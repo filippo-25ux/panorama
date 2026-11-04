@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Panorama">
+<meta name="theme-color" content="#000000">
+<title>Panorama – versione 1</title>
+<style>
+:root {
+  --ink: #ffffff;
+  --soft: rgba(255, 255, 255, 0.72);
+  --glass: rgba(10, 14, 20, 0.58);
+  --accent: #8fd3ff;
+  box-sizing: border-box;
+}
+*, *::before, *::after { box-sizing: inherit; }
+[hidden] { display: none !important; }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  color: var(--ink);
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+#video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Schermata iniziale */
+#start {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: #0c1117;
+}
+.box { width: 100%; max-width: 420px; }
+.box h1 { font-size: 2.2rem; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.02em; }
+.box .sub { margin: 0 0 22px; color: var(--soft); }
+.box p { line-height: 1.5; margin: 0 0 14px; }
+#go {
+  width: 100%;
+  padding: 16px;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #06121c;
+  background: var(--accent);
+  border: 0;
+  border-radius: 14px;
+}
+#go:disabled { opacity: 0.5; }
+#go:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+#msg { color: #ffb4a8; margin: 14px 0 0; min-height: 1.5em; }
+
+/* Schermata con fotocamera */
+#hud { position: fixed; inset: 0; pointer-events: none; }
+.top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px;
+  text-align: center;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+.deg {
+  font-size: 4.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.card { font-size: 1.5rem; font-weight: 600; color: var(--accent); }
+.cross {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 44px; height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.cross::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.panel {
+  position: absolute;
+  left: 12px; right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 16px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-radius: 16px;
+}
+.panel div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 0.95rem;
+}
+.panel span { color: var(--soft); }
+.panel b { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<video id="video" playsinline muted autoplay></video>
+
+<section id="start">
+  <div class="box">
+    <h1>Panorama</h1>
+    <p class="sub">Versione 1: prova di fotocamera, posizione e bussola</p>
+    <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
+    <p>Tieni il telefono in verticale e guarda dove punta la croce al centro dello schermo.</p>
+    <button id="go" type="button">Avvia</button>
+    <p id="msg" role="alert"></p>
+  </div>
+</section>
+
+<main id="hud" hidden>
+  <div class="top">
+    <div class="deg" id="deg">–</div>
+    <div class="card" id="card">&nbsp;</div>
+  </div>
+  <div class="cross" aria-hidden="true"></div>
+  <div class="panel">
+    <div><span>Posizione</span><b id="pos">in attesa del GPS…</b></div>
+    <div><span>Precisione GPS</span><b id="gps">–</b></div>
+    <div><span>Bussola</span><b id="comp">–</b></div>
+    <div><span>Inclinazione</span><b id="tilt">–</b></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+  var S = { heading: null, compAcc: null, pitch: null, lat: null, lon: null, gpsAcc: null, gpsMsg: null };
+
+  // Media "morbida" degli angoli, per evitare che i numeri saltino
+  function smoothAngle(prev, next, k) {
+    if (prev === null) return next;
+    var d = ((next - prev + 540) % 360) - 180;
+    return (prev + d * k + 360) % 360;
+  }
+
+  function onOrient(e) {
+    var h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+      // iPhone e iPad
+      h = e.webkitCompassHeading;
+      S.compAcc = (typeof e.webkitCompassAccuracy === 'number') ? e.webkitCompassAccuracy : null;
+    } else if (e.absolute === true && typeof e.alpha === 'number') {
+      // Android (meno preciso)
+      h = (360 - e.alpha) % 360;
+    }
+    if (h !== null) S.heading = smoothAngle(S.heading, h, 0.3);
+    if (typeof e.beta === 'number') {
+      var p = e.beta - 90; // 0 = orizzonte, positivo = verso l'alto
+      S.pitch = (S.pitch === null) ? p : S.pitch + (p - S.pitch) * 0.3;
+    }
+  }
+
+  function onPos(p) {
+    S.lat = p.coords.latitude;
+    S.lon = p.coords.longitude;
+    S.gpsAcc = p.coords.accuracy;
+    S.gpsMsg = null;
+  }
+
+  function onPosErr(err) {
+    S.gpsMsg = (err && err.code === 1) ? 'permesso negato' : 'non disponibile';
+  }
+
+  function render() {
+    if (S.heading !== null) {
+      var h = (S.heading + 360) % 360;
+      $('deg').textContent = Math.round(h) + '°';
+      $('card').textContent = DIRS[Math.round(h / 45) % 8];
+      if (S.compAcc !== null && S.compAcc >= 0) {
+        $('comp').textContent = 'nord magnetico, ±' + Math.round(S.compAcc) + '°';
+      } else if (S.compAcc !== null) {
+        $('comp').textContent = 'da calibrare: muovi il telefono a 8';
+      } else {
+        $('comp').textContent = 'nord magnetico';
+      }
+    } else {
+      $('comp').textContent = 'nessun dato dai sensori';
+    }
+
+    if (S.pitch !== null) {
+      var t = Math.round(S.pitch);
+      $('tilt').textContent = (t > 0 ? '+' : '') + t + '° ' + (t > 2 ? 'verso l’alto' : t < -2 ? 'verso il basso' : 'orizzonte');
+    }
+
+    if (S.gpsMsg) {
+      $('pos').textContent = S.gpsMsg;
+      $('gps').textContent = '–';
+    } else if (S.lat !== null) {
+      $('pos').textContent = S.lat.toFixed(5) + ', ' + S.lon.toFixed(5);
+      $('gps').textContent = '±' + Math.round(S.gpsAcc) + ' m';
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  $('go').addEventListener('click', async function () {
+    var btn = $('go');
+    var msg = $('msg');
+    btn.disabled = true;
+    msg.textContent = '';
+
+    try {
+      // 1. Sensori di movimento: la richiesta deve partire subito dopo il tocco
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        var r = await DeviceOrientationEvent.requestPermission();
+        if (r !== 'granted') {
+          throw new Error('Permesso ai sensori di movimento negato. Chiudi Safari del tutto, riapri la pagina e premi di nuovo Avvia.');
+        }
+      }
+      window.addEventListener('deviceorientation', onOrient, true);
+      window.addEventListener('deviceorientationabsolute', onOrient, true);
+
+      // 2. Fotocamera posteriore
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Questo browser non può usare la fotocamera. La pagina deve essere aperta con un indirizzo https.');
+      }
+      var stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      var v = $('video');
+      v.srcObject = stream;
+      try { await v.play(); } catch (e) { /* parte comunque da sola */ }
+
+      // 3. Posizione
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(onPos, onPosErr, {
+          enableHighAccuracy: true, maximumAge: 1000, timeout: 20000
+        });
+      } else {
+        S.gpsMsg = 'non disponibile';
+      }
+
+      $('start').hidden = true;
+      $('hud').hidden = false;
+      requestAnimationFrame(render);
+    } catch (err) {
+      msg.textContent = (err && err.name === 'NotAllowedError')
+        ? 'Permesso negato. Concedi fotocamera e sensori, poi riprova.'
+        : (err && err.message) || 'Qualcosa è andato storto.';
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
