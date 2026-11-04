@@ -245,11 +245,13 @@ html, body {
   const RAD = Math.PI / 180;
   const EARTH = 6371000;
   const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta' };
-  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1 };
+  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta', poi: 'luogo' };
+  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1, poi: 1.2 };
   const ENDPOINTS = [
     'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter'
+    'https://overpass.private.coffee/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.openstreetmap.fr/api/interpreter'
   ];
   const MAX_LABELS = 14;
   const LABEL_H = 40;
@@ -343,19 +345,47 @@ html, body {
       'node(' + around + ')[place~"^(city|town|village|hamlet)$"][name];' +
       'node(' + around + ')[natural=peak][name];' +
       ');out;';
-    let lastErr = null;
+    const errors = [];
     for (const url of ENDPOINTS) {
       try {
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), 30000);
-        const res = await fetch(url + '?data=' + encodeURIComponent(q), { signal: ctl.signal });
-        clearTimeout(timer);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const json = await res.json();
-        return json.elements || [];
-      } catch (e) { lastErr = e; }
+        const json = await fetchJSON(url + '?data=' + encodeURIComponent(q), 20000);
+        if (!json.elements || (json.elements.length === 0 && json.remark)) throw new Error('risposta incompleta');
+        return { els: json.elements, partial: false, errors: errors };
+      } catch (e) {
+        errors.push(shortHost(url) + ': ' + describeError(e));
+      }
     }
-    throw lastErr;
+    // Piano B: Wikipedia, raggio massimo 10 km, elenco meno completo
+    try {
+      const r = Math.min(radius, 10000);
+      const wurl = 'https://it.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=' +
+        lat.toFixed(5) + '%7C' + lon.toFixed(5) + '&gsradius=' + r + '&gslimit=200&format=json&origin=*';
+      const json = await fetchJSON(wurl, 15000);
+      const list = (json.query && json.query.geosearch) || [];
+      const els = list.map((p) => ({
+        id: 'w' + p.pageid, lat: p.lat, lon: p.lon,
+        tags: { name: p.title.replace(/\s*\(.*\)\s*$/, ''), place: 'poi' }
+      }));
+      return { els: els, partial: true, errors: errors };
+    } catch (e) {
+      errors.push('it.wikipedia.org: ' + describeError(e));
+    }
+    throw new Error(errors.join(' | '));
+  }
+
+  function shortHost(url) { return url.replace(/^https:\/\//, '').split('/')[0]; }
+  function describeError(e) { return (e && e.name === 'AbortError') ? 'tempo scaduto' : ((e && e.message) || 'errore'); }
+
+  async function fetchJSON(url, ms) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), ms);
+    try {
+      const res = await fetch(url, { signal: ctl.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   function clearPool() {
@@ -374,16 +404,23 @@ html, body {
     loading = true;
     statusMsg = 'Cerco i luoghi nel raggio di ' + (S.radius / 1000) + ' km…';
     const lat = S.lat, lon = S.lon, radius = S.radius;
-    fetchPlaces(lat, lon, radius).then((els) => {
-      items = convert(els);
-      lastFetch = { lat: lat, lon: lon, radius: radius };
+    fetchPlaces(lat, lon, radius).then((res) => {
+      items = convert(res.els);
       clearPool();
+      if (res.partial) {
+        // Elenco di ripiego: non lo memorizzo e riprovo il server principale tra due minuti
+        lastFetch = null;
+        retryAt = Date.now() + 120000;
+        statusMsg = items.length + ' luoghi da Wikipedia (raggio 10 km, elenco parziale). Server principale non raggiungibile: ' + res.errors.join('; ').slice(0, 140);
+      } else {
+        lastFetch = { lat: lat, lon: lon, radius: radius };
+        saveCache();
+        statusMsg = items.length ? items.length + ' luoghi caricati. Punta verso un paese.' : 'Nessun luogo trovato in questa zona.';
+      }
       recompute();
-      saveCache();
-      statusMsg = items.length ? items.length + ' luoghi caricati. Punta verso un paese.' : 'Nessun luogo trovato in questa zona.';
-    }).catch(() => {
+    }).catch((e) => {
       retryAt = Date.now() + 20000;
-      statusMsg = 'Non riesco a caricare i luoghi (rete assente o server occupato). Riprovo tra poco.';
+      statusMsg = 'Non riesco a caricare i luoghi. ' + ((e && e.message) || '').slice(0, 200) + ' Riprovo tra poco.';
     }).then(() => { loading = false; });
   }
 
@@ -469,7 +506,8 @@ html, body {
     // Riga con i dati tecnici
     const parts = [];
     parts.push(S.gpsMsg ? 'GPS ' + S.gpsMsg : (S.gpsAcc !== null ? 'GPS ±' + Math.round(S.gpsAcc) + ' m' : 'GPS in attesa'));
-    if (S.compAcc !== null && S.compAcc >= 0) parts.push('bussola ±' + Math.round(S.compAcc) + '°');
+    if (S.compAcc !== null && S.compAcc > 25) parts.push('bussola ±' + Math.round(S.compAcc) + '° (poco affidabile: allontanati da metalli e muovi il telefono a 8)');
+    else if (S.compAcc !== null && S.compAcc >= 0) parts.push('bussola ±' + Math.round(S.compAcc) + '°');
     else if (S.compAcc !== null) parts.push('bussola da calibrare');
     if (S.pitch !== null) {
       const t = Math.round(S.pitch);
