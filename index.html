@@ -236,7 +236,7 @@ html, body {
         <span class="grp"><button type="button" data-k="cam">Riavvia fotocamera</button></span>
       </div>
       <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo. La taratura sposta tutte le etichette a destra o a sinistra: puntando un luogo che conosci, regolala finché coincide.</p>
-      <p class="hint">Dati dei luoghi: © OpenStreetMap contributors</p>
+      <p class="hint">Dati dei luoghi: GeoNames (CC BY 4.0) e © OpenStreetMap contributors</p>
     </div>
   </div>
 </main>
@@ -265,7 +265,10 @@ html, body {
     lat: null, lon: null, gpsAcc: null, alt: null, gpsMsg: null,
     fov: 65, decl: 3, radius: 25000
   };
-  let items = [];
+  let staticItems = [];   // archivio interno (places-it.json)
+  let onlineItems = [];   // vette e frazioni da OpenStreetMap, quando i server rispondono
+  let items = [];         // elenco unito, solo i luoghi entro il raggio scelto
+  let builtFor = null;
   let lastFetch = null;
   let loading = false;
   let retryAt = 0;
@@ -290,7 +293,7 @@ html, body {
     try {
       const c = JSON.parse(localStorage.getItem('pano.cache') || 'null');
       if (c && c.radius === S.radius && Array.isArray(c.items) && Date.now() - c.time < 14 * 86400000) {
-        items = c.items;
+        onlineItems = c.items;
         lastFetch = { lat: c.lat, lon: c.lon, radius: c.radius };
       }
     } catch (e) {}
@@ -298,7 +301,7 @@ html, body {
   function saveCache() {
     try {
       localStorage.setItem('pano.cache', JSON.stringify({
-        lat: lastFetch.lat, lon: lastFetch.lon, radius: lastFetch.radius, time: Date.now(), items: items
+        lat: lastFetch.lat, lon: lastFetch.lon, radius: lastFetch.radius, time: Date.now(), items: onlineItems
       }));
     } catch (e) {}
   }
@@ -355,27 +358,75 @@ html, body {
       try {
         const json = await fetchJSON(url + '?data=' + encodeURIComponent(q), 20000);
         if (!json.elements || (json.elements.length === 0 && json.remark)) throw new Error('risposta incompleta');
-        return { els: json.elements, partial: false, errors: errors };
+        return json.elements;
       } catch (e) {
         errors.push(shortHost(url) + ': ' + describeError(e));
       }
     }
-    // Piano B: Wikipedia, raggio massimo 10 km, elenco meno completo
-    try {
-      const r = Math.min(radius, 10000);
-      const wurl = 'https://it.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=' +
-        lat.toFixed(5) + '%7C' + lon.toFixed(5) + '&gsradius=' + r + '&gslimit=200&format=json&origin=*';
-      const json = await fetchJSON(wurl, 15000);
-      const list = (json.query && json.query.geosearch) || [];
-      const els = list.filter((p) => !/^(Terremoto|Battaglia|Strage|Alluvione|Eruzione|Frana|Incidente|Elezioni)\b/i.test(p.title)).map((p) => ({
-        id: 'w' + p.pageid, lat: p.lat, lon: p.lon,
-        tags: { name: p.title.replace(/\s*\(.*\)\s*$/, ''), place: 'poi' }
-      }));
-      return { els: els, partial: true, errors: errors };
-    } catch (e) {
-      errors.push('it.wikipedia.org: ' + describeError(e));
-    }
     throw new Error(errors.join(' | '));
+  }
+
+  /* ---------- Archivio interno (GeoNames, Italia) ---------- */
+  function typeFromPop(p) {
+    if (p >= 100000) return 'city';
+    if (p >= 10000) return 'town';
+    if (p >= 250) return 'village';
+    return 'hamlet';
+  }
+
+  function norm(s) {
+    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  }
+
+  async function loadStatic() {
+    try {
+      const arr = await fetchJSON('places-it.json', 20000);
+      staticItems = arr.map((a, i) => ({ id: 's' + i, n: a[0], lat: a[1], lon: a[2], t: typeFromPop(a[3]), e: null }));
+      builtFor = null;
+      refreshItems();
+    } catch (e) {
+      netNote = 'Archivio interno non caricato: ' + describeError(e);
+    }
+  }
+
+  // Unisce archivio interno e dati online, tenendo solo i luoghi entro il raggio scelto
+  function rebuildItems() {
+    if (S.lat === null) return;
+    const r = S.radius;
+    const dLat = r / 111000;
+    const dLon = r / (111000 * Math.cos(S.lat * RAD));
+
+    const online = [];
+    const byName = {};
+    for (const o of onlineItems) {
+      if (geo(S.lat, S.lon, o.lat, o.lon).d > r) continue;
+      online.push(o);
+      (byName[norm(o.n)] = byName[norm(o.n)] || []).push(o);
+    }
+
+    const merged = online.slice();
+    for (const s of staticItems) {
+      if (Math.abs(s.lat - S.lat) > dLat || Math.abs(s.lon - S.lon) > dLon) continue;
+      if (geo(S.lat, S.lon, s.lat, s.lon).d > r) continue;
+      const twins = byName[norm(s.n)];
+      if (twins && twins.some((o) => geo(o.lat, o.lon, s.lat, s.lon).d < 3000)) continue;
+      merged.push(s);
+    }
+
+    items = merged;
+    builtFor = { lat: S.lat, lon: S.lon, radius: r };
+    clearPool();
+    recompute();
+    statusMsg = items.length
+      ? items.length + ' luoghi entro ' + (r / 1000) + ' km. Punta verso un paese.'
+      : 'Nessun luogo trovato in questa zona (l’archivio interno copre solo l’Italia).';
+  }
+
+  function refreshItems() {
+    if (S.lat === null) return;
+    const moved = builtFor ? geo(builtFor.lat, builtFor.lon, S.lat, S.lon).d : Infinity;
+    if (!builtFor || moved > 1000 || builtFor.radius !== S.radius) rebuildItems();
+    else recompute();
   }
 
   function shortHost(url) { return url.replace(/^https:\/\//, '').split('/')[0]; }
@@ -407,28 +458,20 @@ html, body {
     if (lastFetch && lastFetch.radius === S.radius && moved < S.radius * 0.3) return;
 
     loading = true;
-    statusMsg = 'Cerco i luoghi nel raggio di ' + (S.radius / 1000) + ' km…';
     const lat = S.lat, lon = S.lon, radius = S.radius;
-    fetchPlaces(lat, lon, radius).then((res) => {
-      items = convert(res.els);
-      clearPool();
-      if (res.partial) {
-        // Elenco di ripiego: non lo memorizzo e riprovo il server principale tra due minuti
-        lastFetch = null;
-        retryAt = Date.now() + 120000;
-        statusMsg = items.length + ' luoghi da Wikipedia (raggio 10 km, elenco parziale). Server principale non raggiungibile: ' + res.errors.join('; ').slice(0, 140);
-        netNote = 'Elenco di ripiego (Wikipedia). Errori: ' + res.errors.join('; ').slice(0, 260);
-      } else {
-        netNote = '';
-        lastFetch = { lat: lat, lon: lon, radius: radius };
-        saveCache();
-        statusMsg = items.length ? items.length + ' luoghi caricati. Punta verso un paese.' : 'Nessun luogo trovato in questa zona.';
-      }
-      recompute();
+    fetchPlaces(lat, lon, radius).then((els) => {
+      onlineItems = convert(els);
+      lastFetch = { lat: lat, lon: lon, radius: radius };
+      saveCache();
+      netNote = '';
+      builtFor = null;
+      refreshItems();
     }).catch((e) => {
-      retryAt = Date.now() + 20000;
-      statusMsg = 'Non riesco a caricare i luoghi. ' + ((e && e.message) || '').slice(0, 200) + ' Riprovo tra poco.';
-      netNote = 'Errori: ' + ((e && e.message) || '').slice(0, 260);
+      // L'app continua con l'archivio interno; riprova più tardi
+      retryAt = Date.now() + 90000;
+      netNote = staticItems.length
+        ? 'Dati online (vette, frazioni) non disponibili: uso solo l’archivio interno.'
+        : 'Errori: ' + ((e && e.message) || '').slice(0, 260);
     }).then(() => { loading = false; });
   }
 
@@ -461,7 +504,7 @@ html, body {
     S.gpsAcc = p.coords.accuracy;
     S.alt = (typeof p.coords.altitude === 'number') ? p.coords.altitude : null;
     S.gpsMsg = null;
-    recompute();
+    refreshItems();
     maybeFetch();
   }
 
@@ -635,7 +678,7 @@ html, body {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.k === 'cam') { startCamera().catch(() => {}); return; }
-    if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; maybeFetch(); }
+    if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; refreshItems(); maybeFetch(); }
     if (b.dataset.k === 'fov') S.fov = Math.min(100, Math.max(30, S.fov + Number(b.dataset.d)));
     if (b.dataset.k === 'decl') S.decl = Math.min(30, Math.max(-30, S.decl + Number(b.dataset.d)));
     saveSettings();
@@ -646,6 +689,7 @@ html, body {
   loadSettings();
   loadCache();
   refreshSettingsUI();
+  loadStatic();
 
   /* ---------- Fotocamera (si riavvia da sola se si ferma) ---------- */
   let camBusy = false;
