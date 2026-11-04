@@ -266,6 +266,7 @@ html, body {
   let loading = false;
   let retryAt = 0;
   let statusMsg = 'In attesa del GPS…';
+  let netNote = '';
   const pool = {};
   const shownText = {};
 
@@ -362,7 +363,7 @@ html, body {
         lat.toFixed(5) + '%7C' + lon.toFixed(5) + '&gsradius=' + r + '&gslimit=200&format=json&origin=*';
       const json = await fetchJSON(wurl, 15000);
       const list = (json.query && json.query.geosearch) || [];
-      const els = list.map((p) => ({
+      const els = list.filter((p) => !/^(Terremoto|Battaglia|Strage|Alluvione|Eruzione|Frana|Incidente|Elezioni)\b/i.test(p.title)).map((p) => ({
         id: 'w' + p.pageid, lat: p.lat, lon: p.lon,
         tags: { name: p.title.replace(/\s*\(.*\)\s*$/, ''), place: 'poi' }
       }));
@@ -412,7 +413,9 @@ html, body {
         lastFetch = null;
         retryAt = Date.now() + 120000;
         statusMsg = items.length + ' luoghi da Wikipedia (raggio 10 km, elenco parziale). Server principale non raggiungibile: ' + res.errors.join('; ').slice(0, 140);
+        netNote = 'Elenco di ripiego (Wikipedia). Errori: ' + res.errors.join('; ').slice(0, 260);
       } else {
+        netNote = '';
         lastFetch = { lat: lat, lon: lon, radius: radius };
         saveCache();
         statusMsg = items.length ? items.length + ' luoghi caricati. Punta verso un paese.' : 'Nessun luogo trovato in questa zona.';
@@ -421,6 +424,7 @@ html, body {
     }).catch((e) => {
       retryAt = Date.now() + 20000;
       statusMsg = 'Non riesco a caricare i luoghi. ' + ((e && e.message) || '').slice(0, 200) + ' Riprovo tra poco.';
+      netNote = 'Errori: ' + ((e && e.message) || '').slice(0, 260);
     }).then(() => { loading = false; });
   }
 
@@ -513,6 +517,7 @@ html, body {
       const t = Math.round(S.pitch);
       parts.push('inclinazione ' + (t > 0 ? '+' : '') + t + '°');
     }
+    if (netNote) parts.push(netNote);
     setText('foot', parts.join(' · '));
 
     const used = {};
