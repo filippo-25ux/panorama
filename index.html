@@ -8,12 +8,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Panorama">
 <meta name="theme-color" content="#000000">
-<title>Panorama – versione 1</title>
+<title>Panorama – versione 2</title>
 <style>
 :root {
   --ink: #ffffff;
-  --soft: rgba(255, 255, 255, 0.72);
-  --glass: rgba(10, 14, 20, 0.58);
+  --soft: rgba(255, 255, 255, 0.74);
+  --glass: rgba(10, 14, 20, 0.62);
   --accent: #8fd3ff;
   box-sizing: border-box;
 }
@@ -68,21 +68,22 @@ html, body {
 
 /* Schermata con fotocamera */
 #hud { position: fixed; inset: 0; pointer-events: none; }
+#labels { position: absolute; inset: 0; overflow: hidden; }
 .top {
   position: absolute;
   top: 0; left: 0; right: 0;
-  padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 8px;
   text-align: center;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
 }
 .deg {
-  font-size: 4.2rem;
+  font-size: 3rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
-.card { font-size: 1.5rem; font-weight: 600; color: var(--accent); }
+.card { font-size: 1.2rem; font-weight: 600; color: var(--accent); }
 .cross {
   position: absolute;
   top: 50%; left: 50%;
@@ -101,25 +102,81 @@ html, body {
   background: var(--accent);
   border-radius: 50%;
 }
+
+/* Etichette dei luoghi */
+.pill {
+  position: absolute;
+  height: 40px;
+  max-width: 200px;
+  padding: 0 10px;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+.pill b { font-size: 0.92rem; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
+.pill i { font-style: normal; font-size: 0.76rem; line-height: 1.2; color: var(--soft); }
+.pill.sel { background: var(--accent); color: #06121c; }
+.pill.sel i { color: rgba(6, 18, 28, 0.78); }
+.pin {
+  position: absolute;
+  display: none;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.pin::after {
+  content: "";
+  position: absolute;
+  bottom: -3px; left: -3px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Pannello in basso */
 .panel {
   position: absolute;
   left: 12px; right: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  padding: 12px 16px;
+  padding: 12px 16px 6px;
+  pointer-events: auto;
   background: var(--glass);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   border-radius: 16px;
 }
-.panel div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 5px 0;
-  font-size: 0.95rem;
+#aimName { display: block; font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+#aimInfo { display: block; margin-top: 2px; font-size: 0.92rem; color: var(--soft); }
+.foot { margin-top: 8px; font-size: 0.8rem; color: var(--soft); font-variant-numeric: tabular-nums; }
+#gear {
+  margin: 4px 0 0 -2px;
+  padding: 8px 2px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--accent);
+  background: none;
+  border: 0;
 }
-.panel span { color: var(--soft); }
-.panel b { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+#settings { padding-bottom: 8px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: 0.95rem; }
+.row button {
+  min-width: 44px;
+  height: 36px;
+  padding: 0 10px;
+  font: inherit;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 0;
+  border-radius: 10px;
+}
+.row button.on { background: var(--accent); color: #06121c; font-weight: 600; }
+.row .grp { display: flex; align-items: center; gap: 6px; }
+.row .grp b { display: inline-block; min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
+.hint { margin: 6px 0 0; font-size: 0.78rem; line-height: 1.4; color: var(--soft); }
 </style>
 </head>
 <body>
@@ -129,25 +186,54 @@ html, body {
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Versione 1: prova di fotocamera, posizione e bussola</p>
+    <p class="sub">Versione 2: i luoghi vicini nella direzione in cui punti</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
-    <p>Tieni il telefono in verticale e guarda dove punta la croce al centro dello schermo.</p>
+    <p>Serve la connessione a internet per scaricare i nomi dei luoghi. Tieni il telefono in verticale e dritto, senza inclinarlo di lato.</p>
     <button id="go" type="button">Avvia</button>
     <p id="msg" role="alert"></p>
   </div>
 </section>
 
 <main id="hud" hidden>
+  <div id="labels"></div>
   <div class="top">
     <div class="deg" id="deg">–</div>
     <div class="card" id="card">&nbsp;</div>
   </div>
   <div class="cross" aria-hidden="true"></div>
   <div class="panel">
-    <div><span>Posizione</span><b id="pos">in attesa del GPS…</b></div>
-    <div><span>Precisione GPS</span><b id="gps">–</b></div>
-    <div><span>Bussola</span><b id="comp">–</b></div>
-    <div><span>Inclinazione</span><b id="tilt">–</b></div>
+    <b id="aimName">Punta verso un paese</b>
+    <span id="aimInfo">In attesa del GPS…</span>
+    <div class="foot" id="foot"></div>
+    <button id="gear" type="button">Impostazioni</button>
+    <div id="settings" hidden>
+      <div class="row">
+        <span>Raggio di ricerca</span>
+        <span class="grp" id="segR">
+          <button type="button" data-r="10000">10 km</button>
+          <button type="button" data-r="25000">25 km</button>
+          <button type="button" data-r="50000">50 km</button>
+        </span>
+      </div>
+      <div class="row">
+        <span>Campo visivo</span>
+        <span class="grp">
+          <button type="button" data-k="fov" data-d="-2" aria-label="Riduci il campo visivo">−</button>
+          <b id="vFov">65°</b>
+          <button type="button" data-k="fov" data-d="2" aria-label="Aumenta il campo visivo">+</button>
+        </span>
+      </div>
+      <div class="row">
+        <span>Taratura bussola</span>
+        <span class="grp">
+          <button type="button" data-k="decl" data-d="-1" aria-label="Riduci la taratura">−</button>
+          <b id="vDecl">+3°</b>
+          <button type="button" data-k="decl" data-d="1" aria-label="Aumenta la taratura">+</button>
+        </span>
+      </div>
+      <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo. La taratura sposta tutte le etichette a destra o a sinistra: puntando un luogo che conosci, regolala finché coincide.</p>
+      <p class="hint">Dati dei luoghi: © OpenStreetMap contributors</p>
+    </div>
   </div>
 </main>
 
@@ -155,30 +241,171 @@ html, body {
 (function () {
   'use strict';
 
-  var $ = function (id) { return document.getElementById(id); };
-  var DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-  var S = { heading: null, compAcc: null, pitch: null, lat: null, lon: null, gpsAcc: null, gpsMsg: null };
+  const $ = (id) => document.getElementById(id);
+  const RAD = Math.PI / 180;
+  const EARTH = 6371000;
+  const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta' };
+  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1 };
+  const ENDPOINTS = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter'
+  ];
+  const MAX_LABELS = 14;
+  const LABEL_H = 40;
 
+  const S = {
+    heading: null, compAcc: null, pitch: null,
+    lat: null, lon: null, gpsAcc: null, alt: null, gpsMsg: null,
+    fov: 65, decl: 3, radius: 25000
+  };
+  let items = [];
+  let lastFetch = null;
+  let loading = false;
+  let retryAt = 0;
+  let statusMsg = 'In attesa del GPS…';
+  const pool = {};
+  const shownText = {};
+
+  /* ---------- Impostazioni e memoria locale ---------- */
+  function loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem('pano.settings') || '{}');
+      if (typeof s.fov === 'number') S.fov = s.fov;
+      if (typeof s.decl === 'number') S.decl = s.decl;
+      if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
+    } catch (e) { /* si usano i valori di partenza */ }
+  }
+  function saveSettings() {
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fov, decl: S.decl, radius: S.radius })); } catch (e) {}
+  }
+  function loadCache() {
+    try {
+      const c = JSON.parse(localStorage.getItem('pano.cache') || 'null');
+      if (c && c.radius === S.radius && Array.isArray(c.items) && Date.now() - c.time < 14 * 86400000) {
+        items = c.items;
+        lastFetch = { lat: c.lat, lon: c.lon, radius: c.radius };
+      }
+    } catch (e) {}
+  }
+  function saveCache() {
+    try {
+      localStorage.setItem('pano.cache', JSON.stringify({
+        lat: lastFetch.lat, lon: lastFetch.lon, radius: lastFetch.radius, time: Date.now(), items: items
+      }));
+    } catch (e) {}
+  }
+
+  /* ---------- Geografia ---------- */
+  function geo(lat1, lon1, lat2, lon2) {
+    const p1 = lat1 * RAD, p2 = lat2 * RAD, dl = (lon2 - lon1) * RAD, dp = p2 - p1;
+    const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    const d = 2 * EARTH * Math.asin(Math.min(1, Math.sqrt(a)));
+    const y = Math.sin(dl) * Math.cos(p2);
+    const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+    return { d: d, b: (Math.atan2(y, x) / RAD + 360) % 360 };
+  }
+
+  function fmtDist(m) {
+    if (m < 1000) return (Math.round(m / 10) * 10) + ' m';
+    return (m / 1000).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+  }
+
+  function recompute() {
+    if (S.lat === null) return;
+    for (const it of items) {
+      const g = geo(S.lat, S.lon, it.lat, it.lon);
+      it.d = g.d;
+      it.b = g.b;
+      it.skip = g.d < 150;
+      it.score = TYPE_WEIGHT[it.t] / Math.sqrt(Math.max(g.d, 300) / 1000);
+    }
+  }
+
+  /* ---------- Caricamento dei luoghi (OpenStreetMap) ---------- */
+  function convert(els) {
+    const out = [];
+    for (const el of els) {
+      const tg = el.tags || {};
+      if (typeof el.lat !== 'number') continue;
+      const t = tg.natural === 'peak' ? 'peak' : tg.place;
+      const name = tg['name:it'] || tg.name;
+      if (!TYPE_WEIGHT[t] || !name) continue;
+      const e = parseFloat(tg.ele);
+      out.push({ id: el.id, n: name, t: t, lat: el.lat, lon: el.lon, e: isNaN(e) ? null : e });
+    }
+    return out;
+  }
+
+  async function fetchPlaces(lat, lon, radius) {
+    const around = 'around:' + radius + ',' + lat.toFixed(5) + ',' + lon.toFixed(5);
+    const q = '[out:json][timeout:25];(' +
+      'node(' + around + ')[place~"^(city|town|village|hamlet)$"][name];' +
+      'node(' + around + ')[natural=peak][name];' +
+      ');out;';
+    let lastErr = null;
+    for (const url of ENDPOINTS) {
+      try {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 30000);
+        const res = await fetch(url + '?data=' + encodeURIComponent(q), { signal: ctl.signal });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const json = await res.json();
+        return json.elements || [];
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr;
+  }
+
+  function clearPool() {
+    for (const id in pool) {
+      pool[id].pill.remove();
+      pool[id].pin.remove();
+      delete pool[id];
+    }
+  }
+
+  function maybeFetch() {
+    if (S.lat === null || loading || Date.now() < retryAt) return;
+    const moved = lastFetch ? geo(lastFetch.lat, lastFetch.lon, S.lat, S.lon).d : Infinity;
+    if (lastFetch && lastFetch.radius === S.radius && moved < S.radius * 0.3) return;
+
+    loading = true;
+    statusMsg = 'Cerco i luoghi nel raggio di ' + (S.radius / 1000) + ' km…';
+    const lat = S.lat, lon = S.lon, radius = S.radius;
+    fetchPlaces(lat, lon, radius).then((els) => {
+      items = convert(els);
+      lastFetch = { lat: lat, lon: lon, radius: radius };
+      clearPool();
+      recompute();
+      saveCache();
+      statusMsg = items.length ? items.length + ' luoghi caricati. Punta verso un paese.' : 'Nessun luogo trovato in questa zona.';
+    }).catch(() => {
+      retryAt = Date.now() + 20000;
+      statusMsg = 'Non riesco a caricare i luoghi (rete assente o server occupato). Riprovo tra poco.';
+    }).then(() => { loading = false; });
+  }
+
+  /* ---------- Sensori ---------- */
   // Media "morbida" degli angoli, per evitare che i numeri saltino
   function smoothAngle(prev, next, k) {
     if (prev === null) return next;
-    var d = ((next - prev + 540) % 360) - 180;
+    const d = ((next - prev + 540) % 360) - 180;
     return (prev + d * k + 360) % 360;
   }
 
   function onOrient(e) {
-    var h = null;
+    let h = null;
     if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
-      // iPhone e iPad
-      h = e.webkitCompassHeading;
+      h = e.webkitCompassHeading; // iPhone e iPad
       S.compAcc = (typeof e.webkitCompassAccuracy === 'number') ? e.webkitCompassAccuracy : null;
     } else if (e.absolute === true && typeof e.alpha === 'number') {
-      // Android (meno preciso)
-      h = (360 - e.alpha) % 360;
+      h = (360 - e.alpha) % 360; // Android (meno preciso)
     }
     if (h !== null) S.heading = smoothAngle(S.heading, h, 0.3);
     if (typeof e.beta === 'number') {
-      var p = e.beta - 90; // 0 = orizzonte, positivo = verso l'alto
+      const p = e.beta - 90; // 0 = orizzonte, positivo = verso l'alto
       S.pitch = (S.pitch === null) ? p : S.pitch + (p - S.pitch) * 0.3;
     }
   }
@@ -187,48 +414,195 @@ html, body {
     S.lat = p.coords.latitude;
     S.lon = p.coords.longitude;
     S.gpsAcc = p.coords.accuracy;
+    S.alt = (typeof p.coords.altitude === 'number') ? p.coords.altitude : null;
     S.gpsMsg = null;
+    recompute();
+    maybeFetch();
   }
 
   function onPosErr(err) {
     S.gpsMsg = (err && err.code === 1) ? 'permesso negato' : 'non disponibile';
+    statusMsg = 'Senza la posizione non posso cercare i luoghi.';
   }
 
-  function render() {
-    if (S.heading !== null) {
-      var h = (S.heading + 360) % 360;
-      $('deg').textContent = Math.round(h) + '°';
-      $('card').textContent = DIRS[Math.round(h / 45) % 8];
-      if (S.compAcc !== null && S.compAcc >= 0) {
-        $('comp').textContent = 'nord magnetico, ±' + Math.round(S.compAcc) + '°';
-      } else if (S.compAcc !== null) {
-        $('comp').textContent = 'da calibrare: muovi il telefono a 8';
-      } else {
-        $('comp').textContent = 'nord magnetico';
-      }
-    } else {
-      $('comp').textContent = 'nessun dato dai sensori';
+  /* ---------- Disegno ---------- */
+  function setText(id, text) {
+    if (shownText[id] !== text) {
+      shownText[id] = text;
+      $(id).textContent = text;
+    }
+  }
+
+  function makeLabel(it) {
+    const pill = document.createElement('div');
+    pill.className = 'pill';
+    const b = document.createElement('b');
+    b.textContent = it.n;
+    const i = document.createElement('i');
+    i.textContent = TYPE_LABEL[it.t] + ', ' + fmtDist(it.d);
+    pill.appendChild(b);
+    pill.appendChild(i);
+    const pin = document.createElement('div');
+    pin.className = 'pin';
+    $('labels').appendChild(pill);
+    $('labels').appendChild(pin);
+    pill.style.display = 'flex';
+    const lab = { pill: pill, pin: pin, sub: i, w: pill.offsetWidth, subText: i.textContent };
+    pill.style.display = 'none';
+    return lab;
+  }
+
+  function hideLabel(lab) {
+    lab.pill.style.display = 'none';
+    lab.pin.style.display = 'none';
+  }
+
+  function frame() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const heading = (S.heading === null) ? null : (S.heading + S.decl + 360) % 360;
+
+    if (heading !== null) {
+      setText('deg', Math.round(heading) + '°');
+      setText('card', DIRS[Math.round(heading / 45) % 8]);
     }
 
+    // Riga con i dati tecnici
+    const parts = [];
+    parts.push(S.gpsMsg ? 'GPS ' + S.gpsMsg : (S.gpsAcc !== null ? 'GPS ±' + Math.round(S.gpsAcc) + ' m' : 'GPS in attesa'));
+    if (S.compAcc !== null && S.compAcc >= 0) parts.push('bussola ±' + Math.round(S.compAcc) + '°');
+    else if (S.compAcc !== null) parts.push('bussola da calibrare');
     if (S.pitch !== null) {
-      var t = Math.round(S.pitch);
-      $('tilt').textContent = (t > 0 ? '+' : '') + t + '° ' + (t > 2 ? 'verso l’alto' : t < -2 ? 'verso il basso' : 'orizzonte');
+      const t = Math.round(S.pitch);
+      parts.push('inclinazione ' + (t > 0 ? '+' : '') + t + '°');
+    }
+    setText('foot', parts.join(' · '));
+
+    const used = {};
+    let aim = null;
+    const ready = heading !== null && S.pitch !== null && S.lat !== null && items.length > 0;
+
+    if (ready) {
+      const tanV = Math.tan(S.fov * RAD / 2);
+      const tanH = tanV * W / H;
+      const halfH = Math.atan(tanH) / RAD;
+
+      const cand = [];
+      for (const it of items) {
+        if (it.skip || it.d === undefined) continue;
+        const rel = ((it.b - heading + 540) % 360) - 180;
+        if (Math.abs(rel) <= halfH + 3) cand.push({ it: it, rel: rel });
+      }
+
+      // Il luogo "nel mirino": il più importante entro 5° dal centro, altrimenti il più vicino al centro
+      for (const c of cand) {
+        if (Math.abs(c.rel) <= 5 && (!aim || Math.abs(aim.rel) > 5 || c.it.score > aim.it.score)) aim = c;
+      }
+      if (!aim) {
+        for (const c of cand) {
+          if (!aim || Math.abs(c.rel) < Math.abs(aim.rel)) aim = c;
+        }
+      }
+
+      // Etichette: le più importanti per prime, ognuna su una "corsia" libera sopra il suo punto
+      cand.sort((a, b) => b.it.score - a.it.score);
+      const placed = [];
+      const topLimit = 120;
+      const bottomLimit = H - 170;
+      let shown = 0;
+
+      for (const c of cand) {
+        if (shown >= MAX_LABELS) break;
+        const it = c.it;
+        let elev = 0;
+        if (it.e !== null && S.alt !== null) elev = Math.atan2(it.e - S.alt, it.d) / RAD;
+        const x = W / 2 + Math.tan(c.rel * RAD) / tanH * W / 2;
+        const ay = H / 2 + Math.tan((S.pitch - elev) * RAD) / tanV * H / 2;
+        if (ay > bottomLimit || ay < topLimit + LABEL_H) continue;
+
+        let lab = pool[it.id];
+        if (!lab) lab = pool[it.id] = makeLabel(it);
+        const left = Math.min(Math.max(x - lab.w / 2, 6), W - lab.w - 6);
+
+        let top = null;
+        for (let lane = 0; lane < 12; lane++) {
+          const t = ay - 12 - LABEL_H - lane * (LABEL_H + 4);
+          if (t < topLimit) break;
+          let clash = false;
+          for (const r of placed) {
+            if (left < r.r && left + lab.w > r.l && t < r.b && t + LABEL_H > r.t) { clash = true; break; }
+          }
+          if (!clash) { top = t; break; }
+        }
+        if (top === null) continue;
+
+        placed.push({ l: left, r: left + lab.w, t: top, b: top + LABEL_H });
+        shown++;
+        used[it.id] = true;
+
+        const subText = TYPE_LABEL[it.t] + ', ' + fmtDist(it.d);
+        if (lab.subText !== subText) { lab.subText = subText; lab.sub.textContent = subText; }
+        lab.pill.style.display = 'flex';
+        lab.pill.style.left = left + 'px';
+        lab.pill.style.top = top + 'px';
+        lab.pill.classList.toggle('sel', !!aim && aim.it === it);
+        lab.pin.style.display = 'block';
+        lab.pin.style.left = x + 'px';
+        lab.pin.style.top = (top + LABEL_H) + 'px';
+        lab.pin.style.height = Math.max(0, ay - top - LABEL_H) + 'px';
+      }
     }
 
-    if (S.gpsMsg) {
-      $('pos').textContent = S.gpsMsg;
-      $('gps').textContent = '–';
-    } else if (S.lat !== null) {
-      $('pos').textContent = S.lat.toFixed(5) + ', ' + S.lon.toFixed(5);
-      $('gps').textContent = '±' + Math.round(S.gpsAcc) + ' m';
+    for (const id in pool) {
+      if (!used[id]) hideLabel(pool[id]);
     }
 
-    requestAnimationFrame(render);
+    // Scheda in basso
+    if (heading === null || S.pitch === null) {
+      setText('aimName', 'Sensori non attivi');
+      setText('aimInfo', 'Controlla il permesso ai sensori di movimento.');
+    } else if (aim) {
+      let info = TYPE_LABEL[aim.it.t] + ', ' + fmtDist(aim.it.d);
+      if (Math.abs(aim.rel) > 1.5) {
+        info += ', ' + (aim.rel > 0 ? 'più a destra di ' : 'più a sinistra di ') + Math.round(Math.abs(aim.rel)) + '°';
+      }
+      setText('aimName', aim.it.n);
+      setText('aimInfo', info);
+    } else {
+      setText('aimName', 'Punta verso un paese');
+      setText('aimInfo', statusMsg);
+    }
+
+    requestAnimationFrame(frame);
   }
 
-  $('go').addEventListener('click', async function () {
-    var btn = $('go');
-    var msg = $('msg');
+  /* ---------- Impostazioni: pulsanti ---------- */
+  function refreshSettingsUI() {
+    $('vFov').textContent = S.fov + '°';
+    $('vDecl').textContent = (S.decl > 0 ? '+' : '') + S.decl + '°';
+    document.querySelectorAll('#segR button').forEach((b) => {
+      b.classList.toggle('on', Number(b.dataset.r) === S.radius);
+    });
+  }
+
+  $('settings').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; maybeFetch(); }
+    if (b.dataset.k === 'fov') S.fov = Math.min(100, Math.max(30, S.fov + Number(b.dataset.d)));
+    if (b.dataset.k === 'decl') S.decl = Math.min(30, Math.max(-30, S.decl + Number(b.dataset.d)));
+    saveSettings();
+    refreshSettingsUI();
+  });
+  $('gear').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; });
+
+  loadSettings();
+  loadCache();
+  refreshSettingsUI();
+
+  /* ---------- Avvio ---------- */
+  $('go').addEventListener('click', async () => {
+    const btn = $('go');
+    const msg = $('msg');
     btn.disabled = true;
     msg.textContent = '';
 
@@ -236,7 +610,7 @@ html, body {
       // 1. Sensori di movimento: la richiesta deve partire subito dopo il tocco
       if (typeof DeviceOrientationEvent !== 'undefined' &&
           typeof DeviceOrientationEvent.requestPermission === 'function') {
-        var r = await DeviceOrientationEvent.requestPermission();
+        const r = await DeviceOrientationEvent.requestPermission();
         if (r !== 'granted') {
           throw new Error('Permesso ai sensori di movimento negato. Chiudi Safari del tutto, riapri la pagina e premi di nuovo Avvia.');
         }
@@ -248,11 +622,11 @@ html, body {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Questo browser non può usare la fotocamera. La pagina deve essere aperta con un indirizzo https.');
       }
-      var stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' } },
         audio: false
       });
-      var v = $('video');
+      const v = $('video');
       v.srcObject = stream;
       try { await v.play(); } catch (e) { /* parte comunque da sola */ }
 
@@ -264,10 +638,11 @@ html, body {
       } else {
         S.gpsMsg = 'non disponibile';
       }
+      setInterval(maybeFetch, 4000);
 
       $('start').hidden = true;
       $('hud').hidden = false;
-      requestAnimationFrame(render);
+      requestAnimationFrame(frame);
     } catch (err) {
       msg.textContent = (err && err.name === 'NotAllowedError')
         ? 'Permesso negato. Concedi fotocamera e sensori, poi riprova.'
