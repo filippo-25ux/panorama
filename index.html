@@ -231,6 +231,10 @@ html, body {
           <button type="button" data-k="decl" data-d="1" aria-label="Aumenta la taratura">+</button>
         </span>
       </div>
+      <div class="row">
+        <span>Schermo nero?</span>
+        <span class="grp"><button type="button" data-k="cam">Riavvia fotocamera</button></span>
+      </div>
       <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo. La taratura sposta tutte le etichette a destra o a sinistra: puntando un luogo che conosci, regolala finché coincide.</p>
       <p class="hint">Dati dei luoghi: © OpenStreetMap contributors</p>
     </div>
@@ -630,6 +634,7 @@ html, body {
   $('settings').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.k === 'cam') { startCamera().catch(() => {}); return; }
     if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; maybeFetch(); }
     if (b.dataset.k === 'fov') S.fov = Math.min(100, Math.max(30, S.fov + Number(b.dataset.d)));
     if (b.dataset.k === 'decl') S.decl = Math.min(30, Math.max(-30, S.decl + Number(b.dataset.d)));
@@ -641,6 +646,40 @@ html, body {
   loadSettings();
   loadCache();
   refreshSettingsUI();
+
+  /* ---------- Fotocamera (si riavvia da sola se si ferma) ---------- */
+  let camBusy = false;
+
+  async function startCamera() {
+    if (camBusy) return;
+    camBusy = true;
+    try {
+      const v = $('video');
+      const old = v.srcObject;
+      if (old && old.getTracks) old.getTracks().forEach((t) => t.stop());
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      v.srcObject = stream;
+      stream.getVideoTracks().forEach((t) => {
+        t.onended = () => { setTimeout(checkCamera, 500); };
+      });
+      try { await v.play(); } catch (e) { /* parte comunque da sola */ }
+    } finally {
+      camBusy = false;
+    }
+  }
+
+  function checkCamera() {
+    if (document.visibilityState !== 'visible' || camBusy) return;
+    const v = $('video');
+    const s = v.srcObject;
+    const t = s && s.getVideoTracks && s.getVideoTracks()[0];
+    if (!t || t.readyState !== 'live') { startCamera().catch(() => {}); return; }
+    if (v.paused) { v.play().catch(() => {}); return; }
+    if (t.muted || v.videoWidth === 0) { startCamera().catch(() => {}); }
+  }
 
   /* ---------- Avvio ---------- */
   $('go').addEventListener('click', async () => {
@@ -665,13 +704,11 @@ html, body {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Questo browser non può usare la fotocamera. La pagina deve essere aperta con un indirizzo https.');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false
+      await startCamera();
+      setInterval(checkCamera, 3000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') setTimeout(checkCamera, 300);
       });
-      const v = $('video');
-      v.srcObject = stream;
-      try { await v.play(); } catch (e) { /* parte comunque da sola */ }
 
       // 3. Posizione
       if (navigator.geolocation) {
