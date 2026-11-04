@@ -8,13 +8,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Panorama">
 <meta name="theme-color" content="#000000">
-<title>Panorama – versione 2</title>
+<title>Panorama – versione 7</title>
 <style>
 :root {
   --ink: #ffffff;
   --soft: rgba(255, 255, 255, 0.74);
   --glass: rgba(10, 14, 20, 0.62);
   --accent: #8fd3ff;
+  --sun: #ffd166;
   box-sizing: border-box;
 }
 *, *::before, *::after { box-sizing: inherit; }
@@ -118,6 +119,8 @@ html, body {
   backdrop-filter: blur(6px);
   white-space: nowrap;
 }
+.pill.land { border-left: 4px solid #c8a2ff; }
+.pill.peak { border-left: 4px solid #8be28b; }
 .pill b { font-size: 0.92rem; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
 .pill i { font-style: normal; font-size: 0.76rem; line-height: 1.2; color: var(--soft); }
 .pill.sel { background: var(--accent); color: #06121c; }
@@ -137,11 +140,63 @@ html, body {
   background: var(--accent);
 }
 
+/* Marcatore del sole */
+#sunMark {
+  position: absolute;
+  display: none;
+  width: 34px; height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 3px solid var(--sun);
+  border-radius: 50%;
+  box-shadow: 0 0 14px rgba(255, 209, 102, 0.7);
+}
+#sunMark span {
+  position: absolute;
+  top: 38px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sun);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Avvisi */
+#toast {
+  position: absolute;
+  left: 16px; right: 16px;
+  top: calc(104px + env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  text-align: center;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  pointer-events: auto;
+}
+#toast button {
+  flex: none;
+  padding: 6px 10px;
+  font: inherit;
+  font-weight: 600;
+  color: #06121c;
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+}
+
 /* Pannello in basso */
 .panel {
   position: absolute;
   left: 12px; right: 12px;
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  max-height: 70vh;
+  overflow-y: auto;
   padding: 12px 16px 6px;
   pointer-events: auto;
   background: var(--glass);
@@ -151,6 +206,19 @@ html, body {
 }
 #aimName { display: block; font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
 #aimInfo { display: block; margin-top: 2px; font-size: 0.92rem; color: var(--soft); }
+#here { margin-top: 4px; font-size: 0.88rem; color: var(--soft); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 2px; }
+.btn {
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #06121c;
+  background: var(--accent);
+  border: 0;
+  border-radius: 12px;
+}
+.btn.sun { background: var(--sun); }
 .foot { margin-top: 8px; font-size: 0.8rem; color: var(--soft); font-variant-numeric: tabular-nums; }
 #gear {
   margin: 4px 0 0 -2px;
@@ -186,9 +254,9 @@ html, body {
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Versione 2: i luoghi vicini nella direzione in cui punti</p>
+    <p class="sub">Versione 7: calibrazione della bussola, chiese e torri, sole</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
-    <p>Serve la connessione a internet per scaricare i nomi dei luoghi. Tieni il telefono in verticale e dritto, senza inclinarlo di lato.</p>
+    <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
     <button id="go" type="button">Avvia</button>
     <p id="msg" role="alert"></p>
   </div>
@@ -196,14 +264,21 @@ html, body {
 
 <main id="hud" hidden>
   <div id="labels"></div>
+  <div id="sunMark"><span>Sole</span></div>
   <div class="top">
     <div class="deg" id="deg">–</div>
     <div class="card" id="card">&nbsp;</div>
   </div>
   <div class="cross" aria-hidden="true"></div>
+  <div id="toast" hidden><span id="toastText"></span><button id="toastBtn" type="button" hidden>Annulla</button></div>
   <div class="panel">
     <b id="aimName">Punta verso un paese</b>
     <span id="aimInfo">In attesa del GPS…</span>
+    <div id="here"></div>
+    <div class="actions">
+      <button class="btn" id="calib" type="button" hidden>Calibra su questo luogo</button>
+      <button class="btn sun" id="sunBtn" type="button" hidden>Sole rilevato</button>
+    </div>
     <div class="foot" id="foot"></div>
     <button id="gear" type="button">Impostazioni</button>
     <div id="settings" hidden>
@@ -226,17 +301,31 @@ html, body {
       <div class="row">
         <span>Taratura bussola</span>
         <span class="grp">
-          <button type="button" data-k="decl" data-d="-1" aria-label="Riduci la taratura">−</button>
-          <b id="vDecl">+3°</b>
-          <button type="button" data-k="decl" data-d="1" aria-label="Aumenta la taratura">+</button>
+          <button type="button" data-k="off" data-d="-1" aria-label="Riduci la taratura">−</button>
+          <b id="vOff">0°</b>
+          <button type="button" data-k="off" data-d="1" aria-label="Aumenta la taratura">+</button>
         </span>
+      </div>
+      <div class="row">
+        <span>Azzera taratura e inclinazione</span>
+        <span class="grp"><button type="button" data-k="zero">Azzera</button></span>
+      </div>
+      <div class="row">
+        <span>Calibra camminando</span>
+        <span class="grp"><button type="button" data-k="walk">Avvia</button></span>
+      </div>
+      <div class="row">
+        <span>Chiese, torri, castelli</span>
+        <span class="grp"><button type="button" data-k="land" id="landBtn">No</button></span>
       </div>
       <div class="row">
         <span>Schermo nero?</span>
         <span class="grp"><button type="button" data-k="cam">Riavvia fotocamera</button></span>
       </div>
-      <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo. La taratura sposta tutte le etichette a destra o a sinistra: puntando un luogo che conosci, regolala finché coincide.</p>
-      <p class="hint">Dati dei luoghi: GeoNames (CC BY 4.0) e © OpenStreetMap contributors</p>
+      <p class="hint" id="declInfo"></p>
+      <p class="hint"><b>Come calibrare la bussola.</b> Punta la croce al centro su un luogo che vedi bene, meglio un campanile, una torre o una vetta, poi premi “Calibra su questo luogo”. Con il sole visibile, inquadralo e premi “Sole rilevato”. Camminando, usa “Calibra camminando” e tieni il telefono puntato avanti.</p>
+      <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo.</p>
+      <p class="hint">Dati dei luoghi: GeoNames (CC BY 4.0), ISTAT (CC BY 3.0 IT) e © OpenStreetMap contributors</p>
     </div>
   </div>
 </main>
@@ -249,8 +338,9 @@ html, body {
   const RAD = Math.PI / 180;
   const EARTH = 6371000;
   const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta', poi: 'luogo' };
-  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1, poi: 1.2 };
+  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta', church: 'chiesa', tower: 'torre', castle: 'castello' };
+  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1, church: 1.5, tower: 1.7, castle: 1.8 };
+  const LAND_TYPES = { church: 1, tower: 1, castle: 1 };
   const ENDPOINTS = [
     'https://overpass-api.de/api/interpreter',
     'https://overpass.private.coffee/api/interpreter',
@@ -260,20 +350,94 @@ html, body {
   const MAX_LABELS = 14;
   const LABEL_H = 40;
 
+  /* Declinazione magnetica: modello WMM2025 (epoca 2026,85), griglia di 5° in decimi di grado.
+     Righe da -70° a +75° di latitudine, colonne da -180° a +180° di longitudine. */
+  const DECL = { step: 5, la0: -70, lo0: -180, rows: [[859,816,779,745,713,685,658,632,607,583,559,535,510,485,459,432,404,375,345,315,284,253,222,191,160,130,100,71,42,13,-16,-45,-75,-107,-139,-173,-209,-246,-284,-324,-364,-405,-447,-489,-531,-572,-614,-655,-696,-737,-777,-818,-860,-902,-946,-991,-1040,-1093,-1152,-1220,-1300,-1399,-1524,-1680,1736,1544,1371,1231,1121,1035,965,908,859],[642,621,602,584,567,550,535,520,506,491,476,461,444,426,406,385,361,336,309,280,250,220,189,158,128,99,71,44,18,-7,-31,-56,-82,-110,-139,-170,-204,-239,-277,-316,-356,-396,-437,-477,-517,-556,-594,-631,-667,-701,-734,-767,-798,-829,-859,-890,-920,-952,-986,-1023,-1070,-1136,-1265,-1716,1126,916,832,782,745,715,688,664,642],[489,482,474,465,456,448,439,431,424,416,408,399,390,378,364,347,328,305,280,252,222,191,159,126,95,66,38,12,-11,-33,-54,-74,-95,-118,-144,-172,-203,-237,-274,-312,-352,-392,-432,-471,-508,-544,-578,-609,-638,-665,-690,-711,-730,-746,-758,-766,-767,-760,-740,-698,-615,-452,-173,121,306,402,453,479,493,498,498,495,489],[388,387,384,381,376,371,367,362,359,355,352,348,343,336,327,315,299,279,255,228,197,164,129,95,61,29,0,-25,-47,-66,-82,-98,-114,-132,-153,-177,-205,-238,-273,-311,-350,-389,-428,-465,-499,-531,-560,-586,-607,-625,-639,-649,-653,-652,-643,-625,-594,-548,-482,-389,-272,-138,-7,106,193,258,304,336,358,373,382,387,388],[319,321,321,319,317,314,311,308,306,304,303,302,300,297,292,284,271,254,232,205,173,137,100,61,24,-11,-41,-67,-88,-104,-118,-129,-139,-151,-166,-185,-209,-238,-272,-309,-347,-385,-422,-456,-487,-514,-537,-556,-570,-578,-581,-578,-568,-549,-521,-483,-432,-369,-294,-212,-127,-45,30,95,149,194,230,258,280,296,307,315,319],[269,272,273,273,271,269,267,265,263,262,262,261,261,260,258,252,243,228,207,180,147,109,68,26,-14,-52,-84,-110,-130,-145,-156,-163,-169,-175,-184,-196,-214,-238,-268,-303,-339,-375,-409,-440,-466,-489,-506,-517,-522,-521,-514,-499,-476,-445,-405,-356,-301,-240,-178,-118,-60,-7,41,84,123,156,185,209,228,244,255,263,269],[230,233,235,235,235,234,232,230,228,227,226,225,226,225,224,220,213,200,180,154,120,80,36,-9,-52,-91,-124,-150,-169,-183,-191,-196,-199,-201,-203,-208,-218,-235,-259,-288,-321,-353,-384,-411,-433,-450,-460,-465,-463,-453,-437,-413,-383,-345,-301,-253,-203,-154,-107,-64,-25,11,44,75,103,129,153,173,191,205,216,224,230],[198,202,204,205,205,204,203,201,199,197,195,194,194,193,192,189,183,171,152,126,91,50,4,-43,-87,-126,-158,-183,-201,-212,-220,-224,-225,-223,-220,-217,-217,-224,-238,-260,-286,-314,-340,-363,-381,-394,-400,-399,-392,-377,-356,-328,-295,-258,-217,-174,-133,-95,-61,-32,-5,19,42,65,88,109,129,146,162,175,185,193,198],[173,176,178,179,179,179,178,176,174,172,170,168,166,165,164,161,155,144,125,98,63,21,-25,-72,-116,-154,-184,-207,-222,-232,-238,-241,-240,-235,-226,-216,-205,-200,-203,-214,-232,-253,-276,-296,-312,-323,-327,-325,-315,-299,-277,-251,-220,-186,-151,-116,-84,-55,-32,-12,6,22,39,57,75,93,110,125,140,151,161,168,173],[152,154,156,157,157,157,157,156,154,151,148,146,143,141,140,137,130,119,100,73,37,-5,-51,-97,-139,-175,-202,-222,-234,-242,-245,-245,-240,-231,-217,-199,-180,-164,-155,-155,-163,-178,-197,-216,-232,-244,-250,-249,-241,-227,-209,-186,-160,-132,-103,-75,-49,-28,-12,0,11,22,34,49,64,79,95,109,122,133,142,148,152],[135,137,138,138,139,139,138,138,136,133,130,127,124,122,120,116,110,98,79,51,15,-27,-72,-116,-155,-188,-212,-228,-238,-241,-240,-236,-226,-212,-193,-170,-146,-124,-107,-98,-99,-107,-122,-139,-157,-171,-179,-181,-177,-167,-153,-135,-115,-92,-69,-46,-26,-11,0,7,13,20,29,41,54,69,83,96,108,118,126,132,135],[122,123,123,123,123,123,123,122,121,118,115,112,109,107,104,100,93,80,60,32,-4,-45,-88,-129,-165,-194,-215,-228,-233,-232,-226,-216,-201,-183,-160,-136,-111,-87,-68,-55,-50,-53,-63,-78,-95,-110,-121,-126,-125,-120,-110,-98,-82,-65,-46,-28,-12,-1,6,9,12,16,23,33,46,59,73,86,97,107,114,120,122],[112,113,112,111,110,110,110,109,108,106,103,100,97,95,92,88,80,66,45,16,-19,-59,-99,-137,-170,-196,-213,-222,-223,-217,-206,-190,-171,-150,-127,-103,-80,-59,-41,-27,-18,-17,-23,-35,-50,-65,-77,-84,-86,-84,-79,-70,-59,-46,-31,-16,-4,4,8,9,9,11,17,26,38,51,64,77,88,98,105,110,112],[105,105,103,102,101,100,100,100,99,97,94,91,89,86,83,78,69,54,32,4,-31,-69,-106,-141,-171,-193,-207,-212,-209,-199,-183,-164,-142,-120,-97,-76,-56,-38,-22,-9,1,5,2,-7,-20,-34,-46,-54,-57,-58,-55,-50,-43,-33,-21,-10,0,5,7,6,4,5,9,18,30,43,56,69,81,91,98,103,105],[100,99,97,95,94,93,93,93,93,91,89,86,83,80,76,70,60,44,22,-7,-41,-76,-111,-143,-169,-188,-198,-199,-193,-179,-161,-139,-117,-94,-73,-55,-38,-23,-9,3,13,18,17,10,-1,-13,-24,-32,-36,-38,-38,-35,-31,-24,-16,-7,0,4,3,1,-2,-3,1,9,21,34,48,61,74,84,93,98,100],[96,96,94,92,90,89,90,90,90,89,87,84,81,77,72,65,53,36,12,-16,-49,-82,-115,-143,-166,-181,-188,-186,-177,-161,-141,-119,-96,-74,-55,-38,-24,-11,0,11,20,25,26,21,12,2,-8,-16,-21,-24,-25,-24,-22,-18,-12,-6,-2,0,-2,-6,-10,-11,-8,0,11,24,38,52,65,77,87,93,96],[91,92,91,90,89,88,89,90,91,90,88,85,81,77,71,61,48,29,4,-24,-56,-88,-117,-143,-162,-173,-177,-172,-161,-144,-124,-102,-80,-59,-41,-25,-13,-2,7,17,25,31,32,29,21,12,3,-4,-9,-12,-14,-15,-15,-13,-10,-6,-4,-5,-8,-13,-18,-20,-18,-11,-1,13,27,42,56,69,80,87,91],[86,89,90,89,89,90,92,93,95,94,93,90,85,79,71,60,44,23,-2,-32,-62,-92,-120,-142,-157,-165,-166,-159,-147,-130,-110,-89,-67,-47,-30,-16,-5,5,13,22,29,34,36,34,28,20,12,5,0,-3,-5,-7,-8,-8,-8,-7,-7,-10,-15,-21,-27,-31,-29,-24,-14,-1,13,29,44,58,71,80,86],[80,85,88,89,91,93,96,99,101,101,100,97,92,84,74,60,42,19,-8,-38,-69,-97,-122,-141,-153,-158,-156,-148,-134,-118,-99,-78,-58,-39,-22,-9,2,11,19,26,33,38,40,38,33,27,19,14,9,6,3,0,-2,-4,-5,-7,-10,-15,-22,-30,-37,-42,-42,-37,-28,-16,-2,14,30,46,60,71,80],[71,80,85,90,93,98,102,106,109,110,109,106,100,91,79,63,42,16,-13,-44,-74,-102,-125,-141,-150,-152,-148,-138,-125,-108,-90,-71,-52,-33,-17,-3,8,16,23,30,36,41,43,42,39,33,27,22,18,15,12,8,5,1,-2,-7,-13,-20,-30,-40,-48,-54,-56,-52,-44,-33,-18,-3,14,31,47,60,71],[61,72,82,89,96,103,109,114,118,120,119,116,109,99,85,66,43,15,-16,-49,-80,-107,-128,-142,-149,-149,-143,-133,-119,-102,-85,-66,-47,-29,-13,1,12,21,28,34,40,45,47,48,45,41,37,33,29,26,22,18,13,8,1,-6,-15,-26,-38,-50,-60,-67,-70,-67,-60,-49,-36,-20,-3,15,32,48,61],[50,64,77,88,98,108,116,123,128,130,130,126,119,107,91,71,45,14,-19,-53,-85,-112,-132,-145,-150,-149,-142,-131,-116,-100,-83,-64,-46,-28,-11,3,15,24,32,39,45,49,53,54,54,51,49,46,42,39,35,30,23,15,6,-5,-18,-31,-46,-60,-72,-81,-84,-83,-77,-66,-53,-37,-19,-1,17,34,50],[39,56,72,86,100,112,122,131,137,140,140,136,128,116,98,75,47,13,-23,-59,-92,-119,-139,-151,-155,-153,-145,-133,-118,-102,-84,-66,-47,-29,-12,3,16,27,35,43,50,55,60,63,65,65,64,62,60,56,51,44,35,24,12,-3,-20,-37,-55,-72,-85,-95,-99,-98,-92,-82,-69,-53,-35,-17,2,21,39],[29,48,67,84,101,115,128,138,146,150,151,147,139,125,105,80,48,12,-27,-65,-100,-128,-148,-160,-164,-161,-152,-140,-125,-108,-90,-71,-51,-33,-15,1,16,28,38,48,56,63,70,75,79,82,83,83,81,78,71,63,51,36,19,-1,-22,-44,-65,-84,-99,-109,-114,-113,-107,-97,-84,-68,-50,-30,-11,9,29],[20,42,62,82,101,118,133,145,154,160,161,158,149,134,113,84,49,9,-34,-75,-112,-141,-162,-173,-177,-174,-165,-152,-137,-119,-100,-80,-60,-40,-21,-3,14,28,41,53,64,74,83,91,98,104,108,109,108,104,97,85,70,51,29,4,-23,-50,-75,-96,-113,-124,-129,-128,-122,-111,-97,-81,-62,-43,-22,-1,20],[13,36,58,80,100,120,137,151,162,169,172,169,160,144,120,88,49,4,-44,-90,-129,-160,-181,-193,-196,-193,-183,-170,-154,-135,-114,-93,-72,-50,-29,-9,10,28,44,59,74,88,100,112,122,131,137,141,141,137,129,115,96,71,43,11,-23,-55,-84,-109,-127,-138,-143,-142,-135,-124,-110,-93,-74,-53,-32,-10,13],[6,30,53,77,99,120,139,155,168,177,181,180,171,154,127,91,45,-7,-61,-112,-154,-187,-208,-220,-222,-218,-208,-193,-175,-155,-133,-110,-87,-63,-39,-16,6,27,48,68,86,104,121,137,152,164,173,179,181,178,169,153,130,100,64,24,-18,-57,-92,-120,-141,-153,-158,-156,-149,-137,-122,-105,-85,-64,-41,-18,6],[-3,22,47,72,96,118,139,157,172,183,188,187,178,159,129,87,33,-28,-89,-146,-191,-225,-245,-255,-256,-249,-237,-221,-201,-179,-155,-129,-103,-77,-50,-23,3,28,53,78,102,125,146,167,185,202,215,225,229,228,220,204,178,143,99,49,-4,-53,-96,-130,-154,-168,-173,-171,-164,-152,-136,-118,-97,-75,-52,-28,-3],[-15,11,37,63,88,112,133,153,169,180,186,185,174,152,116,65,2,-69,-139,-199,-244,-275,-292,-298,-295,-285,-270,-250,-228,-202,-176,-147,-118,-88,-58,-28,2,32,62,91,120,148,175,200,223,245,263,277,287,291,287,273,249,211,160,98,31,-34,-91,-134,-164,-182,-190,-189,-182,-170,-154,-135,-113,-90,-66,-41,-15],[-35,-9,18,44,69,93,115,134,149,159,162,157,140,110,63,0,-75,-152,-222,-277,-314,-336,-345,-344,-335,-320,-300,-276,-250,-222,-191,-160,-127,-94,-60,-26,8,42,76,109,143,175,207,237,266,293,317,339,356,368,373,369,353,322,272,203,117,26,-56,-121,-167,-195,-208,-211,-206,-194,-178,-159,-137,-113,-88,-62,-35]] };
+
+  function declAt(lat, lon) {
+    const G = DECL;
+    const la = Math.min(G.la0 + (G.rows.length - 1) * G.step, Math.max(G.la0, lat));
+    let lo = ((lon + 180) % 360 + 360) % 360 - 180;
+    const fy = (la - G.la0) / G.step, fx = (lo - G.lo0) / G.step;
+    const y = Math.min(G.rows.length - 2, Math.max(0, Math.floor(fy)));
+    const x = Math.min(G.rows[0].length - 2, Math.max(0, Math.floor(fx)));
+    const ty = fy - y, tx = fx - x;
+    const a = G.rows[y][x], b = G.rows[y][x + 1], c = G.rows[y + 1][x], d = G.rows[y + 1][x + 1];
+    return ((a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + d * tx) * ty) / 10;
+  }
+
+  /* Posizione del sole (formule astronomiche standard): azimut da nord in senso orario, altezza sull'orizzonte */
+  function sunPos(date, lat, lon) {
+    const d = date.valueOf() / 86400000 - 0.5 + 2440588 - 2451545;
+    const M = RAD * (357.5291 + 0.98560028 * d);
+    const C = RAD * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M));
+    const L = M + C + RAD * 102.9372 + Math.PI;
+    const e = RAD * 23.4397;
+    const dec = Math.asin(Math.sin(L) * Math.sin(e));
+    const ra = Math.atan2(Math.sin(L) * Math.cos(e), Math.cos(L));
+    const phi = lat * RAD;
+    const H = RAD * (280.16 + 360.9856235 * d) + lon * RAD - ra;
+    const az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi));
+    const alt = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H));
+    return { az: (az / RAD + 180 + 360) % 360, alt: alt / RAD };
+  }
+
+  /* Cerca nell'immagine il disco chiaro e compatto del sole. Restituisce il centro in pixel o null. */
+  function findSun(d, w, h) {
+    const n = w * h;
+    const mask = new Uint8Array(n);
+    let bright = 0;
+    for (let i = 0; i < n; i++) {
+      const r = d[i * 4], g = d[i * 4 + 1], b = d[i * 4 + 2];
+      if (Math.min(r, g, b) >= 235 && Math.max(r, g, b) >= 250) { mask[i] = 1; bright++; }
+    }
+    if (bright === 0 || bright > n * 0.08) return null; // cielo coperto o muro bianco: nessun sole riconoscibile
+    const seen = new Uint8Array(n);
+    const stack = [];
+    let best = null;
+    for (let s = 0; s < n; s++) {
+      if (!mask[s] || seen[s]) continue;
+      stack.length = 0; stack.push(s); seen[s] = 1;
+      let area = 0, sx = 0, sy = 0, x0 = w, x1 = 0, y0 = h, y1 = 0;
+      while (stack.length) {
+        const p = stack.pop();
+        const x = p % w, y = (p / w) | 0;
+        area++; sx += x; sy += y;
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+        if (x > 0 && mask[p - 1] && !seen[p - 1]) { seen[p - 1] = 1; stack.push(p - 1); }
+        if (x < w - 1 && mask[p + 1] && !seen[p + 1]) { seen[p + 1] = 1; stack.push(p + 1); }
+        if (y > 0 && mask[p - w] && !seen[p - w]) { seen[p - w] = 1; stack.push(p - w); }
+        if (y < h - 1 && mask[p + w] && !seen[p + w]) { seen[p + w] = 1; stack.push(p + w); }
+      }
+      const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+      const fill = area / (bw * bh), ratio = bw / bh;
+      if (area >= 4 && area <= n * 0.04 && fill >= 0.5 && ratio >= 0.5 && ratio <= 2) {
+        if (!best || area > best.area) best = { x: sx / area + 0.5, y: sy / area + 0.5, area: area };
+      }
+    }
+    return best;
+  }
+
   const S = {
     heading: null, compAcc: null, pitch: null,
     lat: null, lon: null, gpsAcc: null, alt: null, gpsMsg: null,
-    fov: 65, decl: 3, radius: 25000
+    fov: 65, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3
   };
   let staticItems = [];   // archivio interno (places-it.json)
-  let onlineItems = [];   // vette e frazioni da OpenStreetMap, quando i server rispondono
+  let onlineItems = [];   // vette e frazioni da OpenStreetMap
+  let landItems = [];     // chiese, torri e castelli da OpenStreetMap
   let items = [];         // elenco unito, solo i luoghi entro il raggio scelto
   let builtFor = null;
-  let lastFetch = null;
-  let loading = false;
-  let retryAt = 0;
+  let lastFetch = null, lastFetchLand = null;
+  let loading = false, loadingLand = false;
+  let retryAt = 0, retryLandAt = 0;
   let statusMsg = 'In attesa del GPS…';
-  let netNote = '';
+  let netNote = '', landNote = '';
+  let here = '';
+  let sunCand = null;
+  let toastTimer = null, undoState = null;
+  const walk = { active: false, samples: [], until: 0 };
   const pool = {};
   const shownText = {};
 
@@ -282,12 +446,14 @@ html, body {
     try {
       const s = JSON.parse(localStorage.getItem('pano.settings') || '{}');
       if (typeof s.fov === 'number') S.fov = s.fov;
-      if (typeof s.decl === 'number') S.decl = s.decl;
+      if (typeof s.off === 'number') S.off = s.off;
+      if (typeof s.pitchOff === 'number') S.pitchOff = s.pitchOff;
+      if (s.land === true) S.land = true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fov, decl: S.decl, radius: S.radius })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fov, off: S.off, pitchOff: S.pitchOff, radius: S.radius, land: S.land })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -296,12 +462,24 @@ html, body {
         onlineItems = c.items;
         lastFetch = { lat: c.lat, lon: c.lon, radius: c.radius };
       }
+      const l = JSON.parse(localStorage.getItem('pano.cacheLand') || 'null');
+      if (l && Array.isArray(l.items) && Date.now() - l.time < 14 * 86400000) {
+        landItems = l.items;
+        lastFetchLand = { lat: l.lat, lon: l.lon, radius: l.radius };
+      }
     } catch (e) {}
   }
   function saveCache() {
     try {
       localStorage.setItem('pano.cache', JSON.stringify({
         lat: lastFetch.lat, lon: lastFetch.lon, radius: lastFetch.radius, time: Date.now(), items: onlineItems
+      }));
+    } catch (e) {}
+  }
+  function saveCacheLand() {
+    try {
+      localStorage.setItem('pano.cacheLand', JSON.stringify({
+        lat: lastFetchLand.lat, lon: lastFetchLand.lon, radius: lastFetchLand.radius, time: Date.now(), items: landItems
       }));
     } catch (e) {}
   }
@@ -316,61 +494,38 @@ html, body {
     return { d: d, b: (Math.atan2(y, x) / RAD + 360) % 360 };
   }
 
+  function norm180(a) { return ((a + 540) % 360) - 180; }
+
   function fmtDist(m) {
     if (m < 1000) return (Math.round(m / 10) * 10) + ' m';
     return (m / 1000).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
   }
 
+  function fmtDeg(v) {
+    return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + '°';
+  }
+
   function recompute() {
     if (S.lat === null) return;
+    let near = null;
     for (const it of items) {
       const g = geo(S.lat, S.lon, it.lat, it.lon);
       it.d = g.d;
       it.b = g.b;
       it.skip = g.d < 150;
       it.score = TYPE_WEIGHT[it.t] / Math.sqrt(Math.max(g.d, 300) / 1000);
+      if (!LAND_TYPES[it.t] && it.t !== 'peak' && (!near || g.d < near.d)) near = it;
     }
+    if (near && near.d <= 500) here = 'Sei a ' + near.n;
+    else if (near && near.d <= 3000) here = 'Vicino a ' + near.n + ' (' + fmtDist(near.d) + ')';
+    else here = '';
   }
 
-  /* ---------- Caricamento dei luoghi (OpenStreetMap) ---------- */
-  function convert(els) {
-    const out = [];
-    for (const el of els) {
-      const tg = el.tags || {};
-      if (typeof el.lat !== 'number') continue;
-      const t = tg.natural === 'peak' ? 'peak' : tg.place;
-      const name = tg['name:it'] || tg.name;
-      if (!TYPE_WEIGHT[t] || !name) continue;
-      const e = parseFloat(tg.ele);
-      out.push({ id: el.id, n: name, t: t, lat: el.lat, lon: el.lon, e: isNaN(e) ? null : e });
-    }
-    return out;
-  }
-
-  async function fetchPlaces(lat, lon, radius) {
-    const around = 'around:' + radius + ',' + lat.toFixed(5) + ',' + lon.toFixed(5);
-    const q = '[out:json][timeout:25];(' +
-      'node(' + around + ')[place~"^(city|town|village|hamlet)$"][name];' +
-      'node(' + around + ')[natural=peak][name];' +
-      ');out;';
-    const errors = [];
-    for (const url of ENDPOINTS) {
-      try {
-        const json = await fetchJSON(url + '?data=' + encodeURIComponent(q), 20000);
-        if (!json.elements || (json.elements.length === 0 && json.remark)) throw new Error('risposta incompleta');
-        return json.elements;
-      } catch (e) {
-        errors.push(shortHost(url) + ': ' + describeError(e));
-      }
-    }
-    throw new Error(errors.join(' | '));
-  }
-
-  /* ---------- Archivio interno (GeoNames, Italia) ---------- */
-  function typeFromPop(p) {
+  /* ---------- Archivio interno (GeoNames + ISTAT, Italia) ---------- */
+  function typeFromPop(p, seat) {
     if (p >= 100000) return 'city';
     if (p >= 10000) return 'town';
-    if (p >= 250) return 'village';
+    if (seat || p >= 250) return 'village';
     return 'hamlet';
   }
 
@@ -381,7 +536,7 @@ html, body {
   async function loadStatic() {
     try {
       const arr = await fetchJSON('places-it.json', 20000);
-      staticItems = arr.map((a, i) => ({ id: 's' + i, n: a[0], lat: a[1], lon: a[2], t: typeFromPop(a[3]), e: null }));
+      staticItems = arr.map((a, i) => ({ id: 's' + i, n: a[0], lat: a[1], lon: a[2], t: typeFromPop(a[3], a[4]), e: null }));
       builtFor = null;
       refreshItems();
     } catch (e) {
@@ -412,9 +567,15 @@ html, body {
       if (twins && twins.some((o) => geo(o.lat, o.lon, s.lat, s.lon).d < 3000)) continue;
       merged.push(s);
     }
+    if (S.land) {
+      const rl = Math.min(r, 10000);
+      for (const l of landItems) {
+        if (geo(S.lat, S.lon, l.lat, l.lon).d <= rl) merged.push(l);
+      }
+    }
 
     items = merged;
-    builtFor = { lat: S.lat, lon: S.lon, radius: r };
+    builtFor = { lat: S.lat, lon: S.lon, radius: r, land: S.land };
     clearPool();
     recompute();
     statusMsg = items.length
@@ -425,8 +586,42 @@ html, body {
   function refreshItems() {
     if (S.lat === null) return;
     const moved = builtFor ? geo(builtFor.lat, builtFor.lon, S.lat, S.lon).d : Infinity;
-    if (!builtFor || moved > 1000 || builtFor.radius !== S.radius) rebuildItems();
+    if (!builtFor || moved > 1000 || builtFor.radius !== S.radius || builtFor.land !== S.land) rebuildItems();
     else recompute();
+  }
+
+  /* ---------- Dati online (OpenStreetMap) ---------- */
+  function convertPlaces(els) {
+    const out = [];
+    for (const el of els) {
+      const tg = el.tags || {};
+      if (typeof el.lat !== 'number') continue;
+      const t = tg.natural === 'peak' ? 'peak' : tg.place;
+      const name = tg['name:it'] || tg.name;
+      if (!TYPE_WEIGHT[t] || LAND_TYPES[t] || !name) continue;
+      const e = parseFloat(tg.ele);
+      out.push({ id: el.id, n: name, t: t, lat: el.lat, lon: el.lon, e: isNaN(e) ? null : e });
+    }
+    return out;
+  }
+
+  function convertLand(els) {
+    const out = [];
+    for (const el of els) {
+      const tg = el.tags || {};
+      const lat = typeof el.lat === 'number' ? el.lat : (el.center && el.center.lat);
+      const lon = typeof el.lon === 'number' ? el.lon : (el.center && el.center.lon);
+      if (typeof lat !== 'number' || typeof lon !== 'number') continue;
+      let t = null;
+      if (tg['tower:type'] === 'bell_tower' || /^(church|cathedral)$/.test(tg.building || '')) t = 'church';
+      else if (tg.historic === 'castle') t = 'castle';
+      else if (tg.man_made === 'tower' || tg.historic === 'tower' || tg.historic === 'city_gate') t = 'tower';
+      if (!t) continue;
+      const name = tg['name:it'] || tg.name || (t === 'church' ? 'Campanile' : t === 'castle' ? 'Castello' : 'Torre');
+      const e = parseFloat(tg.ele);
+      out.push({ id: 'l' + el.type + el.id, n: name, t: t, lat: lat, lon: lon, e: isNaN(e) ? null : e });
+    }
+    return out;
   }
 
   function shortHost(url) { return url.replace(/^https:\/\//, '').split('/')[0]; }
@@ -444,6 +639,20 @@ html, body {
     }
   }
 
+  async function overpass(q) {
+    const errors = [];
+    for (const url of ENDPOINTS) {
+      try {
+        const json = await fetchJSON(url + '?data=' + encodeURIComponent(q), 20000);
+        if (!json.elements || (json.elements.length === 0 && json.remark)) throw new Error('risposta incompleta');
+        return json.elements;
+      } catch (e) {
+        errors.push(shortHost(url) + ': ' + describeError(e));
+      }
+    }
+    throw new Error(errors.join(' | '));
+  }
+
   function clearPool() {
     for (const id in pool) {
       pool[id].pill.remove();
@@ -459,20 +668,53 @@ html, body {
 
     loading = true;
     const lat = S.lat, lon = S.lon, radius = S.radius;
-    fetchPlaces(lat, lon, radius).then((els) => {
-      onlineItems = convert(els);
+    const around = 'around:' + radius + ',' + lat.toFixed(5) + ',' + lon.toFixed(5);
+    const q = '[out:json][timeout:25];(' +
+      'node(' + around + ')[place~"^(city|town|village|hamlet)$"][name];' +
+      'node(' + around + ')[natural=peak][name];' +
+      ');out;';
+    overpass(q).then((els) => {
+      onlineItems = convertPlaces(els);
       lastFetch = { lat: lat, lon: lon, radius: radius };
       saveCache();
       netNote = '';
       builtFor = null;
       refreshItems();
     }).catch((e) => {
-      // L'app continua con l'archivio interno; riprova più tardi
       retryAt = Date.now() + 90000;
       netNote = staticItems.length
         ? 'Dati online (vette, frazioni) non disponibili: uso solo l’archivio interno.'
         : 'Errori: ' + ((e && e.message) || '').slice(0, 260);
     }).then(() => { loading = false; });
+  }
+
+  function maybeFetchLand() {
+    if (!S.land || S.lat === null || loadingLand || Date.now() < retryLandAt) return;
+    const R = Math.min(S.radius, 10000);
+    const moved = lastFetchLand ? geo(lastFetchLand.lat, lastFetchLand.lon, S.lat, S.lon).d : Infinity;
+    if (lastFetchLand && lastFetchLand.radius === R && moved < R * 0.3) return;
+
+    loadingLand = true;
+    landNote = 'Cerco chiese e torri…';
+    const lat = S.lat, lon = S.lon;
+    const around = 'around:' + R + ',' + lat.toFixed(5) + ',' + lon.toFixed(5);
+    const q = '[out:json][timeout:25];(' +
+      'nwr(' + around + ')["man_made"="tower"]["name"];' +
+      'nwr(' + around + ')["tower:type"="bell_tower"];' +
+      'nwr(' + around + ')["historic"~"^(castle|tower|city_gate)$"]["name"];' +
+      'nwr(' + around + ')["building"~"^(church|cathedral)$"]["name"];' +
+      ');out center;';
+    overpass(q).then((els) => {
+      landItems = convertLand(els);
+      lastFetchLand = { lat: lat, lon: lon, radius: R };
+      saveCacheLand();
+      landNote = landItems.length ? '' : 'Nessuna chiesa o torre trovata in questa zona.';
+      builtFor = null;
+      refreshItems();
+    }).catch(() => {
+      retryLandAt = Date.now() + 90000;
+      landNote = landItems.length ? 'Chiese e torri: uso i dati salvati.' : 'Chiese e torri non disponibili (server occupati). Riprovo tra poco.';
+    }).then(() => { loadingLand = false; });
   }
 
   /* ---------- Sensori ---------- */
@@ -504,13 +746,108 @@ html, body {
     S.gpsAcc = p.coords.accuracy;
     S.alt = (typeof p.coords.altitude === 'number') ? p.coords.altitude : null;
     S.gpsMsg = null;
+    S.declAuto = declAt(S.lat, S.lon);
     refreshItems();
     maybeFetch();
+    maybeFetchLand();
+    if (walk.active) walkSample(p.coords);
   }
 
   function onPosErr(err) {
     S.gpsMsg = (err && err.code === 1) ? 'permesso negato' : 'non disponibile';
     statusMsg = 'Senza la posizione non posso cercare i luoghi.';
+  }
+
+  function trueHeading() {
+    return (S.heading + S.declAuto + S.off + 360) % 360;
+  }
+
+  /* ---------- Calibrazione ---------- */
+  function toast(msg, ms, undo) {
+    $('toastText').textContent = msg;
+    $('toastBtn').hidden = !undo;
+    undoState = undo || null;
+    $('toast').hidden = false;
+    clearTimeout(toastTimer);
+    if (ms) toastTimer = setTimeout(() => { $('toast').hidden = true; undoState = null; }, ms);
+  }
+
+  function applyCorrection(dOff, dPitch, label) {
+    const before = { off: S.off, pitchOff: S.pitchOff };
+    S.off = Math.round(norm180(S.off + dOff) * 10) / 10;
+    S.pitchOff = Math.max(-20, Math.min(20, S.pitchOff + dPitch));
+    saveSettings();
+    refreshSettingsUI();
+    toast(label + ': bussola corretta di ' + fmtDeg(Math.round(dOff * 10) / 10) + '.', 8000, () => {
+      S.off = before.off; S.pitchOff = before.pitchOff;
+      saveSettings(); refreshSettingsUI();
+      toast('Correzione annullata.', 3000);
+    });
+  }
+
+  function startWalk() {
+    walk.active = true;
+    walk.samples = [];
+    walk.until = Date.now() + 90000;
+    toast('Cammina dritto per qualche passo tenendo il telefono puntato avanti. Misure: 0/6', 0);
+  }
+
+  function walkSample(c) {
+    if (Date.now() > walk.until) {
+      walk.active = false;
+      toast('Calibrazione camminando non riuscita: servono almeno 6 misure coerenti.', 6000);
+      return;
+    }
+    const course = c.heading, speed = c.speed;
+    if (typeof course !== 'number' || isNaN(course) || typeof speed !== 'number' || speed < 1 || S.heading === null) return;
+    walk.samples.push(norm180(course - (S.heading + S.declAuto)));
+    if (walk.samples.length < 6) {
+      toast('Cammina dritto tenendo il telefono puntato avanti. Misure: ' + walk.samples.length + '/6', 0);
+      return;
+    }
+    let sx = 0, sy = 0;
+    for (const a of walk.samples) { sx += Math.cos(a * RAD); sy += Math.sin(a * RAD); }
+    const n = walk.samples.length;
+    const R = Math.sqrt(sx * sx + sy * sy) / n;
+    const spread = Math.sqrt(-2 * Math.log(Math.max(R, 1e-6))) / RAD;
+    const mean = Math.atan2(sy, sx) / RAD;
+    if (spread > 10) { if (n > 20) walk.samples.shift(); return; }
+    walk.active = false;
+    applyCorrection(norm180(mean - S.off), 0, 'Camminando');
+  }
+
+  /* ---------- Sole: posizione calcolata e rilevamento nell'immagine ---------- */
+  const detCanvas = document.createElement('canvas');
+  let detCtx = null;
+
+  function sunAnalyze() {
+    if (S.lat === null || S.heading === null || S.pitch === null) return;
+    const v = $('video');
+    if (!v.videoWidth || v.paused) return;
+    const sun = sunPos(new Date(), S.lat, S.lon);
+    if (sun.alt < 1) { sunCand = null; return; }
+    const W = window.innerWidth, H = window.innerHeight;
+    const tanV = Math.tan(S.fov * RAD / 2), tanH = tanV * W / H;
+    const relSun = norm180(sun.az - trueHeading());
+    if (Math.abs(relSun) > Math.atan(tanH) / RAD + 15) return;
+
+    const cw = 96, ch = Math.max(8, Math.round(96 * H / W));
+    detCanvas.width = cw; detCanvas.height = ch;
+    if (!detCtx) detCtx = detCanvas.getContext('2d', { willReadFrequently: true });
+    const k = cw / W;
+    const sc = Math.max(W / v.videoWidth, H / v.videoHeight);
+    const dw = v.videoWidth * sc, dh = v.videoHeight * sc;
+    try {
+      detCtx.drawImage(v, (W - dw) / 2 * k, (H - dh) / 2 * k, dw * k, dh * k);
+      const blob = findSun(detCtx.getImageData(0, 0, cw, ch).data, cw, ch);
+      if (!blob) { if (sunCand && Date.now() - sunCand.t > 3000) sunCand = null; return; }
+      const x = blob.x / k, y = blob.y / k;
+      const relImg = Math.atan((x - W / 2) / (W / 2) * tanH) / RAD;
+      const elevImg = (S.pitch + S.pitchOff) - Math.atan((y - H / 2) / (H / 2) * tanV) / RAD;
+      const dOff = norm180(relSun - relImg);
+      const dPitch = sun.alt - elevImg;
+      if (Math.abs(dOff) <= 40 && Math.abs(dPitch) <= 30) sunCand = { dOff: dOff, dPitch: dPitch, t: Date.now() };
+    } catch (e) { /* il video non è leggibile: nessun rilevamento */ }
   }
 
   /* ---------- Disegno ---------- */
@@ -523,7 +860,7 @@ html, body {
 
   function makeLabel(it) {
     const pill = document.createElement('div');
-    pill.className = 'pill';
+    pill.className = 'pill' + (LAND_TYPES[it.t] ? ' land' : it.t === 'peak' ? ' peak' : '');
     const b = document.createElement('b');
     b.textContent = it.n;
     const i = document.createElement('i');
@@ -547,7 +884,8 @@ html, body {
 
   function frame() {
     const W = window.innerWidth, H = window.innerHeight;
-    const heading = (S.heading === null) ? null : (S.heading + S.decl + 360) % 360;
+    const heading = (S.heading === null) ? null : trueHeading();
+    const pitch = (S.pitch === null) ? null : S.pitch + S.pitchOff;
 
     if (heading !== null) {
       setText('deg', Math.round(heading) + '°');
@@ -560,26 +898,27 @@ html, body {
     if (S.compAcc !== null && S.compAcc > 25) parts.push('bussola ±' + Math.round(S.compAcc) + '° (poco affidabile: allontanati da metalli e muovi il telefono a 8)');
     else if (S.compAcc !== null && S.compAcc >= 0) parts.push('bussola ±' + Math.round(S.compAcc) + '°');
     else if (S.compAcc !== null) parts.push('bussola da calibrare');
-    if (S.pitch !== null) {
-      const t = Math.round(S.pitch);
+    if (pitch !== null) {
+      const t = Math.round(pitch);
       parts.push('inclinazione ' + (t > 0 ? '+' : '') + t + '°');
     }
     if (netNote) parts.push(netNote);
+    if (landNote) parts.push(landNote);
     setText('foot', parts.join(' · '));
+    setText('here', here);
 
     const used = {};
     let aim = null;
-    const ready = heading !== null && S.pitch !== null && S.lat !== null && items.length > 0;
+    const ready = heading !== null && pitch !== null && S.lat !== null && items.length > 0;
+    const tanV = Math.tan(S.fov * RAD / 2), tanH = tanV * W / H;
 
     if (ready) {
-      const tanV = Math.tan(S.fov * RAD / 2);
-      const tanH = tanV * W / H;
       const halfH = Math.atan(tanH) / RAD;
 
       const cand = [];
       for (const it of items) {
         if (it.skip || it.d === undefined) continue;
-        const rel = ((it.b - heading + 540) % 360) - 180;
+        const rel = norm180(it.b - heading);
         if (Math.abs(rel) <= halfH + 3) cand.push({ it: it, rel: rel });
       }
 
@@ -606,7 +945,7 @@ html, body {
         let elev = 0;
         if (it.e !== null && S.alt !== null) elev = Math.atan2(it.e - S.alt, it.d) / RAD;
         const x = W / 2 + Math.tan(c.rel * RAD) / tanH * W / 2;
-        const ay = H / 2 + Math.tan((S.pitch - elev) * RAD) / tanV * H / 2;
+        const ay = H / 2 + Math.tan((pitch - elev) * RAD) / tanV * H / 2;
         if (ay > bottomLimit || ay < topLimit + LABEL_H) continue;
 
         let lab = pool[it.id];
@@ -646,7 +985,28 @@ html, body {
       if (!used[id]) hideLabel(pool[id]);
     }
 
-    // Scheda in basso
+    // Marcatore del sole
+    const mark = $('sunMark');
+    let sunShown = false;
+    if (heading !== null && pitch !== null && S.lat !== null) {
+      const sun = sunPos(new Date(), S.lat, S.lon);
+      if (sun.alt > -1) {
+        const rel = norm180(sun.az - heading);
+        if (Math.abs(rel) < 85 && Math.abs(pitch - sun.alt) < 85) {
+          const sx = W / 2 + Math.tan(rel * RAD) / tanH * W / 2;
+          const sy = H / 2 + Math.tan((pitch - sun.alt) * RAD) / tanV * H / 2;
+          if (sx > -20 && sx < W + 20 && sy > 100 && sy < H - 150) {
+            mark.style.display = 'block';
+            mark.style.left = sx + 'px';
+            mark.style.top = sy + 'px';
+            sunShown = true;
+          }
+        }
+      }
+    }
+    if (!sunShown) mark.style.display = 'none';
+
+    // Scheda in basso e pulsanti di calibrazione
     if (heading === null || S.pitch === null) {
       setText('aimName', 'Sensori non attivi');
       setText('aimInfo', 'Controlla il permesso ai sensori di movimento.');
@@ -661,6 +1021,12 @@ html, body {
       setText('aimName', 'Punta verso un paese');
       setText('aimInfo', statusMsg);
     }
+    $('calib').hidden = !(aim && Math.abs(aim.rel) <= 30);
+    if (aim) setText('calib', 'Calibra: il centro è ' + aim.it.n);
+    const sunOk = sunCand && Date.now() - sunCand.t < 3000;
+    $('sunBtn').hidden = !sunOk;
+    if (sunOk) setText('sunBtn', 'Sole rilevato: correggi di ' + fmtDeg(Math.round(sunCand.dOff * 10) / 10));
+    frame.aim = aim;
 
     requestAnimationFrame(frame);
   }
@@ -668,7 +1034,10 @@ html, body {
   /* ---------- Impostazioni: pulsanti ---------- */
   function refreshSettingsUI() {
     $('vFov').textContent = S.fov + '°';
-    $('vDecl').textContent = (S.decl > 0 ? '+' : '') + S.decl + '°';
+    $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
+    $('landBtn').textContent = S.land ? 'Sì' : 'No';
+    $('landBtn').classList.toggle('on', S.land);
+    $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione corretta: ' + fmtDeg(Math.round(S.pitchOff * 10) / 10) + '.';
     document.querySelectorAll('#segR button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.r) === S.radius);
     });
@@ -678,13 +1047,32 @@ html, body {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.k === 'cam') { startCamera().catch(() => {}); return; }
-    if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; refreshItems(); maybeFetch(); }
+    if (b.dataset.k === 'walk') { startWalk(); return; }
+    if (b.dataset.k === 'zero') { S.off = 0; S.pitchOff = 0; toast('Taratura azzerata.', 3000); }
+    if (b.dataset.k === 'land') {
+      S.land = !S.land; retryLandAt = 0;
+      if (!S.land) landNote = '';
+      builtFor = null; refreshItems(); maybeFetchLand();
+    }
+    if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; retryLandAt = 0; refreshItems(); maybeFetch(); maybeFetchLand(); }
     if (b.dataset.k === 'fov') S.fov = Math.min(100, Math.max(30, S.fov + Number(b.dataset.d)));
-    if (b.dataset.k === 'decl') S.decl = Math.min(30, Math.max(-30, S.decl + Number(b.dataset.d)));
+    if (b.dataset.k === 'off') S.off = Math.min(180, Math.max(-180, S.off + Number(b.dataset.d)));
     saveSettings();
     refreshSettingsUI();
   });
-  $('gear').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; });
+  $('gear').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; refreshSettingsUI(); });
+
+  $('calib').addEventListener('click', () => {
+    const aim = frame.aim;
+    if (!aim || Math.abs(aim.rel) > 30) return;
+    applyCorrection(aim.rel, 0, aim.it.n);
+  });
+  $('sunBtn').addEventListener('click', () => {
+    if (!sunCand) return;
+    const c = sunCand; sunCand = null;
+    applyCorrection(c.dOff, c.dPitch, 'Sole');
+  });
+  $('toastBtn').addEventListener('click', () => { if (undoState) undoState(); });
 
   loadSettings();
   loadCache();
@@ -763,6 +1151,8 @@ html, body {
         S.gpsMsg = 'non disponibile';
       }
       setInterval(maybeFetch, 4000);
+      setInterval(maybeFetchLand, 4000);
+      setInterval(sunAnalyze, 600);
 
       $('start').hidden = true;
       $('hud').hidden = false;
