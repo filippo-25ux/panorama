@@ -437,6 +437,7 @@ body.hasmap .peek { padding-right: 104px; }
 #more h3 { margin: 18px 0 4px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
 .sw { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 1rem; }
 .sw span { flex: 1; }
+.sw small { display: block; font-size: 0.78rem; color: rgba(255, 255, 255, 0.55); }
 .sw em { font-style: normal; font-size: 0.82rem; color: rgba(255, 255, 255, 0.55); }
 .sw input { width: 22px; height: 22px; accent-color: var(--accent); }
 .two { display: flex; gap: 14px; }
@@ -644,7 +645,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v12 · menù Bussola nel pannello, qualità foto</p>
+    <p class="sub">Beta v13 · rilievo del terreno: vette nascoste, quota dei paesi</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -736,15 +737,17 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <div id="spot">
         <div class="kv"><span>Luogo</span><b id="spPlace">–</b></div>
         <div class="kv"><span>Quota GPS</span><b id="spAlt">–</b></div>
+        <div class="kv"><span>Quota terreno</span><b id="spGround">–</b></div>
         <div class="kv"><span>Coordinate</span><b id="spCoord">–</b><button type="button" class="mini" id="spCopy">Copia</button></div>
         <div class="kv"><span>Precisione GPS</span><b id="spAcc">–</b></div>
         <div class="kv"><span>Data e ora</span><b id="spTime">–</b></div>
         <div class="kv"><span>Direzione</span><b id="spDir">–</b></div>
-        <p class="hint">Questi dati vengono salvati con ogni foto. La quota del GPS è indicativa (di solito ±10–20 m).</p>
+        <p class="hint">Questi dati vengono salvati con ogni foto. La quota del GPS è indicativa (di solito ±10–20 m); la quota del terreno viene dal rilievo (celle di circa 30 m).</p>
       </div>
       <h3>Cosa mostrare</h3>
       <label class="sw" style="--ic: #ffffff"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
       <label class="sw" style="--ic: #8be28b"><i class="swi" data-t="peak"></i><span>Vette</span><em id="nPeak"></em><input type="checkbox" data-f="peak"></label>
+      <label class="sw" style="--ic: #8fd3ff"><i class="swi" data-t="relief"></i><span>Rilievo del terreno<small>nasconde le vette coperte da monti più vicini</small></span><em id="demState"></em><input type="checkbox" data-f="dem"></label>
       <label class="sw" style="--ic: #c8a2ff"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
       <label class="sw" style="--ic: #ffd166"><i class="swi" data-t="sun"></i><span>Percorso del sole</span><input type="checkbox" data-f="sun"></label>
       <div id="sunRow" hidden>
@@ -807,6 +810,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       </div>
       <div class="foot" id="foot"></div>
       <p class="hint">Dati dei luoghi: GeoNames (CC BY 4.0), ISTAT (CC BY 3.0 IT) e © OpenStreetMap contributors</p>
+      <p class="hint">Rilievo del terreno: Terrain Tiles (Mapzen, Registry of Open Data on AWS). Europa: prodotto con dati e informazioni Copernicus finanziati dall’Unione Europea (strati EU-DEM). SRTM e GMTED2010 per gentile concessione dello U.S. Geological Survey.</p>
     </div>
   </div>
 </main>
@@ -877,13 +881,19 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   // Testo sotto il nome dell'etichetta: per le vette anche la quota
   function subOf(it) {
     const q = (it.t === 'peak' && it.e !== null && it.e !== undefined) ? ' ' + Math.round(it.e).toLocaleString('it-IT') + ' m' : '';
-    return TYPE_LABEL[it.t] + q + ', ' + fmtDist(it.d);
+    return TYPE_LABEL[it.t] + q + ', ' + fmtDist(it.d) + (it.hid ? ', dietro i rilievi' : '');
   }
   // Angolo sopra/sotto l'orizzonte, con curvatura terrestre e rifrazione
+  // (i paesi non hanno quota nell'archivio: la prende dal rilievo del terreno, se disponibile)
   function elevOf(it) {
-    if (it.e === null || it.e === undefined || S.alt === null) return 0;
-    const drop = it.d * it.d / (2 * EARTH) * (1 - REFR);
-    return Math.atan2(it.e - drop - S.alt, it.d) / RAD;
+    const e = (it.e !== null && it.e !== undefined) ? it.e : (it.ge !== undefined ? it.ge : null);
+    const o = obsAlt();
+    if (e === null || o === null) return 0;
+    return angTo(e, it.d, o);
+  }
+  function angTo(e, d, o) {
+    const drop = d * d / (2 * EARTH) * (1 - REFR);
+    return Math.atan2(e - drop - o, d) / RAD;
   }
   const ENDPOINTS = [
     'https://overpass-api.de/api/interpreter',
@@ -907,6 +917,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     else if (t === 'tower') body = '<path class="s" d="M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2" stroke-width="1.6"/>';
     else if (t === 'castle') body = '<path class="s" d="M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z" stroke-width="1.4"/>';
     else if (t === 'sun') body = '<circle class="f" cx="7" cy="7" r="3"/><path class="s" d="M7 0.5 V2.5 M7 11.5 V13.5 M0.5 7 H2.5 M11.5 7 H13.5 M2.4 2.4 L3.8 3.8 M10.2 10.2 L11.6 11.6 M2.4 11.6 L3.8 10.2 M10.2 3.8 L11.6 2.4" stroke-width="1.3"/>';
+    else if (t === 'relief') body = '<path class="s" d="M0.5 12 L4.6 5.5 L7.2 9 L9.8 3.5 L13.5 12" stroke-width="1.6" stroke-linejoin="round"/>';
     else if (t === 'river') body = '<path class="s" d="M0.5 7.5 C2.8 4 4.6 4 7 7.5 S11.2 11 13.5 7.5" stroke-width="2"/>';
     else body = '<circle class="f" cx="7" cy="7" r="4.5"/>';
     return '<svg class="ic" aria-hidden="true" width="' + z + '" height="' + z + '" viewBox="0 0 14 14">' + body + '</svg>';
@@ -992,7 +1003,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     lat: null, lon: null, gpsAcc: null, alt: null, altAcc: null, gpsMsg: null,
     fov: 70, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
     fovs: { std: 70, uw: 100, tele: 17 },   // campo visivo verticale di partenza per obiettivo
-    shotNames: true, shotHi: false
+    shotNames: true, shotHi: false, dem: true
   };
   // Fotocamera: obiettivi trovati, obiettivo in uso, zoom a scatti
   const CAM = { ids: {}, kind: 'std', base: 'std', names: [], scanned: false, track: null, hw: null, zoom: 1, dz: 1, css: 1, mode: '', stops: [1, 1.5, 2] };
@@ -1040,12 +1051,13 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       // Dalla v10 l'inclinazione viene solo da accelerometro e giroscopio: la vecchia correzione si azzera una volta
       if (typeof s.pitchOff === 'number' && s.pitchOff !== 0 && !s.pitchSensors) pitchWasReset = s.pitchOff;
       if (s.land === true) S.land = true;
+      if (s.dem === false) S.dem = false;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -1109,10 +1121,311 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (!LAND_TYPES[it.t] && it.t !== 'peak' && (!near || g.d < near.d)) near = it;
     }
     nearPlace = near;
+    demApply();
     if (near && near.d <= 500) here = 'Sei a ' + near.n;
     else if (near && near.d <= 3000) here = 'Vicino a ' + near.n + ' (' + fmtDist(near.d) + ')';
     else here = '';
   }
+
+  /* ---------- Rilievo del terreno ----------
+     Quote da Terrain Tiles (Mapzen, Registry of Open Data on AWS), formato «Terrarium»:
+     quota in metri = R × 256 + G + B / 256 − 32768. In Europa i dati vengono da EU-DEM (Copernicus), altrove da SRTM/GMTED (USGS).
+     Con le quote si calcola il profilo dell'orizzonte attorno al punto di ripresa:
+     per ogni mezzo grado di direzione, l'angolo più alto raggiunto dal terreno fino a ogni distanza. */
+  const DEM_HOSTS = [
+    'https://elevation-tiles-prod-eu.s3.eu-central-1.amazonaws.com/terrarium/',   // copia europea (più vicina)
+    'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/'
+  ];
+  const DEM_KEY = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/';    // nome stabile nella memoria del telefono
+  const DEM_CACHE = 'panorama-rilievo-v1';
+  const DEM_LEVELS = [{ z: 12, r: 6000 }, { z: 11, r: 18000 }, { z: 10, r: Infinity }];   // più dettaglio vicino, meno lontano
+  const DEM_STEP = 0.5;          // passo del profilo in gradi di direzione
+  const DEM_NEAR = 200;          // il terreno entro 200 m non conta (celle di 30 m, case e alberi: troppo incerto)
+  const EYE = 1.6;               // altezza degli occhi sul terreno
+  const DEM = { tiles: new Map(), host: 0, state: 'off', note: '', err: '', busy: false, retryAt: 0, ground: null, prof: null, gen: 0 };
+
+  function demZoomFor(d) {
+    for (const L of DEM_LEVELS) if (d <= L.r) return L.z;
+    return DEM_LEVELS[DEM_LEVELS.length - 1].z;
+  }
+  function demXY(z, lat, lon) {
+    const n = 1 << z, s = Math.sin(Math.max(-85, Math.min(85, lat)) * RAD);
+    return { fx: (lon + 180) / 360 * n, fy: (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n };
+  }
+  // Quota in un punto (interpolata tra le 4 celle vicine); se manca il tassello di quel dettaglio, prova quelli meno dettagliati
+  let demLast = { k: '', t: null };
+  function demSample(z, lat, lon) {
+    const p = demXY(z, lat, lon);
+    const tx = Math.floor(p.fx), ty = Math.floor(p.fy);
+    const k = z + '/' + tx + '/' + ty;
+    let t;
+    if (demLast.k === k) t = demLast.t;
+    else { t = DEM.tiles.get(k); demLast = { k: k, t: t }; }
+    if (!(t instanceof Float32Array)) return null;
+    const px = Math.min(255, Math.max(0, (p.fx - tx) * 256 - 0.5)), py = Math.min(255, Math.max(0, (p.fy - ty) * 256 - 0.5));
+    const x0 = Math.min(254, Math.floor(px)), y0 = Math.min(254, Math.floor(py)), ax = px - x0, ay = py - y0;
+    const i = y0 * 256 + x0;
+    return (t[i] * (1 - ax) + t[i + 1] * ax) * (1 - ay) + (t[i + 256] * (1 - ax) + t[i + 257] * ax) * ay;
+  }
+  function demGet(lat, lon, z) {
+    for (let zz = z; zz >= DEM_LEVELS[DEM_LEVELS.length - 1].z; zz--) {
+      const v = demSample(zz, lat, lon);
+      if (v !== null) return v;
+    }
+    return null;
+  }
+  // Quota dell'osservatore: GPS se affidabile (mai sotto il terreno), altrimenti terreno + altezza degli occhi
+  function obsAlt() {
+    const g = S.dem ? DEM.ground : null;
+    if (S.alt !== null && (S.altAcc === null || S.altAcc <= 25)) return g !== null ? Math.max(S.alt, g + 1) : S.alt;
+    if (g !== null) return g + EYE;
+    return S.alt;
+  }
+
+  // Tasselli che servono attorno al punto: dettaglio massimo entro 6 km, medio entro 18 km, poi più grossolano
+  function demTileList(lat, lon, R) {
+    const out = [];
+    for (const L of DEM_LEVELS) {
+      const r = Math.min(L.r, R) + 500;
+      const dLat = r / (EARTH * RAD), dLon = dLat / Math.cos(lat * RAD);
+      const a = demXY(L.z, lat + dLat, lon - dLon), b = demXY(L.z, lat - dLat, lon + dLon);
+      for (let x = Math.floor(a.fx); x <= Math.floor(b.fx); x++) {
+        for (let y = Math.floor(a.fy); y <= Math.floor(b.fy); y++) out.push(L.z + '/' + x + '/' + y);
+      }
+      if (L.r >= R) break;
+    }
+    return out;
+  }
+
+  // Lettura del PNG senza passare dal disegno su canvas (che su alcuni telefoni altera i colori e quindi le quote)
+  async function pngDecode(buf) {
+    const u = new Uint8Array(buf), dv = new DataView(buf);
+    if (u[0] !== 0x89 || u[1] !== 0x50 || u[2] !== 0x4e || u[3] !== 0x47) throw new Error('non è un PNG');
+    let p = 8, w = 0, h = 0, bd = 0, ct = 0, il = 0, plte = null;
+    const idat = [];
+    while (p + 8 <= u.length) {
+      const len = dv.getUint32(p);
+      const type = String.fromCharCode(u[p + 4], u[p + 5], u[p + 6], u[p + 7]);
+      if (type === 'IHDR') { w = dv.getUint32(p + 8); h = dv.getUint32(p + 12); bd = u[p + 16]; ct = u[p + 17]; il = u[p + 20]; }
+      else if (type === 'PLTE') plte = u.subarray(p + 8, p + 8 + len);
+      else if (type === 'IDAT') idat.push(u.subarray(p + 8, p + 8 + len));
+      else if (type === 'IEND') break;
+      p += 12 + len;
+    }
+    if (bd !== 8 || il !== 0 || !(ct === 2 || ct === 6 || (ct === 3 && plte))) throw new Error('PNG di tipo inatteso');
+    const raw = new Uint8Array(await new Response(new Blob(idat).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer());
+    const bpp = ct === 2 ? 3 : ct === 6 ? 4 : 1, stride = w * bpp;
+    if (raw.length < h * (stride + 1)) throw new Error('PNG incompleto');
+    const out = new Uint8Array(h * stride);
+    for (let y = 0; y < h; y++) {
+      const f = raw[y * (stride + 1)], src = y * (stride + 1) + 1, dst = y * stride, prev = dst - stride;
+      for (let i = 0; i < stride; i++) {
+        const x = raw[src + i];
+        const a = i >= bpp ? out[dst + i - bpp] : 0;
+        const b = y > 0 ? out[prev + i] : 0;
+        const c = (i >= bpp && y > 0) ? out[prev + i - bpp] : 0;
+        let v;
+        if (f === 0) v = x;
+        else if (f === 1) v = x + a;
+        else if (f === 2) v = x + b;
+        else if (f === 3) v = x + ((a + b) >> 1);
+        else if (f === 4) {
+          const pa = Math.abs(b - c), pb = Math.abs(a - c), pc = Math.abs(a + b - 2 * c);
+          v = x + (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
+        } else throw new Error('PNG con filtro sconosciuto');
+        out[dst + i] = v & 255;
+      }
+    }
+    const n = w * h, rgb = new Uint8Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      if (ct === 3) { const q = out[i] * 3; rgb[i * 3] = plte[q]; rgb[i * 3 + 1] = plte[q + 1]; rgb[i * 3 + 2] = plte[q + 2]; }
+      else { rgb[i * 3] = out[i * bpp]; rgb[i * 3 + 1] = out[i * bpp + 1]; rgb[i * 3 + 2] = out[i * bpp + 2]; }
+    }
+    return { w: w, h: h, rgb: rgb };
+  }
+  // Riserva: lettura tramite canvas (se il telefono non sa decomprimere da solo)
+  async function pngViaCanvas(blob) {
+    const bmp = await createImageBitmap(blob);
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 256;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0, 256, 256);
+    const d = ctx.getImageData(0, 0, 256, 256).data, rgb = new Uint8Array(65536 * 3);
+    for (let i = 0; i < 65536; i++) { rgb[i * 3] = d[i * 4]; rgb[i * 3 + 1] = d[i * 4 + 1]; rgb[i * 3 + 2] = d[i * 4 + 2]; }
+    return { w: 256, h: 256, rgb: rgb };
+  }
+  async function demDecode(blob) {
+    let img;
+    try {
+      if (typeof DecompressionStream !== 'function') throw new Error('no');
+      img = await pngDecode(await blob.arrayBuffer());
+    } catch (e) { img = await pngViaCanvas(blob); }
+    if (img.w !== 256 || img.h !== 256) throw new Error('tassello di misura inattesa');
+    const t = new Float32Array(65536), r = img.rgb;
+    let bad = 0;
+    for (let i = 0; i < 65536; i++) {
+      const v = r[i * 3] * 256 + r[i * 3 + 1] + r[i * 3 + 2] / 256 - 32768;
+      t[i] = v;
+      if (v < -12000 || v > 9000) bad++;
+    }
+    if (bad > 100) throw new Error('quote non plausibili');
+    return t;
+  }
+  async function demFetch(key) {
+    const path = key + '.png';
+    let cache = null, blob = null;
+    try { cache = await caches.open(DEM_CACHE); const r = await cache.match(DEM_KEY + path); if (r) blob = await r.blob(); } catch (e) { cache = null; }
+    if (!blob) {
+      let lastErr = null;
+      for (let k = 0; k < DEM_HOSTS.length && !blob; k++) {
+        const h = (DEM.host + k) % DEM_HOSTS.length;
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 15000);
+        try {
+          const res = await fetch(DEM_HOSTS[h] + path, { signal: ctl.signal, mode: 'cors' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          blob = await res.blob();
+          DEM.host = h;
+        } catch (e) { lastErr = e; } finally { clearTimeout(timer); }
+      }
+      if (!blob) throw lastErr || new Error('rete');
+      const t = await demDecode(blob);
+      if (cache) cache.put(DEM_KEY + path, new Response(blob, { headers: { 'Content-Type': 'image/png' } })).catch(() => {});
+      return t;
+    }
+    return demDecode(blob);
+  }
+  async function demLoad(keys) {
+    const todo = keys.filter((k) => !(DEM.tiles.get(k) instanceof Float32Array));
+    let i = 0, done = 0, fail = 0;
+    const work = async () => {
+      while (i < todo.length) {
+        const k = todo[i++];
+        try { DEM.tiles.set(k, await demFetch(k)); } catch (e) { fail++; DEM.err = describeError(e); }
+        done++;
+        DEM.note = 'Rilievo: carico ' + done + '/' + todo.length;
+      }
+    };
+    await Promise.all([work(), work(), work(), work(), work(), work()]);
+    // Libera i tasselli lontani se la memoria cresce troppo
+    if (DEM.tiles.size > 160) {
+      const keep = new Set(keys);
+      for (const k of DEM.tiles.keys()) if (!keep.has(k)) DEM.tiles.delete(k);
+      demLast = { k: '', t: null };
+    }
+    return { fail: fail, total: todo.length };
+  }
+
+  // Profilo dell'orizzonte: per ogni direzione (passo 0,5°) e ogni distanza, l'angolo più alto raggiunto dal terreno fin lì
+  async function demProfile(lat, lon, R, obs) {
+    const ds = [];
+    for (let d = DEM_NEAR; d <= R; d += Math.max(25, d * 0.012)) ds.push(d);
+    const nD = ds.length, nA = Math.round(360 / DEM_STEP);
+    const cum = new Float32Array(nA * nD), hz = new Float32Array(nA), hzD = new Float32Array(nA);
+    const kLat = 1 / (EARTH * RAD), kLon = kLat / Math.cos(lat * RAD);
+    const zs = ds.map(demZoomFor), drops = ds.map((d) => d * d / (2 * EARTH) * (1 - REFR));
+    for (let a = 0; a < nA; a++) {
+      const br = a * DEM_STEP * RAD, cb = Math.cos(br) * kLat, sb = Math.sin(br) * kLon;
+      let mx = -90, mxD = 0;
+      for (let i = 0; i < nD; i++) {
+        const d = ds[i];
+        const h = demGet(lat + d * cb, lon + d * sb, zs[i]);
+        if (h !== null) {
+          const ang = Math.atan2(h - drops[i] - obs, d) / RAD;
+          if (ang > mx) { mx = ang; mxD = d; }
+        }
+        cum[a * nD + i] = mx;
+      }
+      hz[a] = mx; hzD[a] = mxD;
+      if ((a & 63) === 63) await new Promise((r) => setTimeout(r, 0));   // lascia respirare lo schermo
+    }
+    return { lat: lat, lon: lon, R: R, obs: obs, ds: Float32Array.from(ds), nD: nD, nA: nA, cum: cum, hz: hz, hzD: hzD };
+  }
+  // Angolo più alto del terreno tra il punto di ripresa e la distanza d, nella direzione b (minimo tra i due raggi vicini: nel dubbio si mostra)
+  function demOccl(P, b, d) {
+    const ds = P.ds;
+    if (d < ds[0]) return -90;
+    let lo = 0, hi = P.nD - 1;
+    if (d >= ds[hi]) lo = hi;
+    else while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ds[m] <= d) lo = m; else hi = m; }
+    const f = ((b % 360) + 360) % 360 / DEM_STEP;
+    const a0 = Math.floor(f) % P.nA, a1 = (a0 + 1) % P.nA;
+    return Math.min(P.cum[a0 * P.nD + lo], P.cum[a1 * P.nD + lo]);
+  }
+  // Il luogo è coperto da rilievi più vicini? Vette: basta la cima; paesi: anche i tetti (25 m) devono essere coperti
+  function demHidden(P, it) {
+    const e = (it.e !== null && it.e !== undefined) ? it.e : (it.ge !== undefined ? it.ge : null);
+    if (e === null || it.d > P.R + 100) return false;
+    const lim = it.d - Math.max(250, it.d * 0.04);   // la montagna stessa non copre la propria cima
+    if (lim < DEM_NEAR) return false;
+    const top = e + (it.t === 'peak' ? 0 : 25);
+    return demOccl(P, it.b, lim) > angTo(top, it.d, P.obs) + 0.15;
+  }
+  // Applica il rilievo ai luoghi: quota del terreno per i paesi, luoghi nascosti
+  function demApply() {
+    const P = (S.dem && DEM.prof) ? DEM.prof : null;
+    for (const it of items) {
+      if (!S.dem) { it.ge = undefined; it.hid = false; continue; }
+      if (it.geGen !== DEM.gen && it.d !== undefined) {
+        const g = demGet(it.lat, it.lon, demZoomFor(it.d));
+        if (g !== null) { it.ge = Math.round(g); it.geGen = DEM.gen; }
+      }
+      it.hid = (P && it.d !== undefined && !it.skip) ? demHidden(P, it) : false;
+    }
+  }
+  function demStateUI() {
+    const el = $('demState');
+    if (!el) return;
+    el.textContent = !S.dem ? '' : DEM.state === 'ok' ? 'attivo' : DEM.state === 'load' ? 'in caricamento' : DEM.state === 'err' ? 'non disponibile' : DEM.state === 'part' ? 'incompleto' : '';
+  }
+  // Ricarica il rilievo quando serve: prima volta, spostamento oltre 150 m, distanza più ampia, quota cambiata di molto
+  function demUpdate() {
+    if (!S.dem || S.lat === null || DEM.busy || Date.now() < DEM.retryAt) return;
+    const P = DEM.prof, R = S.radius;
+    if (P && DEM.state !== 'part') {
+      const moved = geo(P.lat, P.lon, S.lat, S.lon).d;
+      const o = obsAlt();
+      if (moved < 150 && P.R >= R && (o === null || Math.abs(o - P.obs) < 8)) return;
+    }
+    demRun();
+  }
+  async function demRun() {
+    DEM.busy = true;
+    const lat = S.lat, lon = S.lon, R = S.radius;
+    try {
+      if (!DEM.prof) DEM.state = 'load';
+      demStateUI();
+      const keys = demTileList(lat, lon, R);
+      const res = await demLoad(keys);
+      const have = keys.filter((k) => DEM.tiles.get(k) instanceof Float32Array).length;
+      if (have === 0) {
+        DEM.state = 'err';
+        DEM.note = 'Rilievo non disponibile (' + (DEM.err || 'rete') + '): la prima volta in un luogo serve la connessione';
+        DEM.retryAt = Date.now() + 60000;
+        return;
+      }
+      const g = demGet(lat, lon, DEM_LEVELS[0].z);
+      DEM.ground = g;
+      DEM.gen++;
+      const obs = obsAlt();
+      if (obs === null) { DEM.retryAt = Date.now() + 5000; return; }
+      DEM.prof = await demProfile(lat, lon, R, obs);
+      DEM.state = have < keys.length ? 'part' : 'ok';
+      DEM.note = have < keys.length ? 'Rilievo incompleto (' + (keys.length - have) + ' tasselli mancanti): riprovo tra poco' : '';
+      if (have < keys.length) DEM.retryAt = Date.now() + 60000;
+      demApply();
+      syncMarkers();
+    } catch (e) {
+      DEM.state = DEM.prof ? DEM.state : 'err';
+      DEM.note = 'Rilievo: errore (' + describeError(e) + ')';
+      DEM.retryAt = Date.now() + 60000;
+    } finally {
+      DEM.busy = false;
+      demStateUI();
+    }
+  }
+
+  setInterval(() => { if (!document.hidden) demUpdate(); }, 3000);
 
   /* ---------- Archivio interno (GeoNames + ISTAT, Italia) ---------- */
   function typeFromPop(p, seat) {
@@ -1358,6 +1671,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     maybeFetch();
     maybeFetchLand();
     tryInitMap();
+    demUpdate();
     if (walk.active) walkSample(p.coords);
   }
 
@@ -1715,7 +2029,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   function alCands(excl) {
     const hd = trueHeading(), out = [];
     for (const it of items) {
-      if (it.skip || it.d === undefined || LAND_TYPES[it.t] || it.d < 2000) continue;
+      if (it.skip || it.d === undefined || LAND_TYPES[it.t] || it.d < 2000 || (it.hid && it.t === 'peak')) continue;
       if (Math.abs(norm180(it.b - hd)) > 60) continue;
       if (excl && (it === excl || Math.abs(norm180(it.b - excl.b)) < 8)) continue;
       out.push(it);
@@ -2120,6 +2434,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (netNote) parts.push(netNote);
     if (landNote) parts.push(landNote);
     if (peakNote) parts.push(peakNote);
+    if (S.dem && DEM.note) parts.push(DEM.note);
     setText('foot', parts.join(' · '));
     setText('here', here);
 
@@ -2134,6 +2449,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       const cand = [];
       for (const it of items) {
         if (it.skip || it.d === undefined || !visible(it)) continue;
+        if (it.hid && it.t === 'peak') continue;   // vetta coperta da rilievi più vicini
         const rel = norm180(it.b - heading);
         if (Math.abs(rel) <= halfH + 3) cand.push({ it: it, rel: rel });
       }
@@ -2291,7 +2607,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     document.querySelectorAll('#segD button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.dn) === F.dens);
     });
-    const st = { town: F.town, peak: F.peak, land: S.land, sun: F.sun };
+    const st = { town: F.town, peak: F.peak, land: S.land, sun: F.sun, dem: S.dem };
+    demStateUI();
     document.querySelectorAll('[data-f]').forEach((el) => {
       if (el.type === 'checkbox') el.checked = st[el.dataset.f];
       else el.setAttribute('aria-pressed', String(st[el.dataset.f]));
@@ -2303,6 +2620,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (k === 'town') F.town = v;
     if (k === 'peak') F.peak = v;
     if (k === 'sun') { F.sun = v; sunToggle(v); }
+    if (k === 'dem') { S.dem = v; DEM.retryAt = 0; demApply(); demUpdate(); }
     if (k === 'land') {
       S.land = v; retryLandAt = 0;
       if (!v) landNote = '';
@@ -2430,6 +2748,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       place: placeText(), placeShort: placeShort(),
       heading: S.heading === null ? null : trueHeading(),
       pitch: S.pitch === null ? null : S.pitch + S.pitchOff,
+      ground: S.dem && DEM.ground !== null ? Math.round(DEM.ground) : null, dem: !!(S.dem && DEM.prof),
       aligned: !!S.alPos, lens: CAM.kind, zoom: CAM.kind === 'tele' ? 'T' : CAM.zoom, fov: S.fov, dz: CAM.dz
     };
   }
@@ -2440,6 +2759,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     spotLast = now;
     setText('spPlace', S.lat === null ? 'in attesa del GPS' : (placeText() || '–'));
     setText('spAlt', S.alt === null ? 'non disponibile' : Math.round(S.alt) + ' m s.l.m.' + (S.altAcc ? ' (±' + Math.round(S.altAcc) + ' m)' : ''));
+    setText('spGround', !S.dem ? 'rilievo spento' : DEM.ground === null ? (DEM.state === 'err' ? 'non disponibile' : 'in caricamento…') : '≈ ' + Math.round(DEM.ground) + ' m s.l.m.');
     setText('spCoord', S.lat === null ? '–' : fmtCoord(S.lat, S.lon));
     setText('spAcc', S.gpsAcc === null ? '–' : '±' + Math.round(S.gpsAcc) + ' m');
     setText('spTime', fmtWhen(now));
@@ -2711,7 +3031,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     ctx.fillStyle = '#ffffff'; ctx.font = '600 ' + fs + 'px ' + FONT;
     fitText(ctx, captionText(rec), pad, H - h + pad, W - pad * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '400 ' + Math.round(fs * 0.85) + 'px ' + FONT;
-    fitText(ctx, 'Nomi: © OpenStreetMap contributors · GeoNames (CC BY 4.0) · ISTAT', pad, H - h + pad + fs * 1.3, W - pad * 2);
+    fitText(ctx, 'Nomi: © OpenStreetMap contributors · GeoNames (CC BY 4.0) · ISTAT' + ((rec.meta || {}).dem ? ' · Rilievo: Terrain Tiles (EU-DEM, USGS)' : ''), pad, H - h + pad + fs * 1.3, W - pad * 2);
   }
   function renderPhoto(img, rec, o) {
     o = o || {};

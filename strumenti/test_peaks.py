@@ -1,5 +1,5 @@
 """Test della beta con GPS, bussola e fotocamera simulati.
-Uso: python3 test_peaks.py <cartella del repository> <cartella per gli screenshot>
+Uso: python3 test_peaks.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]
 """
 import json, math, sys, threading, http.server, functools
 from playwright.sync_api import sync_playwright
@@ -55,12 +55,12 @@ def main():
         errs = []
         page.on('pageerror', lambda e: errs.append(str(e)))
         # niente rete esterna: Overpass e tile falliscono subito
-        ML = '/tmp/claude-0/-home-claude/b2b4e909-7260-54ee-8aa6-aa580d6f0a0e/scratchpad/npm/node_modules/maplibre-gl/dist/'
         import os
+        ML = os.path.join(sys.argv[3], 'node_modules/maplibre-gl/dist/') if len(sys.argv) > 3 else ''
         def route(r):
             u = r.request.url
             if u.startswith('http://127.0.0.1'): return r.continue_()
-            if 'maplibre-gl' in u and os.path.isdir(ML):
+            if 'maplibre-gl' in u and ML and os.path.isdir(ML):
                 f = ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js')
                 return r.fulfill(path=f)
             return r.abort()
