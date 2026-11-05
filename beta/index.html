@@ -1133,8 +1133,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
      Con le quote si calcola il profilo dell'orizzonte attorno al punto di ripresa:
      per ogni mezzo grado di direzione, l'angolo più alto raggiunto dal terreno fino a ogni distanza. */
   const DEM_HOSTS = [
-    'https://elevation-tiles-prod-eu.s3.eu-central-1.amazonaws.com/terrarium/',   // copia europea (più vicina)
-    'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/'
+    'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/'   // (la copia europea risponde 403 dal sito: non usata)
   ];
   const DEM_KEY = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/';    // nome stabile nella memoria del telefono
   const DEM_CACHE = 'panorama-rilievo-v1';
