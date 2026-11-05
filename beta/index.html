@@ -366,7 +366,11 @@ body.aligning .panel { display: none; }
 .chip i { font-style: normal; font-weight: 400; opacity: 0.75; }
 
 /* Percorso del sole */
-#sunPath { position: absolute; inset: 0; display: block; pointer-events: none; }
+#sunPath { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+#ridge { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+#alInfo { display: block; margin-top: 8px; font-size: 0.9rem; font-weight: 600; }
+#alAlt { display: block; margin: 10px auto 0; padding: 6px 4px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 0.88rem; text-decoration: underline; }
+#alAlt[hidden] { display: none; }
 .btn.tog.on { box-shadow: 0 0 0 3px var(--sun); }
 #sunRow { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
 #sunRow .dateRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -521,7 +525,7 @@ body.hasmap #sheet.compmode .peek { padding-right: 0; }
 .shut:active span { transform: scale(0.88); }
 /* schermata Scatto a tutto schermo */
 body.shooting .panel, body.shooting #filters, body.shooting #miniWrap:not(.full),
-body.shooting #sunPath, body.shooting #sunMark, body.shooting .cross { display: none !important; }
+body.shooting #sunPath, body.shooting #ridge, body.shooting #sunMark, body.shooting .cross { display: none !important; }
 body.shooting.nonames #labels { visibility: hidden; }
 #shotTop { position: absolute; left: 0; right: 0; top: calc(34px + env(safe-area-inset-top, 0px)); height: 44px; pointer-events: none; z-index: 3; }
 .ov {
@@ -645,7 +649,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v14 · alba e tramonto dietro i monti</p>
+    <p class="sub">Beta v15 · allinea col profilo dei monti</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -658,6 +662,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   <div id="labels"></div>
   <div id="sunMark"><span>Sole</span></div>
   <canvas id="sunPath" aria-hidden="true"></canvas>
+  <canvas id="ridge" aria-hidden="true"></canvas>
   <canvas id="tape" aria-hidden="true"></canvas>
   <div class="top">
     <div class="deg" id="deg">–</div>
@@ -676,6 +681,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   <div id="alignBar" hidden>
     <b id="alTitle"></b>
     <span id="alText"></span>
+    <span id="alInfo" hidden></span>
     <div id="alChips"></div>
     <div class="actions">
       <button class="btn" id="alLeft" type="button" aria-label="Sposta le etichette di 1 grado a sinistra" hidden>◀ 1°</button>
@@ -683,6 +689,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <button class="btn" id="alOk" type="button">Allinea qui</button>
       <button class="btn alt" id="alCancel" type="button">Annulla</button>
     </div>
+    <button type="button" id="alAlt" hidden>Qui non ci sono monti? Usa un luogo o il sole</button>
   </div>
   <div id="miniWrap" hidden>
     <div id="mini"><div id="miniMap"></div><div id="miniAttr"><span class="s">© OSM</span><span class="l">© OpenStreetMap contributors</span></div></div>
@@ -721,7 +728,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <div class="bmi off" id="calibNone"><b>Nessun luogo al centro</b><span>Metti al centro un paese o una vetta che riconosci</span></div>
       <button type="button" class="bmi sun" id="sunBtn" hidden><b>Sole visibile</b><span id="sunSub"></span></button>
       <div class="bmRow">
-        <button type="button" class="bmi" id="alignBtn"><b>Allinea guidato</b><span>Scegli un luogo o il sole</span></button>
+        <button type="button" class="bmi" id="alignBtn"><b id="alignBtnT">Allinea guidato</b><span id="alignBtnS">Scegli un luogo o il sole</span></button>
         <button type="button" class="bmi" id="walkBtn"><b>Camminando</b><span>Qualche passo dritto</span></button>
       </div>
     </div>
@@ -805,7 +812,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         </div>
         <p class="hint" id="declInfo"></p>
         <p class="hint" id="camInfo"></p>
-        <p class="hint"><b>Come correggere la bussola.</b> Tocca «Bussola» in basso a sinistra. Se al centro del mirino c'è il luogo proposto, toccalo e la bussola si corregge su quello. Con il sole ben visibile compare anche «Sole visibile». «Allinea guidato» ti fa scegliere il luogo e rifinire col dito; «Calibra camminando» usa il GPS mentre cammini dritto.</p>
+        <p class="hint"><b>Come correggere la bussola.</b> Tocca «Bussola» in basso a sinistra. Se al centro del mirino c'è il luogo proposto, toccalo e la bussola si corregge su quello. Con il sole ben visibile compare anche «Sole visibile». «Allinea col profilo» (quando il rilievo è attivo) mostra la linea tratteggiata delle creste: trascinala col dito finché combacia con i monti, e con due dita correggi anche il campo visivo; senza rilievo, o in pianura, «Allinea guidato» ti fa scegliere un luogo o il sole e rifinire col dito; «Calibra camminando» usa il GPS mentre cammini dritto.</p>
         <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo.</p>
       </div>
       <div class="foot" id="foot"></div>
@@ -2065,10 +2072,11 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     $('alText').textContent = text;
     $('alOk').textContent = ok;
     $('alCancel').textContent = cancel;
-    const fine = mode === 'fine';
-    $('alLeft').hidden = !fine; $('alRight').hidden = !fine;
-    $('alChips').hidden = fine || mode === 'intro';
-    $('alignLayer').hidden = !fine;
+    const fine = mode === 'fine', ridge = mode === 'ridge';
+    $('alLeft').hidden = !(fine || ridge); $('alRight').hidden = !(fine || ridge);
+    $('alChips').hidden = fine || ridge || mode === 'intro';
+    $('alignLayer').hidden = !(fine || ridge);
+    $('alInfo').hidden = !ridge; $('alAlt').hidden = !ridge;
     $('alOk').disabled = (mode === 'pick' || mode === 'verify') && !align.target;
   }
 
@@ -2080,17 +2088,39 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   }
 
   function alStart() {
-    if (S.heading === null || S.lat === null || !items.length) { toast('Servono sensori, GPS e luoghi caricati.', 3500); return; }
+    if (S.heading === null || S.lat === null || (!items.length && !ridgeReady())) { toast('Servono sensori, GPS e luoghi caricati.', 3500); return; }
     alSnapshot();
     document.body.classList.add('aligning');
     $('alignBar').hidden = false;
-    alPick();
+    alBegin();
+  }
+  // Col rilievo pronto si allinea sul profilo dei monti; altrimenti su un luogo o sul sole
+  function alBegin() { if (ridgeReady()) alRidge(); else alPick(); }
+  function ridgeReady() {
+    const P = DEM.prof;
+    return !!(S.dem && P && S.lat !== null && geo(P.lat, P.lon, S.lat, S.lon).d < 300);
+  }
+  function alRidge() {
+    align.step = 'ridge'; align.target = null; align.r0 = S.alOff; align.relief = null;
+    alUI('Allinea col profilo dei monti', 'Trascina col dito a destra o a sinistra finché la linea tratteggiata combacia con le creste. Se combacia al centro ma non ai lati, allarga o stringi con due dita. Conta la forma, non l’altezza.', 'Combacia: fatto', 'Annulla', 'ridge');
   }
 
-  function alSnapshot() { align.prev = S.alOff; align.prevQ = S.alQ; align.prevPitch = S.pitchOff; align.prevPos = S.alPos; }
+  function alSnapshot() { align.prev = S.alOff; align.prevQ = S.alQ; align.prevPitch = S.pitchOff; align.prevPos = S.alPos; align.prevFov = S.fov; align.prevFovKind = CAM.kind; }
   function alRestore() {
     S.alOff = align.prev; S.alQ = align.prevQ; S.alPos = align.prevPos; S.pitchOff = align.prevPitch;
+    alRestoreFov();
     saveSettings(); refreshSettingsUI(); saveAlign();
+  }
+  // Campo visivo cambiato con due dita durante l'allineamento: torna com'era
+  function alRestoreFov() {
+    if (typeof align.prevFov !== 'number' || !align.prevFovKind) return;
+    if (S.fovs[align.prevFovKind] === align.prevFov && (CAM.kind !== align.prevFovKind || S.fov === align.prevFov)) return;
+    S.fovs[align.prevFovKind] = align.prevFov;
+    if (CAM.kind === align.prevFovKind) { S.fov = align.prevFov; if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true); }
+  }
+  function setFovLive(f) {
+    S.fov = Math.round(Math.min(130, Math.max(8, f)) * 2) / 2;
+    S.fovs[CAM.kind] = S.fov;
   }
 
   function alIntro() {
@@ -2128,6 +2158,12 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   $('alLeft').addEventListener('click', () => { S.alOff = norm180(S.alOff + 1); });
   $('alRight').addEventListener('click', () => { S.alOff = norm180(S.alOff - 1); });
 
+  $('alAlt').addEventListener('click', () => {
+    if (align.step !== 'ridge') return;
+    S.alOff = align.r0; alRestoreFov();
+    alPick();
+  });
+
   $('alCancel').addEventListener('click', () => {
     if (align.step === 'intro') { alFinish(); return; }
     if (align.step === 'verify') { saveAlign(); toast('Allineamento salvato (verifica saltata).', 3500); }
@@ -2136,7 +2172,16 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   });
 
   $('alOk').addEventListener('click', () => {
-    if (align.step === 'intro') { alPick(); return; }
+    if (align.step === 'intro') { alBegin(); return; }
+    if (align.step === 'ridge') {
+      if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true);
+      S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = 2;
+      saveAlign(); saveSettings(); refreshSettingsUI();
+      const dFov = S.fov - (typeof align.prevFov === 'number' && align.prevFovKind === CAM.kind ? align.prevFov : S.fov);
+      toast('Allineata col profilo dei monti ✓ Correzione ' + fmtDeg(Math.round(norm180(S.alOff - align.r0) * 10) / 10) + (dFov ? ', campo visivo ' + S.fov + '°' : '') + '.', 5000);
+      alFinish();
+      return;
+    }
     if (align.step === 'pick') {
       if (!align.target) return;
       const rel = norm180(align.target.b - trueHeading());
@@ -2171,23 +2216,94 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (align.step === 'fine') saveAlign();
   });
 
-  let alDrag = null;
+  // Un dito: sposta di lato (direzione). Due dita (solo col profilo): allarga o stringi (campo visivo) e sposta.
+  let alDrag = null, alPinch = null;
+  const alPtr = new Map();
   const alLayer = $('alignLayer');
+  const alPpd = () => { const W = window.innerWidth, H = window.innerHeight; return (W / 2) / (tanVis() * W / H) * RAD; };
+  function alTwo() { const v = [...alPtr.values()]; return { d: Math.max(20, Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y)), cx: (v[0].x + v[1].x) / 2 }; }
   alLayer.addEventListener('pointerdown', (e) => {
-    if (align.step !== 'fine') return;
-    alDrag = { x: e.clientX, base: S.alOff };
+    if (align.step !== 'fine' && align.step !== 'ridge') return;
+    alPtr.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { alLayer.setPointerCapture(e.pointerId); } catch (err) {}
+    if (alPtr.size === 2 && align.step === 'ridge') {
+      const t = alTwo();
+      alDrag = null; alPinch = { d0: t.d, cx0: t.cx, tan0: Math.tan(S.fov * RAD / 2), off0: S.alOff };
+    } else if (alPtr.size === 1) alDrag = { x: e.clientX, base: S.alOff };
   });
   alLayer.addEventListener('pointermove', (e) => {
-    if (!alDrag) return;
-    const W = window.innerWidth, H = window.innerHeight;
-    const ppd = (W / 2) / (tanVis() * W / H) * RAD;
-    S.alOff = norm180(alDrag.base - (e.clientX - alDrag.x) / ppd);
+    if (!alPtr.has(e.pointerId)) return;
+    alPtr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (alPinch && alPtr.size >= 2) {
+      const t = alTwo();
+      setFovLive(2 * Math.atan(alPinch.tan0 / (t.d / alPinch.d0)) / RAD);
+      S.alOff = norm180(alPinch.off0 - (t.cx - alPinch.cx0) / alPpd());
+    } else if (alDrag) {
+      S.alOff = norm180(alDrag.base - (e.clientX - alDrag.x) / alPpd());
+    }
   });
-  const alEnd = () => { alDrag = null; };
+  const alEnd = (e) => {
+    alPtr.delete(e.pointerId);
+    if (alPinch && alPtr.size < 2) {
+      alPinch = null;
+      if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true);
+      refreshSettingsUI();
+    }
+    if (alPtr.size === 1) { const v = [...alPtr.values()][0]; alDrag = { x: v.x, base: S.alOff }; } else if (!alPtr.size) alDrag = null;
+  };
   alLayer.addEventListener('pointerup', alEnd);
   alLayer.addEventListener('pointercancel', alEnd);
-  window.__pano = { S: S, items: () => items, trueHeading: trueHeading, align: align, sunPos: sunPos };
+
+  /* ---------- Linea delle creste (profilo dell'orizzonte calcolato dal rilievo) ---------- */
+  const ridgeCv = $('ridge'), ridgeCtx = ridgeCv.getContext('2d');
+  let ridgeDrawn = false;
+  function profAlt(P, az) {
+    const f = ((az % 360) + 360) % 360 / DEM_STEP, a0 = Math.floor(f) % P.nA, a1 = (a0 + 1) % P.nA, w = f - Math.floor(f);
+    const h0 = P.hz[a0], h1 = P.hz[a1];
+    if (h0 < -45 || h1 < -45) return null;
+    return h0 * (1 - w) + h1 * w;
+  }
+  function drawRidge(W, H, heading, pitch, tanH, tanV) {
+    const P = DEM.prof;
+    if (align.step !== 'ridge' || !P || heading === null || pitch === null) {
+      if (ridgeDrawn) { ridgeCtx.setTransform(1, 0, 0, 1, 0, 0); ridgeCtx.clearRect(0, 0, ridgeCv.width, ridgeCv.height); ridgeDrawn = false; }
+      return;
+    }
+    const d = window.devicePixelRatio || 1;
+    if (ridgeCv.width !== Math.round(W * d) || ridgeCv.height !== Math.round(H * d)) { ridgeCv.width = Math.round(W * d); ridgeCv.height = Math.round(H * d); ridgeCv.style.width = W + 'px'; ridgeCv.style.height = H + 'px'; }
+    ridgeCtx.setTransform(d, 0, 0, d, 0, 0);
+    ridgeCtx.clearRect(0, 0, W, H);
+    ridgeDrawn = true;
+    const segs = [];
+    let cur = null, lo = 90, hi = -90;
+    for (let x = 0; x <= W + 2; x += 3) {
+      const rel = Math.atan((x - W / 2) / (W / 2) * tanH) / RAD;
+      const alt = profAlt(P, heading + rel);
+      if (alt === null) { cur = null; continue; }
+      lo = Math.min(lo, alt); hi = Math.max(hi, alt);
+      const y = H / 2 + Math.tan((pitch - alt) * RAD) / tanV * H / 2;
+      if (!cur) { cur = []; segs.push(cur); }
+      cur.push(x, y);
+    }
+    align.relief = hi >= lo ? hi - lo : 0;
+    ridgeCtx.lineJoin = 'round'; ridgeCtx.lineCap = 'round';
+    for (const pass of [0, 1]) {
+      ridgeCtx.setLineDash(pass ? [9, 6] : []);
+      ridgeCtx.strokeStyle = pass ? qcol('--accent', '#8fd3ff') : 'rgba(0,0,0,0.45)';
+      ridgeCtx.lineWidth = pass ? 2.4 : 5;
+      for (const sg of segs) {
+        if (sg.length < 4) continue;
+        ridgeCtx.beginPath(); ridgeCtx.moveTo(sg[0], sg[1]);
+        for (let i = 2; i < sg.length; i += 2) ridgeCtx.lineTo(sg[i], sg[i + 1]);
+        ridgeCtx.stroke();
+      }
+    }
+    ridgeCtx.setLineDash([]);
+    const corr = Math.round(norm180(S.alOff - align.r0) * 10) / 10;
+    setText('alInfo', 'Correzione ' + fmtDeg(corr) + ' · campo visivo ' + String(S.fov).replace('.', ',') + '°' +
+      (align.relief < 1 ? ' · qui le creste sono quasi piatte: meglio un luogo o il sole' : ''));
+  }
+  window.__pano = { S: S, items: () => items, trueHeading: trueHeading, align: align, sunPos: sunPos, dem: () => DEM };
 
   /* ---------- Percorso del sole ---------- */
   const sunUI = { on: false, date: null };
@@ -2301,7 +2417,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (sunDrawn) { sunCtx.setTransform(1, 0, 0, 1, 0, 0); sunCtx.clearRect(0, 0, sunCv.width, sunCv.height); sunDrawn = false; }
       return;
     }
-    if (sunCv.width !== Math.round(W * d) || sunCv.height !== Math.round(H * d)) { sunCv.width = Math.round(W * d); sunCv.height = Math.round(H * d); }
+    if (sunCv.width !== Math.round(W * d) || sunCv.height !== Math.round(H * d)) { sunCv.width = Math.round(W * d); sunCv.height = Math.round(H * d); sunCv.style.width = W + 'px'; sunCv.style.height = H + 'px'; }
     sunCtx.setTransform(d, 0, 0, d, 0, 0);
     sunCtx.clearRect(0, 0, W, H);
     sunDrawn = true;
@@ -2580,6 +2696,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     }
     if (!sunShown) mark.style.display = 'none';
     drawSunPath(W, H, heading, pitch, tanH, tanV);
+    drawRidge(W, H, heading, pitch, tanH, tanV);
 
     // Orizzonte geometrico (0°) calcolato con accelerometro e giroscopio
     const hz = $('horizon');
@@ -2732,7 +2849,14 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   $('compBtn').addEventListener('click', () => setMenu($('bmenu').hidden));
   $('bmClose').addEventListener('click', () => setMenu(false));
   let lastCompState = '';
+  let lastAlignBtn = null;
   function updateCompState() {
+    const rr = ridgeReady();
+    if (rr !== lastAlignBtn) {
+      lastAlignBtn = rr;
+      $('alignBtnT').textContent = rr ? 'Allinea col profilo' : 'Allinea guidato';
+      $('alignBtnS').textContent = rr ? 'Trascina la linea sui monti' : 'Scegli un luogo o il sole';
+    }
     const q = qualInfo();
     const bad = S.compAcc !== null && (S.compAcc > 25 || S.compAcc < 0);
     const txt = (S.alPos && S.alQ !== null) ? 'Bussola allineata in questo punto (±' + Math.round(S.alQ) + '°)'

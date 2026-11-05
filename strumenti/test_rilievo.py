@@ -178,6 +178,49 @@ def main():
         res['sole_21_giugno'] = page.inner_text('#sdInfo')
         look(90)
         page.screenshot(path=f'{OUT}/rilievo_sole_est.png')
+        # --- Allinea col profilo: bussola sbagliata di +5° (il telefono guarda a nord, la bussola dice 5°) ---
+        page.evaluate("document.querySelector('#more input[data-f=\"sun\"]').click()")
+        page.evaluate(f'window.__setOrient({(5 - decl) % 360}, 90)')
+        page.wait_for_timeout(1200)
+        res['al_pulsante'] = page.inner_text('#alignBtnT')
+        page.evaluate("document.getElementById('alignBtn').click()")
+        page.wait_for_timeout(800)
+        res['al_passo'] = page.evaluate('window.__pano.align.step')
+        res['al_linea_px'] = page.evaluate("""(() => { const c = document.getElementById('ridge'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; })()""")
+        page.screenshot(path=f'{OUT}/allinea_prima.png')
+        fov = page.evaluate('window.__pano.S.fov')
+        tanH = math.tan(math.radians(fov / 2)) * 390 / 844
+        ppd = (390 / 2) / tanH * math.pi / 180
+        page.mouse.move(120, 500); page.mouse.down()
+        for k in range(1, 11):
+            page.mouse.move(120 + 5 * ppd * k / 10, 500); page.wait_for_timeout(30)
+        page.mouse.up(); page.wait_for_timeout(400)
+        res['al_info'] = page.inner_text('#alInfo')
+        page.screenshot(path=f'{OUT}/allinea_dopo.png')
+        page.click('#alOk'); page.wait_for_timeout(400)
+        res['al_dopo'] = page.evaluate('({ off: window.__pano.S.alOff, q: window.__pano.S.alQ, step: window.__pano.align.step, pos: !!window.__pano.S.alPos })')
+        res['al_toast'] = page.inner_text('#toastText')
+        # due dita: allarga (campo visivo più stretto), poi Annulla deve rimettere tutto com'era
+        page.evaluate("document.getElementById('alignBtn').click()")
+        page.wait_for_timeout(400)
+        res['al_pinch'] = page.evaluate("""(async () => {
+          const L = document.getElementById('alignLayer'), ev = (t, id, x) => L.dispatchEvent(new PointerEvent(t, { pointerId: id, clientX: x, clientY: 500, bubbles: true }));
+          ev('pointerdown', 11, 100); ev('pointerdown', 12, 300);
+          for (let k = 1; k <= 8; k++) { ev('pointermove', 12, 300 + 5 * k); await new Promise(r => setTimeout(r, 20)); }
+          const fov = window.__pano.S.fov;
+          ev('pointerup', 12, 340); ev('pointerup', 11, 100);
+          return fov; })()""")
+        page.click('#alCancel'); page.wait_for_timeout(300)
+        res['al_annulla'] = page.evaluate('({ off: window.__pano.S.alOff, q: window.__pano.S.alQ, fov: window.__pano.S.fov })')
+        # senza rilievo: si torna al luogo o al sole
+        page.click('#grab'); page.wait_for_timeout(500)
+        page.evaluate("document.querySelector('#more input[data-f=\"dem\"]').click()")
+        page.click('#grab'); page.wait_for_timeout(500)
+        res['al_pulsante_senza'] = page.inner_text('#alignBtnT')
+        page.evaluate("document.getElementById('alignBtn').click()")
+        page.wait_for_timeout(400)
+        res['al_passo_senza'] = page.evaluate('window.__pano.align.step')
+        page.click('#alCancel')
         res['foot'] = page.evaluate("document.getElementById('foot').textContent")
         res['errors'] = errs
         b.close()
@@ -221,6 +264,15 @@ def main():
     g = re.search(r'Alba (\d\d:\d\d).*Tramonto (\d\d:\d\d).*senza i monti: alba (\d\d:\d\d), tramonto (\d\d:\d\d)', res['sole_21_giugno'])
     check(bool(g) and g.group(1) == g.group(3), '21 giugno: alba a nord-est libera, uguale a quella sull\'orizzonte libero')
     check(bool(g) and g.group(2) < g.group(4), '21 giugno: tramonto anticipato dal colle di «Collina» a ovest-nord-ovest')
+    check(res['al_pulsante'] == 'Allinea col profilo', 'menù Bussola: «Allinea col profilo» col rilievo attivo')
+    check(res['al_passo'] == 'ridge' and res['al_linea_px'] > 500, f'linea tratteggiata delle creste disegnata ({res["al_linea_px"]} px)')
+    check('−5' in res['al_info'] or '-5' in res['al_info'], 'durante il trascinamento: ' + res['al_info'])
+    a = res['al_dopo']
+    check(abs(a['off'] + 5) < 0.3 and a['q'] == 2 and a['step'] is None and a['pos'], f'dopo «Combacia: fatto»: correzione {a["off"]:.2f}° (attesa −5), ±{a["q"]}°')
+    check(abs(res['al_pinch'] - 60.5) < 0.6, f'due dita: campo visivo {res["al_pinch"]}° (atteso ~60,5)')
+    b = res['al_annulla']
+    check(abs(b['off'] + 5) < 0.3 and b['q'] == 2 and b['fov'] == fov, f'Annulla rimette tutto com\'era (correzione {b["off"]:.2f}°, campo visivo {b["fov"]}°)')
+    check(res['al_pulsante_senza'] == 'Allinea guidato' and res['al_passo_senza'] == 'pick', 'senza rilievo: «Allinea guidato» con luogo o sole')
     check(not res['errors'], 'nessun errore JavaScript')
     print('TUTTO OK' if ok else 'CI SONO PROBLEMI')
 
