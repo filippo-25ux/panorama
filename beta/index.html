@@ -484,12 +484,13 @@ body.aligning #horizon.on { display: block; }
 .comp.sunready i { background: var(--sun) !important; box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.35); }
 .bar .shut { width: 56px; height: 56px; }
 .bar .shut span { width: 42px; height: 42px; }
-#bmenu {
-  position: absolute; left: 12px; width: 290px; max-width: calc(100% - 24px); z-index: 5;
-  padding: 14px; display: flex; flex-direction: column; gap: 8px; pointer-events: auto;
-  border-radius: 18px; background: rgba(18, 24, 32, 0.97); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
-}
+#bmenu { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 0; }
 #bmenu[hidden] { display: none; }
+#sheet.compmode .peek, #sheet.compmode #miniWrap:not(.full) { display: none; }
+body.hasmap #sheet.compmode .peek { padding-right: 0; }
+.bmRow { display: flex; gap: 8px; }
+.bmRow .bmi { flex: 1; min-width: 0; }
+#bmClose { margin-left: auto; flex: none; width: 36px; height: 32px; border: 0; background: none; color: #fff; font-size: 1rem; }
 .bmState { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; line-height: 1.3; color: rgba(255, 255, 255, 0.74); }
 .bmState i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--q-none); }
 .bmi {
@@ -506,8 +507,7 @@ body.aligning #horizon.on { display: block; }
 .bmi.sun span { color: rgba(29, 18, 0, 0.78); }
 .bmi.off { background: rgba(255, 255, 255, 0.05); }
 .bmi.off b { color: rgba(255, 255, 255, 0.7); }
-.bmNote { margin: 2px 2px 0; font-size: 0.72rem; color: rgba(255, 255, 255, 0.55); }
-body.sheetopen #bmenu, body.aligning #bmenu, body.shooting #bmenu { display: none; }
+
 .gal { width: 46px; height: 46px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center; }
 .gal .thumb {
   display: block; width: 32px; height: 32px; border-radius: 7px;
@@ -531,6 +531,8 @@ body.shooting.nonames #labels { visibility: hidden; }
 }
 #shotClose { left: 16px; padding: 0; }
 #shotNames { right: 16px; box-shadow: inset 0 0 0 1.5px var(--accent); }
+#shotHi { right: 16px; top: 54px; height: 36px; font-size: 0.76rem; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3); }
+#shotHi[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--sun); color: var(--sun); }
 #shotNames[aria-pressed="false"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3); color: rgba(255, 255, 255, 0.75); }
 #shotNames[aria-pressed="false"] svg { opacity: 0.4; }
 #shotBar {
@@ -642,7 +644,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v11 · menù Bussola, foto, galleria e zoom</p>
+    <p class="sub">Beta v12 · menù Bussola nel pannello, qualità foto</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -694,6 +696,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   </div>
   <div id="shotTop" hidden>
     <button class="ov" id="shotClose" type="button" aria-label="Chiudi lo scatto"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 3 L13 13 M13 3 L3 13" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path></svg></button>
+    <button class="ov" id="shotHi" type="button" aria-pressed="false"><span>Qualità normale</span></button>
     <button class="ov" id="shotNames" type="button" aria-pressed="true"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14"><path d="M1.5 12.5 L7 2.5 L12.5 12.5 Z" fill="#8be28b"></path></svg><span>Nomi sì</span></button>
   </div>
   <div id="shotBar" hidden>
@@ -702,15 +705,6 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     <div class="sp"></div>
   </div>
   <div id="flash"></div>
-  <div id="bmenu" hidden>
-    <div class="bmState"><i id="bmDot"></i><span id="bmState">Bussola non ancora allineata in questo punto</span></div>
-    <button type="button" class="bmi main" id="calib" hidden><b id="calibQ"></b><span>Tocca se sì: correggo la bussola su questo luogo</span></button>
-    <div class="bmi off" id="calibNone"><b>Nessun luogo al centro</b><span>Metti al centro del mirino un paese o una vetta che riconosci</span></div>
-    <button type="button" class="bmi sun" id="sunBtn" hidden><b>Sole visibile</b><span id="sunSub"></span></button>
-    <button type="button" class="bmi" id="alignBtn"><b>Allinea guidato</b><span>Scegli tu un luogo o il sole e rifinisci col dito</span></button>
-    <button type="button" class="bmi" id="walkBtn"><b>Calibra camminando</b><span>Cammina dritto qualche passo col telefono puntato avanti</span></button>
-    <p class="bmNote">Ogni correzione si può annullare dall'avviso che compare subito dopo.</p>
-  </div>
   <div id="toast" hidden><span id="toastText"></span><button id="toastBtn" type="button" hidden>Annulla</button></div>
   <div class="panel" id="sheet">
     <button id="grab" type="button" aria-label="Apri o chiudi il pannello" aria-expanded="false"><i></i></button>
@@ -719,6 +713,16 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <span id="aimInfo">In attesa del GPS…</span>
       <span id="sunLine" hidden></span>
       <div id="here"></div>
+    </div>
+    <div id="bmenu" hidden>
+      <div class="bmState"><i id="bmDot"></i><span id="bmState">Bussola non ancora allineata in questo punto</span><button type="button" id="bmClose" aria-label="Chiudi il menù della bussola">✕</button></div>
+      <button type="button" class="bmi main" id="calib" hidden><b id="calibQ"></b><span>Tocca se sì: correggo la bussola su questo luogo</span></button>
+      <div class="bmi off" id="calibNone"><b>Nessun luogo al centro</b><span>Metti al centro un paese o una vetta che riconosci</span></div>
+      <button type="button" class="bmi sun" id="sunBtn" hidden><b>Sole visibile</b><span id="sunSub"></span></button>
+      <div class="bmRow">
+        <button type="button" class="bmi" id="alignBtn"><b>Allinea guidato</b><span>Scegli un luogo o il sole</span></button>
+        <button type="button" class="bmi" id="walkBtn"><b>Camminando</b><span>Qualche passo dritto</span></button>
+      </div>
     </div>
     <div class="bar">
       <button class="comp" id="compBtn" type="button" aria-expanded="false" aria-controls="bmenu"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="#8fd3ff" stroke-width="1.8" fill="none"></circle><path d="M12 5.5 L14.5 12 L12 18.5 L9.5 12 Z" fill="#8fd3ff"></path></svg><span>Bussola</span><i id="compDot"></i></button>
@@ -988,7 +992,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     lat: null, lon: null, gpsAcc: null, alt: null, altAcc: null, gpsMsg: null,
     fov: 70, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
     fovs: { std: 70, uw: 100, tele: 17 },   // campo visivo verticale di partenza per obiettivo
-    shotNames: true
+    shotNames: true, shotHi: false
   };
   // Fotocamera: obiettivi trovati, obiettivo in uso, zoom a scatti
   const CAM = { ids: {}, kind: 'std', base: 'std', names: [], scanned: false, track: null, hw: null, zoom: 1, dz: 1, css: 1, mode: '', stops: [1, 1.5, 2] };
@@ -1031,6 +1035,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (!s.pitchSensors && S.fovs.std === 65) S.fovs.std = 70;   // campo visivo standard più realistico
       S.fov = S.fovs.std;
       if (s.shotNames === false) S.shotNames = false;
+      if (s.shotHi === true) S.shotHi = true;
       if (typeof s.off === 'number') S.off = s.off;
       // Dalla v10 l'inclinazione viene solo da accelerometro e giroscopio: la vecchia correzione si azzera una volta
       if (typeof s.pitchOff === 'number' && s.pitchOff !== 0 && !s.pitchSensors) pitchWasReset = s.pitchOff;
@@ -1040,7 +1045,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -2369,22 +2374,15 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   $('walkBtn').addEventListener('click', () => { setMenu(false); startWalk(); });
 
   /* ---------- Menù della bussola ---------- */
+  // Il menù della bussola prende il posto delle informazioni nel pannello: l'immagine resta libera
   function setMenu(open) {
     if (open) setSheet(false);
     $('bmenu').hidden = !open;
+    $('sheet').classList.toggle('compmode', open);
     $('compBtn').setAttribute('aria-expanded', String(open));
-    if (open) placeMenu();
-  }
-  function placeMenu() {
-    const r = $('sheet').getBoundingClientRect();
-    $('bmenu').style.bottom = Math.round(window.innerHeight - r.top + 8) + 'px';
   }
   $('compBtn').addEventListener('click', () => setMenu($('bmenu').hidden));
-  document.addEventListener('pointerdown', (e) => {
-    if ($('bmenu').hidden) return;
-    if (e.target.closest('#bmenu') || e.target.closest('#compBtn')) return;
-    setMenu(false);
-  });
+  $('bmClose').addEventListener('click', () => setMenu(false));
   let lastCompState = '';
   function updateCompState() {
     const q = qualInfo();
@@ -2464,14 +2462,26 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   /* ---------- Scatto a tutto schermo ---------- */
   let shooting = false;
   function setShooting(on) {
+    const was = shooting;
     shooting = on;
-    if (on) setSheet(false);
+    if (on) { setSheet(false); setMenu(false); }
+    if (S.shotHi && was !== on) startCamera(CAM.kind);   // passa a 4K entrando, torna a Full HD uscendo
     document.body.classList.toggle('shooting', on);
     $('shotTop').hidden = !on;
     $('shotBar').hidden = !on;
     refreshShotNames();
   }
+  function refreshShotHi() {
+    $('shotHi').setAttribute('aria-pressed', String(S.shotHi));
+    $('shotHi').querySelector('span').textContent = S.shotHi ? 'Qualità alta (4K)' : 'Qualità normale';
+  }
+  $('shotHi').addEventListener('click', () => {
+    S.shotHi = !S.shotHi; saveSettings(); refreshShotHi();
+    startCamera(CAM.kind);
+    toast(S.shotHi ? 'Qualità alta: foto più grandi, la fotocamera può metterci un attimo.' : 'Qualità normale.', 2500);
+  });
   function refreshShotNames() {
+    refreshShotHi();
     $('shotNames').setAttribute('aria-pressed', String(S.shotNames));
     $('shotNames').querySelector('span').textContent = S.shotNames ? 'Nomi sì' : 'Nomi no';
     document.body.classList.toggle('nonames', !S.shotNames);
@@ -3024,7 +3034,9 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (old && old.getTracks) old.getTracks().forEach((t) => t.stop());
       const want = kind || CAM.kind;
       const id = CAM.ids[want];
-      const size = { width: { ideal: 3840 }, height: { ideal: 2160 } };
+      // Risoluzione sicura (Full HD) per guardare; alta (4K) solo nella schermata di scatto, se scelta
+      const hi = shooting && S.shotHi;
+      const size = hi ? { width: { ideal: 3840 }, height: { ideal: 2160 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
       let stream = null;
       if (id) {
         try { stream = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ deviceId: { exact: id } }, size), audio: false }); }
