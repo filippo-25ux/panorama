@@ -376,6 +376,21 @@ body.aligning .panel { display: none; }
 }
 #sunRow input[type=range] { width: 100%; margin: 8px 0 4px; accent-color: var(--sun); }
 #sunRow .sdChips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.sunlbl { font-size: 10px; font-weight: 700; line-height: 1; white-space: nowrap; padding: 2px 4px; border-radius: 4px; color: #fff; pointer-events: none; transform: translateY(-50%); }
+.sunlbl.rise { background: rgba(255, 159, 28, 0.92); color: #1d1200; }
+.sunlbl.set { background: rgba(228, 87, 46, 0.92); }
+#miniWrap.full .sunlbl { font-size: 12px; padding: 3px 6px; }
+#sunLegend {
+  display: none; position: absolute; left: 12px; top: calc(14px + env(safe-area-inset-top, 0px));
+  padding: 8px 10px; font-size: 0.78rem; line-height: 1.5; color: var(--ink);
+  background: var(--glass); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border-radius: 10px; pointer-events: none; z-index: 2;
+}
+#sunLegend i { display: inline-block; width: 22px; height: 0; margin-right: 6px; vertical-align: middle; border-top: 3px dashed; }
+#sunLegend .r { border-color: #ff9f1c; }
+#sunLegend .s { border-color: #e4572e; }
+#sunLegend .w { width: 22px; height: 10px; border: 0; background: rgba(255, 209, 102, 0.55); }
+#miniWrap.full #sunLegend.on { display: block; }
 #sdInfo { font-size: 0.85rem; color: var(--soft); line-height: 1.35; }
 </style>
 </head>
@@ -419,6 +434,7 @@ body.aligning .panel { display: none; }
   </div>
   <div id="miniWrap" hidden>
     <div id="mini"><div id="miniMap"></div><div id="miniAttr"><span class="s">© OSM</span><span class="l">© OpenStreetMap contributors</span></div></div>
+    <div id="sunLegend"><div><i class="r"></i>Alba</div><div><i class="s"></i>Tramonto</div><div><i class="w"></i>Percorso del sole nel giorno</div></div>
     <button id="miniExpand" type="button" aria-label="Ingrandisci o riduci la mappa">⤢</button>
     <button id="miniCenter" type="button" hidden>Ricentra</button>
     <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
@@ -1558,9 +1574,15 @@ body.aligning .panel { display: none; }
   function sunMapUpdate() {
     const on = sunUI.on && S.lat !== null;
     if (!on) {
-      if (sunMapKey !== 'off') { for (const id of ['sunsweep', 'sunrise', 'sunset']) map.getSource(id).setData({ type: 'FeatureCollection', features: [] }); sunMapKey = 'off'; }
+      if (sunMapKey !== 'off') {
+        for (const id of ['sunsweep', 'sunrise', 'sunset']) map.getSource(id).setData({ type: 'FeatureCollection', features: [] });
+        sunMapKey = 'off';
+        for (const k of ['rise', 'set']) if (sunLbl[k]) { sunLbl[k].marker.remove(); sunLbl[k] = null; }
+        $('sunLegend').classList.remove('on');
+      }
       return;
     }
+    $('sunLegend').classList.add('on');
     sunMapKey = 'on';
     const dd = sunDayData();
     if (!dd.rise || !dd.set) return;
@@ -1570,9 +1592,20 @@ body.aligning .panel { display: none; }
     const line = (az) => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[S.lon, S.lat], dest(S.lat, S.lon, az, R)] }, properties: {} });
     map.getSource('sunrise').setData(line(dd.rise.az));
     map.getSource('sunset').setData(line(dd.set.az));
+    const ld = mpp * Math.min(c.clientWidth, c.clientHeight) * (full ? 0.2 : 0.3);
+    for (const [k, ev, name] of [['rise', dd.rise, 'Alba'], ['set', dd.set, 'Tramonto']]) {
+      if (!sunLbl[k]) {
+        const el = document.createElement('div');
+        el.className = 'sunlbl ' + k;
+        sunLbl[k] = { el: el, marker: new window.maplibregl.Marker({ element: el, anchor: 'left' }).setLngLat([S.lon, S.lat]).addTo(map) };
+      }
+      sunLbl[k].el.textContent = name + ' ' + fmtTime(ev.t);
+      sunLbl[k].marker.setLngLat(dest(S.lat, S.lon, ev.az, ld));
+    }
     map.getSource('sunsweep').setData(sector(S.lat, S.lon, dd.rise.az, dd.set.az > dd.rise.az ? dd.set.az : dd.set.az + 360, R));
   }
   let sunMapKey = null;
+  const sunLbl = { rise: null, set: null };
 
   /* ---------- Disegno ---------- */
   function setText(id, text) {
