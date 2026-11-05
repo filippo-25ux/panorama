@@ -362,6 +362,21 @@ body.aligning .panel { display: none; }
 }
 .chip.on { border-color: var(--accent); background: rgba(143, 211, 255, 0.28); }
 .chip i { font-style: normal; font-weight: 400; opacity: 0.75; }
+
+/* Percorso del sole */
+#sunPath { position: absolute; inset: 0; display: block; pointer-events: none; }
+.btn.tog.on { box-shadow: 0 0 0 3px var(--sun); }
+#sunRow { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.18); }
+#sunRow .dateRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#sunRow .dateRow b { font-size: 1rem; }
+#sdDate::first-letter { text-transform: uppercase; }
+#sunRow .dateRow button, #sunRow .sdChips button {
+  padding: 6px 11px; font: inherit; font-size: 0.85rem; font-weight: 600;
+  color: var(--ink); background: rgba(255, 255, 255, 0.16); border: 0; border-radius: 999px;
+}
+#sunRow input[type=range] { width: 100%; margin: 8px 0 4px; accent-color: var(--sun); }
+#sunRow .sdChips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+#sdInfo { font-size: 0.85rem; color: var(--soft); line-height: 1.35; }
 </style>
 </head>
 <body>
@@ -382,6 +397,7 @@ body.aligning .panel { display: none; }
 <main id="hud" hidden>
   <div id="labels"></div>
   <div id="sunMark"><span>Sole</span></div>
+  <canvas id="sunPath" aria-hidden="true"></canvas>
   <canvas id="tape" aria-hidden="true"></canvas>
   <div class="top">
     <div class="deg" id="deg">–</div>
@@ -414,8 +430,25 @@ body.aligning .panel { display: none; }
     <div id="here"></div>
     <div class="actions">
       <button class="btn" id="alignBtn" type="button">Allinea la bussola</button>
+      <button class="btn tog" id="sunPathBtn" type="button" style="background: var(--sun)">Percorso del sole</button>
       <button class="btn" id="calib" type="button" hidden>Calibra su questo luogo</button>
       <button class="btn sun" id="sunBtn" type="button" hidden>Sole rilevato</button>
+    </div>
+    <div id="sunRow" hidden>
+      <div class="dateRow">
+        <button type="button" id="sdPrev" aria-label="Giorno precedente">◀</button>
+        <b id="sdDate"></b>
+        <button type="button" id="sdNext" aria-label="Giorno successivo">▶</button>
+      </div>
+      <input type="range" id="sdRange" min="0" max="365" step="1" aria-label="Giorno dell'anno">
+      <div class="sdChips">
+        <button type="button" data-sd="today">Oggi</button>
+        <button type="button" data-sd="3-21">21 mar</button>
+        <button type="button" data-sd="6-21">21 giu</button>
+        <button type="button" data-sd="9-23">23 set</button>
+        <button type="button" data-sd="12-21">21 dic</button>
+      </div>
+      <div id="sdInfo"></div>
     </div>
     <div class="foot" id="foot"></div>
     <button id="gear" type="button">Impostazioni</button>
@@ -1045,7 +1078,10 @@ body.aligning .panel { display: none; }
     map.touchZoomRotate.disableRotation();
     map.on('load', () => {
       const empty = { type: 'FeatureCollection', features: [] };
-      for (const id of ['fan', 'cone', 'me']) map.addSource(id, { type: 'geojson', data: empty });
+      for (const id of ['sunsweep', 'sunrise', 'sunset', 'fan', 'cone', 'me']) map.addSource(id, { type: 'geojson', data: empty });
+      map.addLayer({ id: 'sunsweep', type: 'fill', source: 'sunsweep', paint: { 'fill-color': '#ffd166', 'fill-opacity': 0.18 } });
+      map.addLayer({ id: 'sunrise', type: 'line', source: 'sunrise', paint: { 'line-color': '#ff9f1c', 'line-width': 3, 'line-dasharray': [2, 1] } });
+      map.addLayer({ id: 'sunset', type: 'line', source: 'sunset', paint: { 'line-color': '#e4572e', 'line-width': 3, 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'fan', type: 'fill', source: 'fan', paint: { 'fill-color': '#8fd3ff', 'fill-opacity': 0.18 } });
       map.addLayer({ id: 'cone', type: 'fill', source: 'cone', paint: { 'fill-color': '#8fd3ff', 'fill-opacity': 0.42 } });
       map.addLayer({ id: 'coneLine', type: 'line', source: 'cone', paint: { 'line-color': '#1b6fa8', 'line-width': 2 } });
@@ -1067,6 +1103,7 @@ body.aligning .panel { display: none; }
 
   function updateMap() {
     if (!mapReady || S.lat === null) return;
+    sunMapUpdate();
     const hd = (S.heading === null) ? 0 : trueHeading();
     if (follow) map.jumpTo({ center: [S.lon, S.lat], bearing: full ? 0 : hd });
     const mpp = 78271.517 * Math.cos(S.lat * RAD) / Math.pow(2, map.getZoom());
@@ -1080,6 +1117,7 @@ body.aligning .panel { display: none; }
     map.getSource('fan').setData(sector(S.lat, S.lon, hd - halfH - acc, hd + halfH + acc, R));
     map.getSource('me').setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [S.lon, S.lat] }, properties: {} });
   }
+
 
   function syncMarkers() {
     if (!mapReady) return;
@@ -1384,6 +1422,158 @@ body.aligning .panel { display: none; }
   alLayer.addEventListener('pointercancel', alEnd);
   window.__pano = { S: S, items: () => items, trueHeading: trueHeading, align: align, sunPos: sunPos };
 
+  /* ---------- Percorso del sole ---------- */
+  const sunUI = { on: false, date: null };
+  let sunCache = null;
+  const SUN_H0 = -0.833; // sole a filo d'orizzonte (raggio solare + rifrazione)
+  const dayNoon = (y, m, d) => new Date(y, m, d, 12, 0, 0);
+  const fmtTime = (t) => new Date(t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+  function sunDayData() {
+    const b = sunUI.date;
+    const key = b.getFullYear() + '-' + b.getMonth() + '-' + b.getDate() + '|' + S.lat.toFixed(2) + ',' + S.lon.toFixed(2);
+    if (sunCache && sunCache.key === key) return sunCache;
+    const start = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 0, 0, 0).getTime();
+    const pts = [];
+    let prev = null, rise = null, set = null, maxAlt = -90;
+    for (let k = 0; k <= 1440; k++) {
+      const t = start + k * 60000, s = sunPos(new Date(t), S.lat, S.lon);
+      if (s.alt > maxAlt) maxAlt = s.alt;
+      if (prev) {
+        const a0 = prev.alt - SUN_H0, a1 = s.alt - SUN_H0;
+        if (a0 < 0 && a1 >= 0 && !rise) { const f = -a0 / (a1 - a0); rise = { t: prev.t + f * 60000, az: (prev.az + norm180(s.az - prev.az) * f + 360) % 360 }; }
+        if (a0 >= 0 && a1 < 0 && !set) { const f = a0 / (a0 - a1); set = { t: prev.t + f * 60000, az: (prev.az + norm180(s.az - prev.az) * f + 360) % 360 }; }
+      }
+      if (k % 10 === 0) pts.push({ t: t, az: s.az, alt: s.alt });
+      prev = { t: t, az: s.az, alt: s.alt };
+    }
+    const arc = [];
+    if (rise) arc.push({ t: rise.t, az: rise.az, alt: SUN_H0 });
+    for (const p of pts) if ((!rise || p.t > rise.t) && (!set || p.t < set.t) && p.alt > SUN_H0) arc.push(p);
+    if (set) arc.push({ t: set.t, az: set.az, alt: SUN_H0 });
+    sunCache = { key: key, arc: arc, rise: rise, set: set, maxAlt: maxAlt };
+    return sunCache;
+  }
+
+  function sunInfoText(dd) {
+    if (!dd.rise || !dd.set) return 'In questa data il sole non sorge o non tramonta alla tua latitudine.';
+    const mins = Math.round((dd.set.t - dd.rise.t) / 60000);
+    return 'Alba ' + fmtTime(dd.rise.t) + ' (' + Math.round(dd.rise.az) + '° ' + DIRS[Math.round(dd.rise.az / 45) % 8] + ') · Tramonto ' + fmtTime(dd.set.t) +
+      ' (' + Math.round(dd.set.az) + '° ' + DIRS[Math.round(dd.set.az / 45) % 8] + ') · luce ' + Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min · altezza massima ' + Math.round(dd.maxAlt) + '°';
+  }
+
+  function sunRefreshUI() {
+    const d = sunUI.date;
+    $('sdDate').textContent = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+    $('sdRange').value = String(Math.round((dayNoon(d.getFullYear(), d.getMonth(), d.getDate()) - dayNoon(d.getFullYear(), 0, 1)) / 86400000));
+    $('sdInfo').textContent = S.lat === null ? 'Attendo il GPS…' : sunInfoText(sunDayData());
+  }
+
+  function sunSetDate(d) {
+    sunUI.date = dayNoon(d.getFullYear(), d.getMonth(), d.getDate());
+    sunRefreshUI();
+  }
+
+  function sunToday() { const n = new Date(); return dayNoon(n.getFullYear(), n.getMonth(), n.getDate()); }
+
+  $('sunPathBtn').addEventListener('click', () => {
+    sunUI.on = !sunUI.on;
+    if (sunUI.on) sunSetDate(sunToday());          // parte sempre da oggi
+    $('sunRow').hidden = !sunUI.on;
+    $('sunPathBtn').classList.toggle('on', sunUI.on);
+    $('sunPathBtn').textContent = sunUI.on ? 'Nascondi il percorso' : 'Percorso del sole';
+  });
+  $('sdPrev').addEventListener('click', () => { const d = new Date(sunUI.date); d.setDate(d.getDate() - 1); sunSetDate(d); });
+  $('sdNext').addEventListener('click', () => { const d = new Date(sunUI.date); d.setDate(d.getDate() + 1); sunSetDate(d); });
+  $('sdRange').addEventListener('input', (e) => { sunSetDate(dayNoon(sunUI.date.getFullYear(), 0, 1 + Number(e.target.value))); });
+  document.querySelector('#sunRow .sdChips').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.sd === 'today') { sunSetDate(sunToday()); return; }
+    const p = b.dataset.sd.split('-');
+    sunSetDate(dayNoon(sunUI.date.getFullYear(), Number(p[0]) - 1, Number(p[1])));
+  });
+  setInterval(() => { if (sunUI.on && S.lat !== null) sunRefreshUI(); }, 2000);
+
+  const sunCv = $('sunPath'), sunCtx = sunCv.getContext('2d');
+  let sunDrawn = false;
+  function drawSunPath(W, H, heading, pitch, tanH, tanV) {
+    const d = window.devicePixelRatio || 1;
+    if (!sunUI.on || heading === null || pitch === null || S.lat === null) {
+      if (sunDrawn) { sunCtx.setTransform(1, 0, 0, 1, 0, 0); sunCtx.clearRect(0, 0, sunCv.width, sunCv.height); sunDrawn = false; }
+      return;
+    }
+    if (sunCv.width !== Math.round(W * d) || sunCv.height !== Math.round(H * d)) { sunCv.width = Math.round(W * d); sunCv.height = Math.round(H * d); }
+    sunCtx.setTransform(d, 0, 0, d, 0, 0);
+    sunCtx.clearRect(0, 0, W, H);
+    sunDrawn = true;
+    const dd = sunDayData();
+    const col = qcol('--sun', '#ffd166');
+    const proj = (az, alt) => {
+      const rel = norm180(az - heading);
+      if (Math.abs(rel) > 80 || Math.abs(pitch - alt) > 80) return null;
+      return { x: W / 2 + Math.tan(rel * RAD) / tanH * W / 2, y: H / 2 + Math.tan((pitch - alt) * RAD) / tanV * H / 2 };
+    };
+    const now = Date.now();
+    const isToday = sunUI.date.toDateString() === new Date().toDateString();
+    const P = dd.arc.map((a) => ({ a: a, p: proj(a.az, a.alt) }));
+    sunCtx.lineCap = 'round'; sunCtx.lineJoin = 'round';
+    for (const pass of [0, 1]) {
+      for (let i = 1; i < P.length; i++) {
+        const A = P[i - 1], B = P[i];
+        if (!A.p || !B.p || Math.abs(A.p.x - B.p.x) > W) continue;
+        const past = isToday && B.a.t < now;
+        sunCtx.globalAlpha = past ? 0.4 : 1;
+        sunCtx.strokeStyle = pass === 0 ? 'rgba(0,0,0,0.55)' : col;
+        sunCtx.lineWidth = pass === 0 ? 7 : 3.5;
+        sunCtx.beginPath(); sunCtx.moveTo(A.p.x, A.p.y); sunCtx.lineTo(B.p.x, B.p.y); sunCtx.stroke();
+      }
+    }
+    sunCtx.globalAlpha = 1;
+    sunCtx.font = '700 13px -apple-system, system-ui, sans-serif';
+    sunCtx.textAlign = 'center'; sunCtx.textBaseline = 'bottom';
+    for (const q of P) {
+      if (!q.p || new Date(q.a.t).getMinutes() !== 0 || q.a.alt <= SUN_H0 + 0.01) continue;
+      if (q.p.x < 6 || q.p.x > W - 6) continue;
+      sunCtx.beginPath(); sunCtx.arc(q.p.x, q.p.y, 5, 0, 6.2832);
+      sunCtx.fillStyle = '#ffffff'; sunCtx.fill(); sunCtx.lineWidth = 2; sunCtx.strokeStyle = '#7a5200'; sunCtx.stroke();
+      sunCtx.lineWidth = 3; sunCtx.strokeStyle = 'rgba(0,0,0,0.7)';
+      const h = String(new Date(q.a.t).getHours());
+      sunCtx.strokeText(h, q.p.x, q.p.y - 9); sunCtx.fillStyle = col; sunCtx.fillText(h, q.p.x, q.p.y - 9);
+    }
+    for (const [ev, name] of [[dd.rise, 'Alba'], [dd.set, 'Tramonto']]) {
+      if (!ev) continue;
+      const p = proj(ev.az, SUN_H0);
+      if (!p || p.x < 30 || p.x > W - 30) continue;
+      sunCtx.beginPath(); sunCtx.moveTo(p.x - 9, p.y + 6); sunCtx.lineTo(p.x + 9, p.y + 6); sunCtx.lineTo(p.x, p.y - 9); sunCtx.closePath();
+      sunCtx.fillStyle = col; sunCtx.fill(); sunCtx.lineWidth = 2; sunCtx.strokeStyle = 'rgba(0,0,0,0.7)'; sunCtx.stroke();
+      const txt = name + ' ' + fmtTime(ev.t);
+      sunCtx.textBaseline = 'top';
+      sunCtx.lineWidth = 3; sunCtx.strokeStyle = 'rgba(0,0,0,0.7)';
+      sunCtx.strokeText(txt, p.x, p.y + 12); sunCtx.fillStyle = '#ffffff'; sunCtx.fillText(txt, p.x, p.y + 12);
+      sunCtx.textBaseline = 'bottom';
+    }
+  }
+
+  function sunMapUpdate() {
+    const on = sunUI.on && S.lat !== null;
+    if (!on) {
+      if (sunMapKey !== 'off') { for (const id of ['sunsweep', 'sunrise', 'sunset']) map.getSource(id).setData({ type: 'FeatureCollection', features: [] }); sunMapKey = 'off'; }
+      return;
+    }
+    sunMapKey = 'on';
+    const dd = sunDayData();
+    if (!dd.rise || !dd.set) return;
+    const mpp = 78271.517 * Math.cos(S.lat * RAD) / Math.pow(2, map.getZoom());
+    const c = map.getContainer();
+    const R = mpp * Math.max(c.clientWidth, c.clientHeight) * 0.9;
+    const line = (az) => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: [[S.lon, S.lat], dest(S.lat, S.lon, az, R)] }, properties: {} });
+    map.getSource('sunrise').setData(line(dd.rise.az));
+    map.getSource('sunset').setData(line(dd.set.az));
+    map.getSource('sunsweep').setData(sector(S.lat, S.lon, dd.rise.az, dd.set.az > dd.rise.az ? dd.set.az : dd.set.az + 360, R));
+  }
+  let sunMapKey = null;
+
   /* ---------- Disegno ---------- */
   function setText(id, text) {
     if (shownText[id] !== text) {
@@ -1543,6 +1733,7 @@ body.aligning .panel { display: none; }
       }
     }
     if (!sunShown) mark.style.display = 'none';
+    drawSunPath(W, H, heading, pitch, tanH, tanV);
 
     // Scheda in basso e pulsanti di calibrazione
     if (heading === null || S.pitch === null) {
