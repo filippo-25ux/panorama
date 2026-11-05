@@ -55,7 +55,16 @@ def main():
         errs = []
         page.on('pageerror', lambda e: errs.append(str(e)))
         # niente rete esterna: Overpass e tile falliscono subito
-        page.route(lambda u: not u.startswith('http://127.0.0.1'), lambda r: r.abort())
+        ML = '/tmp/claude-0/-home-claude/b2b4e909-7260-54ee-8aa6-aa580d6f0a0e/scratchpad/npm/node_modules/maplibre-gl/dist/'
+        import os
+        def route(r):
+            u = r.request.url
+            if u.startswith('http://127.0.0.1'): return r.continue_()
+            if 'maplibre-gl' in u and os.path.isdir(ML):
+                f = ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js')
+                return r.fulfill(path=f)
+            return r.abort()
+        page.route('**/*', route)
         page.route('**/beta/peaks-it.json', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(PEAKS)))
         page.goto('http://127.0.0.1:8765/beta/index.html')
         page.evaluate('window.__setOrient(0, 90)')
@@ -73,8 +82,19 @@ def main():
         page.evaluate(f'window.__setOrient({(360 - decl) % 360}, 90)')
         page.wait_for_timeout(1500)
         page.screenshot(path=f'{OUT}/nord.png')
+        page.click('#mini'); page.wait_for_timeout(600)
+        results['mappa_grande'] = page.evaluate("document.getElementById('miniWrap').className")
+        page.screenshot(path=f'{OUT}/mappa.png')
+        page.click('#miniExpand'); page.wait_for_timeout(400)
+        results['mappa_chiusa'] = page.evaluate("document.getElementById('miniWrap').className")
+        page.click('.flt[data-f="peak"]'); page.wait_for_timeout(400)
+        results['senza_vette'] = page.evaluate("[...document.querySelectorAll('#labels .pill')].filter(p => p.style.display !== 'none').map(p => p.innerText)")
+        page.click('.flt[data-f="peak"]'); page.click('.flt[data-f="sun"]'); page.wait_for_timeout(300)
+        page.click('#grab'); page.wait_for_timeout(500)
+        page.screenshot(path=f'{OUT}/pannello.png')
+        page.click('#segD button[data-dn="3"]'); page.click('#grab'); page.wait_for_timeout(600)
         pills = page.evaluate("""[...document.querySelectorAll('#labels .pill')].filter(p => p.style.display !== 'none').map(p => {
-            const r = p.getBoundingClientRect(); return { text: p.innerText.replace(/\\n/g, ' | '), cls: p.className, x: r.left + r.width / 2, top: r.top }; })""")
+            const r = p.getBoundingClientRect(); return { text: p.innerText.replace(/\\n/g, ' | '), cls: p.className }; })""")
         pins = page.evaluate("""[...document.querySelectorAll('#labels .pin')].filter(p => p.style.display !== 'none').map(p => ({ x: parseFloat(p.style.left), bottom: parseFloat(p.style.top) + parseFloat(p.style.height) }))""")
         results['nord'] = {'pills': pills, 'pins': pins, 'aim': page.inner_text('#aimName') + ' / ' + page.inner_text('#aimInfo'), 'foot': page.inner_text('#foot')}
         page.evaluate(f'window.__setOrient({(90 - decl) % 360}, 90)')

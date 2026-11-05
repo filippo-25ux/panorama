@@ -392,6 +392,72 @@ body.aligning .panel { display: none; }
 #sunLegend .w { width: 22px; height: 10px; border: 0; background: rgba(255, 209, 102, 0.55); }
 #miniWrap.full #sunLegend.on { display: block; }
 #sdInfo { font-size: 0.85rem; color: var(--soft); line-height: 1.35; }
+
+/* ===== Versione B: filtri, etichette compatte, pannello che scorre ===== */
+.top { padding-top: calc(36px + env(safe-area-inset-top, 0px)); display: flex; justify-content: center; align-items: center; gap: 8px; }
+.deg { font-size: 1.7rem; }
+.card { font-size: 1.05rem; }
+#qual span { display: none; }
+#qual i { width: 10px; height: 10px; }
+#filters { position: absolute; left: 0; right: 0; top: calc(82px + env(safe-area-inset-top, 0px)); display: flex; justify-content: center; gap: 10px; pointer-events: auto; }
+.flt { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(10, 14, 20, 0.5); box-shadow: inset 0 0 0 1.5px var(--c); }
+.flt[aria-pressed="false"] { background: rgba(10, 14, 20, 0.28); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3); opacity: 0.6; }
+.ic .f { fill: var(--ic, #fff); }
+.ic .s { stroke: var(--ic, #fff); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+/* etichette: icona + nome; al centro anche quota e distanza; i minori solo icona */
+.pill { height: auto; min-height: 30px; max-width: 230px; padding: 0 10px 0 8px; flex-direction: row; align-items: center; gap: 6px; border-radius: 15px; border-left: 0 !important; }
+.pill .ic { flex: none; }
+.pill .tx { display: flex; flex-direction: column; min-width: 0; }
+.pill b { font-size: 0.9rem; }
+.pill i { display: none; }
+.pill.sel { padding: 6px 12px 7px 10px; border-radius: 14px; --ic: #06121c; }
+.pill.sel b { font-size: 0.95rem; font-weight: 700; }
+.pill.sel i { display: block; }
+.pill.dot { width: 24px; min-height: 24px; height: 24px; padding: 0; justify-content: center; border-radius: 12px; background: rgba(10, 14, 20, 0.55); }
+.pill.dot .tx { display: none; }
+.pill.dot .ic { width: 11px; height: 11px; }
+.pin::after { background: var(--pc, var(--accent)); }
+/* pannello in basso */
+.panel { left: 0; right: 0; bottom: 0; max-height: 46vh; overflow: hidden; padding: 0 16px calc(14px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: rgba(10, 14, 20, 0.8); transition: max-height 0.25s ease; }
+.panel.open { max-height: 82vh; overflow-y: auto; background: rgba(14, 18, 24, 0.96); }
+#grab { display: block; width: 100%; height: 22px; margin: 0; padding: 0; border: 0; background: none; }
+#grab i { display: block; width: 40px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: rgba(255, 255, 255, 0.45); }
+.peek { min-height: 88px; display: flex; flex-direction: column; justify-content: center; }
+body.hasmap .peek { padding-right: 104px; }
+#aimName { font-size: 1.3rem; }
+#sunLine { display: block; margin-top: 3px; font-size: 0.85rem; color: var(--sun); }
+#here { margin-top: 2px; font-size: 0.82rem; }
+.panel .actions { align-items: center; margin: 10px 0 0; min-height: 46px; }
+.rb { width: 46px; height: 46px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.12); }
+.rb.warn { box-shadow: 0 0 0 3px #ffb347; }
+#more { padding-top: 6px; }
+.panel:not(.open) #more { display: none; }
+#more h3 { margin: 18px 0 4px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+.sw { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 1rem; }
+.sw span { flex: 1; }
+.sw em { font-style: normal; font-size: 0.82rem; color: rgba(255, 255, 255, 0.55); }
+.sw input { width: 22px; height: 22px; accent-color: var(--accent); }
+.two { display: flex; gap: 14px; }
+.two > div { flex: 1; }
+.seg { display: flex; border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.seg button { flex: 1; height: 38px; padding: 0; border: 0; font: inherit; font-size: 0.85rem; color: #fff; background: transparent; }
+.seg button.on { background: var(--accent); color: #06121c; font-weight: 700; }
+.soon { display: flex; justify-content: space-between; align-items: center; min-height: 40px; color: rgba(255, 255, 255, 0.45); }
+.soon em { font-style: normal; font-size: 0.78rem; }
+#sunRow { margin-top: 6px; padding-top: 0; border-top: 0; }
+/* mini-mappa dentro il pannello */
+#miniWrap:not(.full) { top: 0; left: auto; right: 16px; width: 88px; height: 88px; }
+#miniWrap:not(.full) #mini { border-radius: 16px; }
+#miniWrap:not(.full) #miniExpand, #miniWrap:not(.full) #miniCenter { display: none; }
+body.sheetopen #miniWrap:not(.full) { display: none; }
+body.aligning #filters, body.aligning #miniWrap:not(.full) { display: none; }
+.mk { width: 18px; height: 18px; }
+.mk i { display: flex; align-items: center; justify-content: center; border: 0; background: rgba(12, 17, 23, 0.85); }
+.mk i .ic { width: 10px; height: 10px; }
+.mk.land i, .mk.peak i { background: rgba(12, 17, 23, 0.85); }
+.mk.aim i, .mk.sel i { background: var(--accent); --ic: #06121c; }
+.pill.sel .ic .f, .mk.aim .ic .f, .mk.sel .ic .f { fill: #06121c; }
+.pill.sel .ic .s, .mk.aim .ic .s, .mk.sel .ic .s { stroke: #06121c; }
 </style>
 </head>
 <body>
@@ -401,7 +467,7 @@ body.aligning .panel { display: none; }
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta: mini-mappa con il cono di visuale</p>
+    <p class="sub">Beta: nuova schermata con filtri e pannello</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
     <button id="go" type="button">Avvia</button>
@@ -418,6 +484,12 @@ body.aligning .panel { display: none; }
     <div class="deg" id="deg">–</div>
     <div class="card" id="card">&nbsp;</div>
     <div id="qual"><i></i><span></span></div>
+  </div>
+  <div id="filters">
+    <button class="flt" type="button" data-f="town" aria-label="Paesi e città" aria-pressed="true" style="--c: #ffffff; --ic: #ffffff"></button>
+    <button class="flt" type="button" data-f="peak" aria-label="Vette" aria-pressed="true" style="--c: #8be28b; --ic: #8be28b"></button>
+    <button class="flt" type="button" data-f="land" aria-label="Chiese, torri, castelli" aria-pressed="false" style="--c: #c8a2ff; --ic: #c8a2ff"></button>
+    <button class="flt" type="button" data-f="sun" aria-label="Percorso del sole" aria-pressed="false" style="--c: #ffd166; --ic: #ffd166"></button>
   </div>
   <div class="cross" aria-hidden="true"></div>
   <div id="alignLayer" hidden></div>
@@ -440,78 +512,83 @@ body.aligning .panel { display: none; }
     <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
   </div>
   <div id="toast" hidden><span id="toastText"></span><button id="toastBtn" type="button" hidden>Annulla</button></div>
-  <div class="panel">
-    <b id="aimName">Punta verso un paese</b>
-    <span id="aimInfo">In attesa del GPS…</span>
-    <div id="here"></div>
+  <div class="panel" id="sheet">
+    <button id="grab" type="button" aria-label="Apri o chiudi il pannello" aria-expanded="false"><i></i></button>
+    <div class="peek">
+      <b id="aimName">Punta verso un paese</b>
+      <span id="aimInfo">In attesa del GPS…</span>
+      <span id="sunLine" hidden></span>
+      <div id="here"></div>
+    </div>
     <div class="actions">
-      <button class="btn" id="alignBtn" type="button">Allinea la bussola</button>
-      <button class="btn tog" id="sunPathBtn" type="button" style="background: var(--sun)">Percorso del sole</button>
       <button class="btn" id="calib" type="button" hidden>Calibra su questo luogo</button>
       <button class="btn sun" id="sunBtn" type="button" hidden>Sole rilevato</button>
+      <button class="rb" id="alignBtn" type="button" aria-label="Allinea la bussola"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="#8fd3ff" stroke-width="1.8" fill="none"></circle><path d="M12 5.5 L14.5 12 L12 18.5 L9.5 12 Z" fill="#8fd3ff"></path></svg></button>
     </div>
-    <div id="sunRow" hidden>
-      <div class="dateRow">
-        <button type="button" id="sdPrev" aria-label="Giorno precedente">◀</button>
-        <b id="sdDate"></b>
-        <button type="button" id="sdNext" aria-label="Giorno successivo">▶</button>
+    <div id="more">
+      <h3>Cosa mostrare</h3>
+      <label class="sw" style="--ic: #ffffff"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
+      <label class="sw" style="--ic: #8be28b"><i class="swi" data-t="peak"></i><span>Vette</span><em id="nPeak"></em><input type="checkbox" data-f="peak"></label>
+      <label class="sw" style="--ic: #c8a2ff"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
+      <label class="sw" style="--ic: #ffd166"><i class="swi" data-t="sun"></i><span>Percorso del sole</span><input type="checkbox" data-f="sun"></label>
+      <div id="sunRow" hidden>
+        <div class="dateRow">
+          <button type="button" id="sdPrev" aria-label="Giorno precedente">◀</button>
+          <b id="sdDate"></b>
+          <button type="button" id="sdNext" aria-label="Giorno successivo">▶</button>
+        </div>
+        <input type="range" id="sdRange" min="0" max="365" step="1" aria-label="Giorno dell'anno">
+        <div class="sdChips">
+          <button type="button" data-sd="today">Oggi</button>
+          <button type="button" data-sd="3-21">21 mar</button>
+          <button type="button" data-sd="6-21">21 giu</button>
+          <button type="button" data-sd="9-23">23 set</button>
+          <button type="button" data-sd="12-21">21 dic</button>
+        </div>
+        <div id="sdInfo"></div>
       </div>
-      <input type="range" id="sdRange" min="0" max="365" step="1" aria-label="Giorno dell'anno">
-      <div class="sdChips">
-        <button type="button" data-sd="today">Oggi</button>
-        <button type="button" data-sd="3-21">21 mar</button>
-        <button type="button" data-sd="6-21">21 giu</button>
-        <button type="button" data-sd="9-23">23 set</button>
-        <button type="button" data-sd="12-21">21 dic</button>
+      <div class="two">
+        <div><h3>Nomi</h3><div class="seg" id="segD"><button type="button" data-dn="1">Pochi</button><button type="button" data-dn="2">Normali</button><button type="button" data-dn="3">Molti</button></div></div>
+        <div><h3>Distanza</h3><div class="seg" id="segR"><button type="button" data-r="10000">10</button><button type="button" data-r="25000">25</button><button type="button" data-r="50000">50 km</button></div></div>
       </div>
-      <div id="sdInfo"></div>
-    </div>
-    <div class="foot" id="foot"></div>
-    <button id="gear" type="button">Impostazioni</button>
-    <div id="settings" hidden>
-      <div class="row">
-        <span>Raggio di ricerca</span>
-        <span class="grp" id="segR">
-          <button type="button" data-r="10000">10 km</button>
-          <button type="button" data-r="25000">25 km</button>
-          <button type="button" data-r="50000">50 km</button>
-        </span>
+      <h3>Livelli sulla mappa</h3>
+      <div class="soon">Frane e alluvioni (IdroGEO)<em>in arrivo</em></div>
+      <div class="soon">Catasto<em>in arrivo</em></div>
+      <h3>Bussola e taratura</h3>
+      <div id="settings">
+        <div class="row">
+          <span>Campo visivo</span>
+          <span class="grp">
+            <button type="button" data-k="fov" data-d="-2" aria-label="Riduci il campo visivo">−</button>
+            <b id="vFov">65°</b>
+            <button type="button" data-k="fov" data-d="2" aria-label="Aumenta il campo visivo">+</button>
+          </span>
+        </div>
+        <div class="row">
+          <span>Taratura bussola</span>
+          <span class="grp">
+            <button type="button" data-k="off" data-d="-1" aria-label="Riduci la taratura">−</button>
+            <b id="vOff">0°</b>
+            <button type="button" data-k="off" data-d="1" aria-label="Aumenta la taratura">+</button>
+          </span>
+        </div>
+        <div class="row">
+          <span>Azzera taratura e inclinazione</span>
+          <span class="grp"><button type="button" data-k="zero">Azzera</button></span>
+        </div>
+        <div class="row">
+          <span>Calibra camminando</span>
+          <span class="grp"><button type="button" data-k="walk">Avvia</button></span>
+        </div>
+        <div class="row">
+          <span>Schermo nero?</span>
+          <span class="grp"><button type="button" data-k="cam">Riavvia fotocamera</button></span>
+        </div>
+        <p class="hint" id="declInfo"></p>
+        <p class="hint"><b>Come calibrare la bussola.</b> Punta la croce al centro su un luogo che vedi bene, meglio un campanile, una torre o una vetta, poi premi “Calibra su questo luogo”. Con il sole visibile, inquadralo e premi “Sole rilevato”. Camminando, usa “Calibra camminando” e tieni il telefono puntato avanti.</p>
+        <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo.</p>
       </div>
-      <div class="row">
-        <span>Campo visivo</span>
-        <span class="grp">
-          <button type="button" data-k="fov" data-d="-2" aria-label="Riduci il campo visivo">−</button>
-          <b id="vFov">65°</b>
-          <button type="button" data-k="fov" data-d="2" aria-label="Aumenta il campo visivo">+</button>
-        </span>
-      </div>
-      <div class="row">
-        <span>Taratura bussola</span>
-        <span class="grp">
-          <button type="button" data-k="off" data-d="-1" aria-label="Riduci la taratura">−</button>
-          <b id="vOff">0°</b>
-          <button type="button" data-k="off" data-d="1" aria-label="Aumenta la taratura">+</button>
-        </span>
-      </div>
-      <div class="row">
-        <span>Azzera taratura e inclinazione</span>
-        <span class="grp"><button type="button" data-k="zero">Azzera</button></span>
-      </div>
-      <div class="row">
-        <span>Calibra camminando</span>
-        <span class="grp"><button type="button" data-k="walk">Avvia</button></span>
-      </div>
-      <div class="row">
-        <span>Chiese, torri, castelli</span>
-        <span class="grp"><button type="button" data-k="land" id="landBtn">No</button></span>
-      </div>
-      <div class="row">
-        <span>Schermo nero?</span>
-        <span class="grp"><button type="button" data-k="cam">Riavvia fotocamera</button></span>
-      </div>
-      <p class="hint" id="declInfo"></p>
-      <p class="hint"><b>Come calibrare la bussola.</b> Punta la croce al centro su un luogo che vedi bene, meglio un campanile, una torre o una vetta, poi premi “Calibra su questo luogo”. Con il sole visibile, inquadralo e premi “Sole rilevato”. Camminando, usa “Calibra camminando” e tieni il telefono puntato avanti.</p>
-      <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo.</p>
+      <div class="foot" id="foot"></div>
       <p class="hint">Dati dei luoghi: GeoNames (CC BY 4.0), ISTAT (CC BY 3.0 IT) e © OpenStreetMap contributors</p>
     </div>
   </div>
@@ -552,8 +629,32 @@ body.aligning .panel { display: none; }
     'https://overpass.kumi.systems/api/interpreter',
     'https://overpass.openstreetmap.fr/api/interpreter'
   ];
-  const MAX_LABELS = 14;
-  const LABEL_H = 40;
+  const DENS = { 1: 4, 2: 7, 3: 12 };   // quanti nomi mostrare (Pochi / Normali / Molti)
+  const MAX_DOTS = 24;                  // luoghi mostrati solo con l'icona
+  const F = { town: true, peak: true, sun: false, dens: 2 };
+  const TYPE_COLOR = { peak: '#8be28b', church: '#c8a2ff', tower: '#c8a2ff', castle: '#c8a2ff' };
+  const typeColor = (t) => TYPE_COLOR[t] || '#ffffff';
+  // Icone per tipo (stesse forme in camera, sulla mappa e nei filtri)
+  function iconSvg(t, size) {
+    const z = size || 14;
+    let body;
+    if (t === 'peak') body = '<path class="f" d="M1.5 12.5 L7 2.5 L12.5 12.5 Z"/>';
+    else if (t === 'city') body = '<circle class="s" cx="7" cy="7" r="5.6" stroke-width="1.4"/><circle class="f" cx="7" cy="7" r="3.2"/>';
+    else if (t === 'hamlet') body = '<circle class="s" cx="7" cy="7" r="3.4" stroke-width="1.8"/>';
+    else if (t === 'church') body = '<path class="s" d="M7 1.5 V12.5 M3 5 H11" stroke-width="2"/>';
+    else if (t === 'tower') body = '<path class="s" d="M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2" stroke-width="1.6"/>';
+    else if (t === 'castle') body = '<path class="s" d="M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z" stroke-width="1.4"/>';
+    else if (t === 'sun') body = '<circle class="f" cx="7" cy="7" r="3"/><path class="s" d="M7 0.5 V2.5 M7 11.5 V13.5 M0.5 7 H2.5 M11.5 7 H13.5 M2.4 2.4 L3.8 3.8 M10.2 10.2 L11.6 11.6 M2.4 11.6 L3.8 10.2 M10.2 3.8 L11.6 2.4" stroke-width="1.3"/>';
+    else if (t === 'river') body = '<path class="s" d="M0.5 7.5 C2.8 4 4.6 4 7 7.5 S11.2 11 13.5 7.5" stroke-width="2"/>';
+    else body = '<circle class="f" cx="7" cy="7" r="4.5"/>';
+    return '<svg class="ic" aria-hidden="true" width="' + z + '" height="' + z + '" viewBox="0 0 14 14">' + body + '</svg>';
+  }
+  // Il luogo è acceso nei filtri?
+  function visible(it) {
+    if (it.t === 'peak') return F.peak;
+    if (LAND_TYPES[it.t]) return S.land;
+    return F.town;
+  }
 
   /* Declinazione magnetica: modello WMM2025 (epoca 2026,85), griglia di 5° in decimi di grado.
      Righe da -70° a +75° di latitudine, colonne da -180° a +180° di longitudine. */
@@ -656,10 +757,11 @@ body.aligning .panel { display: none; }
       if (typeof s.pitchOff === 'number') S.pitchOff = s.pitchOff;
       if (s.land === true) S.land = true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
+      if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fov, off: S.off, pitchOff: S.pitchOff, radius: S.radius, land: S.land })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fov, off: S.off, pitchOff: S.pitchOff, radius: S.radius, land: S.land, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -790,6 +892,9 @@ body.aligning .panel { display: none; }
 
     items = merged;
     builtFor = { lat: S.lat, lon: S.lon, radius: r, land: S.land };
+    let nT = 0, nP = 0;
+    for (const it of merged) { if (it.t === 'peak') nP++; else if (!LAND_TYPES[it.t]) nT++; }
+    $('nTown').textContent = nT; $('nPeak').textContent = nP;
     clearPool();
     recompute();
     syncMarkers();
@@ -1130,6 +1235,9 @@ body.aligning .panel { display: none; }
       map.addLayer({ id: 'me', type: 'circle', source: 'me', paint: { 'circle-radius': 6, 'circle-color': '#1b6fa8', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
       mapReady = true;
       $('miniWrap').hidden = false;
+      document.body.classList.add('hasmap');
+      map.dragPan.disable(); map.scrollZoom.disable(); map.touchZoomRotate.disable(); map.doubleClickZoom.disable();
+      map.on('click', () => { if (!full) setFull(true); });
       syncMarkers();
       updateMap();
     });
@@ -1165,11 +1273,14 @@ body.aligning .panel { display: none; }
     if (!mapReady) return;
     markers.forEach((m) => m.marker.remove());
     markers = [];
-    const list = items.filter((it) => it.d !== undefined).sort((a, b) => b.score - a.score).slice(0, 40);
+    const list = items.filter((it) => it.d !== undefined && visible(it)).sort((a, b) => b.score - a.score).slice(0, 40);
     for (const it of list) {
       const el = document.createElement('div');
       el.className = 'mk' + (LAND_TYPES[it.t] ? ' land' : it.t === 'peak' ? ' peak' : '');
-      el.appendChild(document.createElement('i'));
+      el.style.setProperty('--ic', typeColor(it.t));
+      const mi = document.createElement('i');
+      mi.innerHTML = iconSvg(it.t, 10);
+      el.appendChild(mi);
       const sp = document.createElement('span');
       sp.textContent = it.n;
       el.appendChild(sp);
@@ -1191,6 +1302,10 @@ body.aligning .panel { display: none; }
     full = v;
     $('miniWrap').classList.toggle('full', v);
     $('miniExpand').textContent = v ? '✕' : '⤢';
+    if (map) {
+      for (const h of [map.dragPan, map.scrollZoom, map.touchZoomRotate, map.doubleClickZoom]) { if (v) h.enable(); else h.disable(); }
+      if (v) map.touchZoomRotate.disableRotation();
+    }
     if (!v) { $('miniCard').hidden = true; selId = null; refreshMarkerClasses(); }
     setFollow(true);
     requestAnimationFrame(() => { if (map) { map.resize(); updateMap(); } });
@@ -1509,6 +1624,9 @@ body.aligning .panel { display: none; }
     $('sdDate').textContent = d.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
     $('sdRange').value = String(Math.round((dayNoon(d.getFullYear(), d.getMonth(), d.getDate()) - dayNoon(d.getFullYear(), 0, 1)) / 86400000));
     $('sdInfo').textContent = S.lat === null ? 'Attendo il GPS…' : sunInfoText(sunDayData());
+    let line = d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+    if (S.lat !== null) { const dd = sunDayData(); if (dd.rise && dd.set) line += ' · alba ' + fmtTime(dd.rise.t) + ' · tramonto ' + fmtTime(dd.set.t); }
+    $('sunLine').textContent = line;
   }
 
   function sunSetDate(d) {
@@ -1518,13 +1636,12 @@ body.aligning .panel { display: none; }
 
   function sunToday() { const n = new Date(); return dayNoon(n.getFullYear(), n.getMonth(), n.getDate()); }
 
-  $('sunPathBtn').addEventListener('click', () => {
-    sunUI.on = !sunUI.on;
-    if (sunUI.on) sunSetDate(sunToday());          // parte sempre da oggi
-    $('sunRow').hidden = !sunUI.on;
-    $('sunPathBtn').classList.toggle('on', sunUI.on);
-    $('sunPathBtn').textContent = sunUI.on ? 'Nascondi il percorso' : 'Percorso del sole';
-  });
+  function sunToggle(on) {
+    sunUI.on = on;
+    if (on) sunSetDate(sunToday());          // parte sempre da oggi
+    $('sunRow').hidden = !on;
+    $('sunLine').hidden = !on;
+  }
   $('sdPrev').addEventListener('click', () => { const d = new Date(sunUI.date); d.setDate(d.getDate() - 1); sunSetDate(d); });
   $('sdNext').addEventListener('click', () => { const d = new Date(sunUI.date); d.setDate(d.getDate() + 1); sunSetDate(d); });
   $('sdRange').addEventListener('input', (e) => { sunSetDate(dayNoon(sunUI.date.getFullYear(), 0, 1 + Number(e.target.value))); });
@@ -1643,22 +1760,31 @@ body.aligning .panel { display: none; }
 
   function makeLabel(it) {
     const pill = document.createElement('div');
-    pill.className = 'pill' + (LAND_TYPES[it.t] ? ' land' : it.t === 'peak' ? ' peak' : '');
+    pill.className = 'pill';
     pill.dataset.id = String(it.id);
+    pill.style.setProperty('--ic', typeColor(it.t));
+    pill.innerHTML = iconSvg(it.t);
+    const tx = document.createElement('span');
+    tx.className = 'tx';
     const b = document.createElement('b');
     b.textContent = it.n;
     const i = document.createElement('i');
     i.textContent = subOf(it);
-    pill.appendChild(b);
-    pill.appendChild(i);
+    tx.appendChild(b);
+    tx.appendChild(i);
+    pill.appendChild(tx);
     const pin = document.createElement('div');
     pin.className = 'pin';
+    pin.style.setProperty('--pc', typeColor(it.t));
     $('labels').appendChild(pill);
     $('labels').appendChild(pin);
     pill.style.display = 'flex';
-    const lab = { pill: pill, pin: pin, sub: i, w: pill.offsetWidth, subText: i.textContent };
+    const w = pill.offsetWidth, h = pill.offsetHeight;
+    pill.classList.add('sel');
+    const wSel = pill.offsetWidth, hSel = pill.offsetHeight;
+    pill.classList.remove('sel');
     pill.style.display = 'none';
-    return lab;
+    return { pill: pill, pin: pin, sub: i, w: w, h: h, wSel: wSel, hSel: hSel, subText: i.textContent };
   }
 
   function hideLabel(lab) {
@@ -1673,6 +1799,11 @@ body.aligning .panel { display: none; }
 
     drawTape(heading);
     updateQual();
+    if (!full) {
+      const pk = document.querySelector('.peek').getBoundingClientRect();
+      const mt = Math.round(pk.top + (pk.height - 88) / 2) + 'px';
+      if ($('miniWrap').style.top !== mt) $('miniWrap').style.top = mt;
+    } else if ($('miniWrap').style.top) $('miniWrap').style.top = '';
     if (heading !== null) {
       setText('deg', Math.round(heading) + '°');
       setText('card', DIRS[Math.round(heading / 45) % 8]);
@@ -1705,7 +1836,7 @@ body.aligning .panel { display: none; }
 
       const cand = [];
       for (const it of items) {
-        if (it.skip || it.d === undefined) continue;
+        if (it.skip || it.d === undefined || !visible(it)) continue;
         const rel = norm180(it.b - heading);
         if (Math.abs(rel) <= halfH + 3) cand.push({ it: it, rel: rel });
       }
@@ -1720,51 +1851,62 @@ body.aligning .panel { display: none; }
         }
       }
 
-      // Etichette: le più importanti per prime, ognuna su una "corsia" libera sopra il suo punto
+      // Etichette: prima quella nel mirino, poi le più importanti con il nome, poi le altre solo con l'icona
       cand.sort((a, b) => b.it.score - a.it.score);
+      const order = aim ? [aim].concat(cand.filter((c) => c !== aim)) : cand;
       const placed = [];
-      const topLimit = 160;
-      const bottomLimit = H - 170;
-      let shown = 0;
+      const topLimit = $('filters').getBoundingClientRect().bottom + 8;
+      const bottomLimit = $('sheet').getBoundingClientRect().top - 10;
+      let names = 0, dots = 0;
+      const nNames = DENS[F.dens];
 
-      for (const c of cand) {
-        if (shown >= MAX_LABELS) break;
+      for (const c of order) {
+        if (names >= nNames && dots >= MAX_DOTS) break;
         const it = c.it;
         const elev = elevOf(it);
         const x = W / 2 + Math.tan(c.rel * RAD) / tanH * W / 2;
         const ay = H / 2 + Math.tan((pitch - elev) * RAD) / tanV * H / 2;
-        if (ay > bottomLimit || ay < topLimit + LABEL_H) continue;
+        if (ay > bottomLimit || ay < topLimit + 30) continue;
 
         let lab = pool[it.id];
         if (!lab) lab = pool[it.id] = makeLabel(it);
-        const left = Math.min(Math.max(x - lab.w / 2, 6), W - lab.w - 6);
-
-        let top = null;
-        for (let lane = 0; lane < 12; lane++) {
-          const t = ay - 12 - LABEL_H - lane * (LABEL_H + 4);
-          if (t < topLimit) break;
-          let clash = false;
-          for (const r of placed) {
-            if (left < r.r && left + lab.w > r.l && t < r.b && t + LABEL_H > r.t) { clash = true; break; }
+        const isSel = c === aim || (align.step === 'fine' && align.target === it);
+        const modes = isSel ? ['sel', 'dot'] : names < nNames ? ['name', 'dot'] : ['dot'];
+        let got = null;
+        for (const m of modes) {
+          if (m === 'dot' && dots >= MAX_DOTS) continue;
+          const lw = m === 'sel' ? lab.wSel : m === 'dot' ? 24 : lab.w;
+          const lh = m === 'sel' ? lab.hSel : m === 'dot' ? 24 : lab.h;
+          const left = Math.min(Math.max(x - lw / 2, 6), W - lw - 6);
+          const lanes = m === 'dot' ? 3 : 12;
+          for (let lane = 0; lane < lanes; lane++) {
+            const t = ay - 10 - lh - lane * (lh + 4);
+            if (t < topLimit) break;
+            let clash = false;
+            for (const r of placed) {
+              if (left < r.r && left + lw > r.l && t < r.b && t + lh > r.t) { clash = true; break; }
+            }
+            if (!clash) { got = { m: m, left: left, top: t, w: lw, h: lh }; break; }
           }
-          if (!clash) { top = t; break; }
+          if (got) break;
         }
-        if (top === null) continue;
+        if (!got) continue;
+        if (got.m === 'dot') dots++; else names++;
 
-        placed.push({ l: left, r: left + lab.w, t: top, b: top + LABEL_H });
-        shown++;
+        placed.push({ l: got.left - 2, r: got.left + got.w + 2, t: got.top - 2, b: got.top + got.h + 2 });
         used[it.id] = true;
 
         const subText = subOf(it);
         if (lab.subText !== subText) { lab.subText = subText; lab.sub.textContent = subText; }
+        lab.pill.classList.toggle('sel', got.m === 'sel');
+        lab.pill.classList.toggle('dot', got.m === 'dot');
         lab.pill.style.display = 'flex';
-        lab.pill.style.left = left + 'px';
-        lab.pill.style.top = top + 'px';
-        lab.pill.classList.toggle('sel', (!!aim && aim.it === it) || (align.step === 'fine' && align.target === it));
+        lab.pill.style.left = got.left + 'px';
+        lab.pill.style.top = got.top + 'px';
         lab.pin.style.display = 'block';
         lab.pin.style.left = x + 'px';
-        lab.pin.style.top = (top + LABEL_H) + 'px';
-        lab.pin.style.height = Math.max(0, ay - top - LABEL_H) + 'px';
+        lab.pin.style.top = (got.top + got.h) + 'px';
+        lab.pin.style.height = Math.max(0, ay - got.top - got.h) + 'px';
       }
     }
 
@@ -1799,7 +1941,7 @@ body.aligning .panel { display: none; }
       setText('aimName', 'Sensori non attivi');
       setText('aimInfo', 'Controlla il permesso ai sensori di movimento.');
     } else if (aim) {
-      let info = subOf(aim.it);
+      let info = subOf(aim.it) + ' · ' + Math.round(aim.it.b) + '° ' + DIRS[Math.round(aim.it.b / 45) % 8];
       if (Math.abs(aim.rel) > 1.5) {
         info += ', ' + (aim.rel > 0 ? 'più a destra di ' : 'più a sinistra di ') + Math.round(Math.abs(aim.rel)) + '°';
       }
@@ -1826,32 +1968,76 @@ body.aligning .panel { display: none; }
   function refreshSettingsUI() {
     $('vFov').textContent = S.fov + '°';
     $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
-    $('landBtn').textContent = S.land ? 'Sì' : 'No';
-    $('landBtn').classList.toggle('on', S.land);
     $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione corretta: ' + fmtDeg(Math.round(S.pitchOff * 10) / 10) + '.';
     document.querySelectorAll('#segR button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.r) === S.radius);
     });
+    document.querySelectorAll('#segD button').forEach((b) => {
+      b.classList.toggle('on', Number(b.dataset.dn) === F.dens);
+    });
+    const st = { town: F.town, peak: F.peak, land: S.land, sun: F.sun };
+    document.querySelectorAll('[data-f]').forEach((el) => {
+      if (el.type === 'checkbox') el.checked = st[el.dataset.f];
+      else el.setAttribute('aria-pressed', String(st[el.dataset.f]));
+    });
   }
 
-  $('settings').addEventListener('click', (e) => {
+  // Accende o spegne un tipo di luogo (stessa scelta per i pulsanti rotondi e per il pannello)
+  function setFilter(k, v) {
+    if (k === 'town') F.town = v;
+    if (k === 'peak') F.peak = v;
+    if (k === 'sun') { F.sun = v; sunToggle(v); }
+    if (k === 'land') {
+      S.land = v; retryLandAt = 0;
+      if (!v) landNote = '';
+      builtFor = null; refreshItems(); maybeFetchLand();
+    }
+    syncMarkers();
+    saveSettings();
+    refreshSettingsUI();
+  }
+  document.querySelectorAll('.flt').forEach((b) => {
+    b.innerHTML = iconSvg(b.dataset.f === 'town' ? 'town' : b.dataset.f === 'land' ? 'church' : b.dataset.f, 15);
+    b.addEventListener('click', () => setFilter(b.dataset.f, b.getAttribute('aria-pressed') !== 'true'));
+  });
+  document.querySelectorAll('.swi').forEach((el) => { el.outerHTML = iconSvg(el.dataset.t, 16); });
+  document.querySelectorAll('#more input[data-f]').forEach((el) => {
+    el.addEventListener('change', () => setFilter(el.dataset.f, el.checked));
+  });
+
+  // Pannello: si apre toccando la maniglia o trascinando in su, si chiude trascinando in giù
+  function setSheet(open) {
+    $('sheet').classList.toggle('open', open);
+    document.body.classList.toggle('sheetopen', open);
+    $('grab').setAttribute('aria-expanded', String(open));
+    if (!open) $('sheet').scrollTop = 0;
+    refreshSettingsUI();
+  }
+  $('grab').addEventListener('click', () => setSheet(!$('sheet').classList.contains('open')));
+  let sheetY = null;
+  $('sheet').addEventListener('touchstart', (e) => { sheetY = e.touches[0].clientY; }, { passive: true });
+  $('sheet').addEventListener('touchend', (e) => {
+    if (sheetY === null) return;
+    const dy = e.changedTouches[0].clientY - sheetY;
+    sheetY = null;
+    const open = $('sheet').classList.contains('open');
+    if (!open && dy < -40) setSheet(true);
+    else if (open && dy > 50 && $('sheet').scrollTop <= 0) setSheet(false);
+  }, { passive: true });
+
+  $('more').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.k === 'cam') { startCamera().catch(() => {}); return; }
     if (b.dataset.k === 'walk') { startWalk(); return; }
     if (b.dataset.k === 'zero') { S.off = 0; S.pitchOff = 0; S.alOff = 0; S.alPos = null; S.alQ = null; saveAlign(); toast('Taratura azzerata.', 3000); }
-    if (b.dataset.k === 'land') {
-      S.land = !S.land; retryLandAt = 0;
-      if (!S.land) landNote = '';
-      builtFor = null; refreshItems(); maybeFetchLand();
-    }
+    if (b.dataset.dn) F.dens = Number(b.dataset.dn);
     if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; retryLandAt = 0; refreshItems(); maybeFetch(); maybeFetchLand(); }
     if (b.dataset.k === 'fov') S.fov = Math.min(100, Math.max(30, S.fov + Number(b.dataset.d)));
     if (b.dataset.k === 'off') S.off = Math.min(180, Math.max(-180, S.off + Number(b.dataset.d)));
     saveSettings();
     refreshSettingsUI();
   });
-  $('gear').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; refreshSettingsUI(); });
 
   $('calib').addEventListener('click', () => {
     const aim = frame.aim;
@@ -1949,6 +2135,7 @@ body.aligning .panel { display: none; }
 
       $('start').hidden = true;
       $('hud').hidden = false;
+      if (F.sun) sunToggle(true);
       requestAnimationFrame(frame);
     } catch (err) {
       msg.textContent = (err && err.name === 'NotAllowedError')
