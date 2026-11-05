@@ -645,7 +645,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v13 · rilievo del terreno: vette nascoste, quota dei paesi</p>
+    <p class="sub">Beta v14 · alba e tramonto dietro i monti</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -2198,35 +2198,64 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 
   function sunDayData() {
     const b = sunUI.date;
-    const key = b.getFullYear() + '-' + b.getMonth() + '-' + b.getDate() + '|' + S.lat.toFixed(2) + ',' + S.lon.toFixed(2);
+    const P = (S.dem && DEM.prof) ? DEM.prof : null;
+    const key = b.getFullYear() + '-' + b.getMonth() + '-' + b.getDate() + '|' + S.lat.toFixed(2) + ',' + S.lon.toFixed(2) + '|' + (P ? DEM.gen : 0);
     if (sunCache && sunCache.key === key) return sunCache;
     const start = new Date(b.getFullYear(), b.getMonth(), b.getDate(), 0, 0, 0).getTime();
     const pts = [];
     let prev = null, rise = null, set = null, maxAlt = -90;
+    let pv = null, rRise = null, rSet = null, seen = false;
     for (let k = 0; k <= 1440; k++) {
       const t = start + k * 60000, s = sunPos(new Date(t), S.lat, S.lon);
       if (s.alt > maxAlt) maxAlt = s.alt;
       if (prev) {
         const a0 = prev.alt - SUN_H0, a1 = s.alt - SUN_H0;
-        if (a0 < 0 && a1 >= 0 && !rise) { const f = -a0 / (a1 - a0); rise = { t: prev.t + f * 60000, az: (prev.az + norm180(s.az - prev.az) * f + 360) % 360 }; }
-        if (a0 >= 0 && a1 < 0 && !set) { const f = a0 / (a0 - a1); set = { t: prev.t + f * 60000, az: (prev.az + norm180(s.az - prev.az) * f + 360) % 360 }; }
+        if (a0 < 0 && a1 >= 0 && !rise) { const f = -a0 / (a1 - a0); rise = { t: prev.t + f * 60000, az: (prev.az + norm180(s.az - prev.az) * f + 360) % 360, alt: SUN_H0 }; }
+        if (a0 >= 0 && a1 < 0 && !set) { const f = a0 / (a0 - a1); set = { t: prev.t + f * 60000, az: (prev.az + norm180(s.az - prev.az) * f + 360) % 360, alt: SUN_H0 }; }
       }
-      if (k % 10 === 0) pts.push({ t: t, az: s.az, alt: s.alt });
+      // Con il rilievo: di quanto il bordo del sole sta sopra le montagne in quella direzione
+      let m = 0;
+      if (P) {
+        m = sunOverRidge(P, s);
+        if (pv) {
+          if (pv.m < 0 && m >= 0 && !rRise) { const f = -pv.m / (m - pv.m); rRise = { t: pv.t + f * 60000, az: (pv.az + norm180(s.az - pv.az) * f + 360) % 360, alt: pv.alt + (s.alt - pv.alt) * f }; }
+          if (pv.m >= 0 && m < 0) { const f = pv.m / (pv.m - m); rSet = { t: pv.t + f * 60000, az: (pv.az + norm180(s.az - pv.az) * f + 360) % 360, alt: pv.alt + (s.alt - pv.alt) * f }; }
+        }
+        if (m >= 0) seen = true;
+        pv = { t: t, az: s.az, alt: s.alt, m: m };
+      }
+      if (k % 10 === 0) pts.push({ t: t, az: s.az, alt: s.alt, hid: !!P && m < 0 });
       prev = { t: t, az: s.az, alt: s.alt };
     }
     const arc = [];
-    if (rise) arc.push({ t: rise.t, az: rise.az, alt: SUN_H0 });
+    if (rise) arc.push({ t: rise.t, az: rise.az, alt: SUN_H0, hid: !!P });
     for (const p of pts) if ((!rise || p.t > rise.t) && (!set || p.t < set.t) && p.alt > SUN_H0) arc.push(p);
-    if (set) arc.push({ t: set.t, az: set.az, alt: SUN_H0 });
-    sunCache = { key: key, arc: arc, rise: rise, set: set, maxAlt: maxAlt };
+    if (set) arc.push({ t: set.t, az: set.az, alt: SUN_H0, hid: !!P });
+    const out = { key: key, arc: arc, rise: rise, set: set, maxAlt: maxAlt, astroRise: rise, astroSet: set, ridge: !!P, hidden: false };
+    if (P && rise && set) {
+      if (!seen) { out.rise = null; out.set = null; out.hidden = true; }    // il sole non supera mai i monti
+      else { out.rise = rRise || rise; out.set = rSet || set; }
+    }
+    sunCache = out;
     return sunCache;
+  }
+  // Rifrazione per un'altezza vera h (gradi), formula di Saemundsson
+  function refrAt(h) { const x = Math.max(-1, h); return 1.02 / Math.tan((x + 10.3 / (x + 5.11)) * RAD) / 60; }
+  // Margine (gradi) tra il bordo superiore del sole e l'orizzonte reale (monti, oppure orizzonte libero)
+  function sunOverRidge(P, s) {
+    const f = ((s.az % 360) + 360) % 360 / DEM_STEP, a0 = Math.floor(f) % P.nA, a1 = (a0 + 1) % P.nA, w = f - Math.floor(f);
+    const hz = P.hz[a0] * (1 - w) + P.hz[a1] * w;
+    return Math.min(s.alt - SUN_H0, s.alt + refrAt(s.alt) + 0.267 - hz);   // mai prima dell'alba sull'orizzonte libero
   }
 
   function sunInfoText(dd) {
+    if (dd.hidden) return 'In questa data il sole non supera i monti attorno a te (sull’orizzonte libero: alba ' + fmtTime(dd.astroRise.t) + ', tramonto ' + fmtTime(dd.astroSet.t) + ').';
     if (!dd.rise || !dd.set) return 'In questa data il sole non sorge o non tramonta alla tua latitudine.';
+    const late = dd.ridge && (dd.rise.t - dd.astroRise.t > 60000 || dd.astroSet.t - dd.set.t > 60000);
+    const extra = late ? ' · senza i monti: alba ' + fmtTime(dd.astroRise.t) + ', tramonto ' + fmtTime(dd.astroSet.t) : (dd.ridge ? ' · nessun monte copre alba e tramonto' : '');
     const mins = Math.round((dd.set.t - dd.rise.t) / 60000);
     return 'Alba ' + fmtTime(dd.rise.t) + ' (' + Math.round(dd.rise.az) + '° ' + DIRS[Math.round(dd.rise.az / 45) % 8] + ') · Tramonto ' + fmtTime(dd.set.t) +
-      ' (' + Math.round(dd.set.az) + '° ' + DIRS[Math.round(dd.set.az / 45) % 8] + ') · luce ' + Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min · altezza massima ' + Math.round(dd.maxAlt) + '°';
+      ' (' + Math.round(dd.set.az) + '° ' + DIRS[Math.round(dd.set.az / 45) % 8] + ') · luce ' + Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min · altezza massima ' + Math.round(dd.maxAlt) + '°' + extra;
   }
 
   function sunRefreshUI() {
@@ -2291,18 +2320,20 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       for (let i = 1; i < P.length; i++) {
         const A = P[i - 1], B = P[i];
         if (!A.p || !B.p || Math.abs(A.p.x - B.p.x) > W) continue;
-        const past = isToday && B.a.t < now;
-        sunCtx.globalAlpha = past ? 0.4 : 1;
+        const past = isToday && B.a.t < now, hid = A.a.hid && B.a.hid;   // tratto dietro i monti: tratteggiato
+        sunCtx.globalAlpha = (past ? 0.4 : 1) * (hid ? 0.6 : 1);
+        sunCtx.setLineDash(hid ? [2, 7] : []);
         sunCtx.strokeStyle = pass === 0 ? 'rgba(0,0,0,0.55)' : col;
         sunCtx.lineWidth = pass === 0 ? 7 : 3.5;
         sunCtx.beginPath(); sunCtx.moveTo(A.p.x, A.p.y); sunCtx.lineTo(B.p.x, B.p.y); sunCtx.stroke();
       }
     }
     sunCtx.globalAlpha = 1;
+    sunCtx.setLineDash([]);
     sunCtx.font = '700 13px -apple-system, system-ui, sans-serif';
     sunCtx.textAlign = 'center'; sunCtx.textBaseline = 'bottom';
     for (const q of P) {
-      if (!q.p || new Date(q.a.t).getMinutes() !== 0 || q.a.alt <= SUN_H0 + 0.01) continue;
+      if (!q.p || new Date(q.a.t).getMinutes() !== 0 || q.a.alt <= SUN_H0 + 0.01 || q.a.hid) continue;
       if (q.p.x < 6 || q.p.x > W - 6) continue;
       sunCtx.beginPath(); sunCtx.arc(q.p.x, q.p.y, 5, 0, 6.2832);
       sunCtx.fillStyle = '#ffffff'; sunCtx.fill(); sunCtx.lineWidth = 2; sunCtx.strokeStyle = '#7a5200'; sunCtx.stroke();
@@ -2312,7 +2343,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     }
     for (const [ev, name] of [[dd.rise, 'Alba'], [dd.set, 'Tramonto']]) {
       if (!ev) continue;
-      const p = proj(ev.az, SUN_H0);
+      const p = proj(ev.az, ev.alt === undefined ? SUN_H0 : ev.alt);
       if (!p || p.x < 30 || p.x > W - 30) continue;
       sunCtx.beginPath(); sunCtx.moveTo(p.x - 9, p.y + 6); sunCtx.lineTo(p.x + 9, p.y + 6); sunCtx.lineTo(p.x, p.y - 9); sunCtx.closePath();
       sunCtx.fillStyle = col; sunCtx.fill(); sunCtx.lineWidth = 2; sunCtx.strokeStyle = 'rgba(0,0,0,0.7)'; sunCtx.stroke();

@@ -167,6 +167,17 @@ def main():
         page.evaluate("document.querySelector('#more input[data-f=\"dem\"]').click()")
         page.wait_for_timeout(1500)
         res['nord_riacceso'] = look(0)
+        # sole il 21 marzo: sorge a est, dietro «Poggio Est» (2,3° sopra l'orizzonte)
+        page.evaluate("document.querySelector('#more input[data-f=\"sun\"]').click()")
+        page.wait_for_timeout(300)
+        page.evaluate("document.querySelector('#sunRow button[data-sd=\"3-21\"]').click()")
+        page.wait_for_timeout(500)
+        res['sole_21_marzo'] = page.inner_text('#sdInfo')
+        page.evaluate("document.querySelector('#sunRow button[data-sd=\"6-21\"]').click()")
+        page.wait_for_timeout(500)
+        res['sole_21_giugno'] = page.inner_text('#sdInfo')
+        look(90)
+        page.screenshot(path=f'{OUT}/rilievo_sole_est.png')
         res['foot'] = page.evaluate("document.getElementById('foot').textContent")
         res['errors'] = errs
         b.close()
@@ -201,6 +212,15 @@ def main():
         check(abs(co0[0]['ay'] - H / 2) < 6, f'senza rilievo Collina torna all\'altezza degli occhi: {co0[0]["ay"]:.0f} px')
     else:
         check(False, 'etichetta Collina trovata')
+    m = re.search(r'Alba (\d\d):(\d\d).*senza i monti: alba (\d\d):(\d\d)', res['sole_21_marzo'])
+    if m:
+        dmin = (int(m.group(1)) * 60 + int(m.group(2))) - (int(m.group(3)) * 60 + int(m.group(4)))
+        check(8 <= dmin <= 30, f'21 marzo: alba dietro Poggio Est {dmin} min dopo quella sull\'orizzonte libero')
+    else:
+        check(False, '21 marzo: alba ritardata dal Poggio Est (' + res['sole_21_marzo'] + ')')
+    g = re.search(r'Alba (\d\d:\d\d).*Tramonto (\d\d:\d\d).*senza i monti: alba (\d\d:\d\d), tramonto (\d\d:\d\d)', res['sole_21_giugno'])
+    check(bool(g) and g.group(1) == g.group(3), '21 giugno: alba a nord-est libera, uguale a quella sull\'orizzonte libero')
+    check(bool(g) and g.group(2) < g.group(4), '21 giugno: tramonto anticipato dal colle di «Collina» a ovest-nord-ovest')
     check(not res['errors'], 'nessun errore JavaScript')
     print('TUTTO OK' if ok else 'CI SONO PROBLEMI')
 
