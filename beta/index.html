@@ -461,8 +461,14 @@ body.aligning #filters, body.aligning #miniWrap:not(.full) { display: none; }
 .pill.sel .ic .f, .mk.aim .ic .f, .mk.sel .ic .f { fill: #06121c; }
 .pill.sel .ic .s, .mk.aim .ic .s, .mk.sel .ic .s { stroke: #06121c; }
 
+/* Linea dell'orizzonte (solo durante l'allineamento) */
+#horizon { position: absolute; left: 0; right: 0; height: 0; display: none; border-top: 1.5px dashed rgba(255, 255, 255, 0.85); box-shadow: 0 0 3px rgba(0, 0, 0, 0.6); pointer-events: none; }
+#horizon span { position: absolute; left: 12px; top: 3px; font-size: 0.72rem; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); }
+body.aligning #horizon.on { display: block; }
+
 /* ===== Passo 2: zoom, scatto, galleria, punto di ripresa ===== */
-#video { transform-origin: 50% 50%; }
+#video { transform-origin: 50% 50%; transition: opacity 0.15s; }
+#video.switching { opacity: 0; }
 /* riga in basso di Esplora: galleria – scatto – allinea */
 #calRow { margin: 8px 0 0; min-height: 0; }
 .bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 0; }
@@ -627,6 +633,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     <button class="flt" type="button" data-f="sun" aria-label="Percorso del sole" aria-pressed="false" style="--c: #ffd166; --ic: #ffd166"></button>
   </div>
   <div class="cross" aria-hidden="true"></div>
+  <div id="horizon" aria-hidden="true"><span>orizzonte (altezza degli occhi)</span></div>
   <div id="alignLayer" hidden></div>
   <div id="alignBar" hidden>
     <b id="alTitle"></b>
@@ -736,7 +743,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
           </span>
         </div>
         <div class="row">
-          <span>Azzera taratura e inclinazione</span>
+          <span>Azzera taratura</span>
           <span class="grp"><button type="button" data-k="zero">Azzera</button></span>
         </div>
         <div class="row">
@@ -937,8 +944,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   const S = {
     heading: null, compAcc: null, pitch: null, alOff: 0, alPos: null, alQ: null,
     lat: null, lon: null, gpsAcc: null, alt: null, altAcc: null, gpsMsg: null,
-    fov: 65, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
-    fovs: { std: 65, uw: 100, tele: 17 },   // campo visivo verticale di partenza per obiettivo
+    fov: 70, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
+    fovs: { std: 70, uw: 100, tele: 17 },   // campo visivo verticale di partenza per obiettivo
     shotNames: true
   };
   // Fotocamera: obiettivi trovati, obiettivo in uso, zoom a scatti
@@ -953,6 +960,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     return CAM.base;
   }
   function dzFor(z, kind) { return Math.max(1, Math.tan(S.fovs[kind] * RAD / 2) / (Math.tan(S.fovs[CAM.base] * RAD / 2) / z)); }
+  let pitchWasReset = null;
   let staticItems = [];   // archivio interno (places-it.json)
   let onlineItems = [];   // vette e frazioni da OpenStreetMap
   let landItems = [];     // chiese, torri e castelli da OpenStreetMap
@@ -978,17 +986,19 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       const s = JSON.parse(localStorage.getItem('pano.settings') || '{}');
       if (typeof s.fov === 'number') S.fovs.std = s.fov;
       if (s.fovs) for (const k in S.fovs) if (typeof s.fovs[k] === 'number') S.fovs[k] = s.fovs[k];
+      if (!s.pitchSensors && S.fovs.std === 65) S.fovs.std = 70;   // campo visivo standard più realistico
       S.fov = S.fovs.std;
       if (s.shotNames === false) S.shotNames = false;
       if (typeof s.off === 'number') S.off = s.off;
-      if (typeof s.pitchOff === 'number') S.pitchOff = s.pitchOff;
+      // Dalla v10 l'inclinazione viene solo da accelerometro e giroscopio: la vecchia correzione si azzera una volta
+      if (typeof s.pitchOff === 'number' && s.pitchOff !== 0 && !s.pitchSensors) pitchWasReset = s.pitchOff;
       if (s.land === true) S.land = true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, off: S.off, pitchOff: S.pitchOff, radius: S.radius, land: S.land, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -1327,11 +1337,10 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   function applyCorrection(dOff, dPitch, label) {
     const before = { off: S.off, pitchOff: S.pitchOff };
     S.off = Math.round(norm180(S.off + dOff) * 10) / 10;
-    S.pitchOff = Math.max(-20, Math.min(20, S.pitchOff + dPitch));
     saveSettings();
     refreshSettingsUI();
     toast(label + ': bussola corretta di ' + fmtDeg(Math.round(dOff * 10) / 10) + '.', 8000, () => {
-      S.off = before.off; S.pitchOff = before.pitchOff;
+      S.off = before.off;
       saveSettings(); refreshSettingsUI();
       toast('Correzione annullata.', 3000);
     });
@@ -1372,6 +1381,12 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   const detCanvas = document.createElement('canvas');
   let detCtx = null;
 
+  const SUN_VTOL = 4;      // scarto verticale ammesso tra sole calcolato e sole visto (gradi)
+  const sunHist = [];
+  function sunCandFail(now) {
+    sunHist.length = 0;
+    if (sunCand && now - sunCand.t > 1500) sunCand = null;
+  }
   function sunAnalyze() {
     if (S.lat === null || S.heading === null || S.pitch === null) return;
     const v = $('video');
@@ -1392,13 +1407,22 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     try {
       detCtx.drawImage(v, (W - dw) / 2 * k, (H - dh) / 2 * k, dw * k, dh * k);
       const blob = findSun(detCtx.getImageData(0, 0, cw, ch).data, cw, ch);
-      if (!blob) { if (sunCand && Date.now() - sunCand.t > 3000) sunCand = null; return; }
+      if (!blob) { sunCandFail(Date.now()); return; }
       const x = blob.x / k, y = blob.y / k;
       const relImg = Math.atan((x - W / 2) / (W / 2) * tanH) / RAD;
       const elevImg = (S.pitch + S.pitchOff) - Math.atan((y - H / 2) / (H / 2) * tanV) / RAD;
       const dOff = norm180(relSun - relImg);
       const dPitch = sun.alt - elevImg;
-      if (Math.abs(dOff) <= 40 && Math.abs(dPitch) <= 30) sunCand = { dOff: dOff, dPitch: dPitch, t: Date.now() };
+      const now = Date.now();
+      // L'inclinazione dei sensori è affidabile: un punto chiaro più alto o più basso del sole vero è una nuvola
+      if (Math.abs(dOff) > 40 || Math.abs(dPitch) > SUN_VTOL) { sunCandFail(now); return; }
+      sunHist.push({ d: dOff, t: now });
+      while (sunHist.length && now - sunHist[0].t > 3600) sunHist.shift();
+      if (sunHist.length < 5) return;
+      let lo = 1e9, hi = -1e9, sum = 0;
+      for (const h of sunHist) { lo = Math.min(lo, h.d); hi = Math.max(hi, h.d); sum += h.d; }
+      if (hi - lo > 1.5) { sunCandFail(now); return; }      // il punto salta: niente proposta
+      sunCand = { dOff: sum / sunHist.length, dPitch: 0, t: now };
     } catch (e) { /* il video non è leggibile: nessun rilevamento */ }
   }
 
@@ -1759,10 +1783,6 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       S.alOff = norm180(S.alOff + rel);
       S.alPos = { lat: S.lat, lon: S.lon };
       S.alQ = align.target.sun ? 3 : 6;
-      if (align.target.sun && S.pitch !== null) {
-        const dp = align.target.alt - (S.pitch + S.pitchOff);
-        if (Math.abs(dp) <= 10) { S.pitchOff = Math.round((S.pitchOff + dp) * 10) / 10; saveSettings(); refreshSettingsUI(); }
-      }
       align.first = align.target; align.h0 = S.heading; align.step = 'fine';
       alUI('Rifinisci', 'Tieni fermo il telefono. Trascina il dito a destra o a sinistra finché l’etichetta evidenziata coincide con il luogo vero (oppure usa i pulsanti da 1°). Poi premi «Fatto».', 'Fatto', 'Annulla', 'fine');
     } else if (align.step === 'fine') {
@@ -2168,6 +2188,15 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (!sunShown) mark.style.display = 'none';
     drawSunPath(W, H, heading, pitch, tanH, tanV);
 
+    // Orizzonte geometrico (0°) calcolato con accelerometro e giroscopio
+    const hz = $('horizon');
+    if (align.step && pitch !== null) {
+      const hy = H / 2 + Math.tan(pitch * RAD) / tanV * H / 2;
+      const ok = hy > 0 && hy < H;
+      hz.classList.toggle('on', ok);
+      if (ok) hz.style.top = Math.round(hy) + 'px';
+    } else hz.classList.remove('on');
+
     // Scheda in basso e pulsanti di calibrazione
     if (heading === null || S.pitch === null) {
       setText('aimName', 'Sensori non attivi');
@@ -2186,7 +2215,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     $('calib').hidden = !(aim && Math.abs(aim.rel) <= 30);
     if (aim) setText('calib', 'Calibra: il centro è ' + aim.it.n);
     $('alignBtn').classList.toggle('warn', S.compAcc !== null && (S.compAcc > 25 || S.compAcc < 0));
-    const sunOk = sunCand && Date.now() - sunCand.t < 3000;
+    const sunOk = sunCand && Date.now() - sunCand.t < 2000;
     $('sunBtn').hidden = !sunOk;
     $('calRow').hidden = $('calib').hidden && $('sunBtn').hidden;
     if ($('sheet').classList.contains('open')) updateSpot(heading, pitch);
@@ -2206,7 +2235,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       (CAM.kind !== 'tele' && CAM.zoom !== 1 ? ', zoom ' + zoomName(CAM.zoom) + ' (' + CAM.mode + (CAM.dz > 1 ? ' ' + zoomName(Math.round(CAM.dz * 100) / 100) : '') + ')' : '') +
       '. Il campo visivo si tara separatamente per ogni obiettivo. Fotocamere trovate: ' + (CAM.names.length ? CAM.names.join('; ') : '–') + '.';
     $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
-    $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione corretta: ' + fmtDeg(Math.round(S.pitchOff * 10) / 10) + '.';
+    $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione: misurata dai sensori del telefono (accelerometro e giroscopio).';
     document.querySelectorAll('#segR button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.r) === S.radius);
     });
@@ -2893,6 +2922,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   galLoad().then(setThumbs).catch(() => {});
 
   loadSettings();
+  if (pitchWasReset !== null) { saveSettings(); }
   loadCache();
   refreshSettingsUI();
   loadStatic();
@@ -2907,6 +2937,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     try {
       const v = $('video');
       const old = v.srcObject;
+      v.classList.add('switching');
+      v.style.transform = '';
       if (old && old.getTracks) old.getTracks().forEach((t) => t.stop());
       const want = kind || CAM.kind;
       const id = CAM.ids[want];
@@ -2925,6 +2957,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         t.onended = () => { setTimeout(checkCamera, 500); };
       });
       try { await v.play(); } catch (e) { /* parte comunque da sola */ }
+      await videoReady(v);
       // Quale obiettivo si è aperto davvero
       const tid = track && track.getSettings ? track.getSettings().deviceId : null;
       CAM.kind = (tid && tid === CAM.ids.uw) ? 'uw' : (tid && tid === CAM.ids.tele) ? 'tele' : (id && tid === id) ? want : 'std';
@@ -2941,8 +2974,30 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       refreshSettingsUI();
     } finally {
       camBusy = false;
+      refitVideo();
+      $('video').classList.remove('switching');
     }
   }
+
+  // Aspetta che il nuovo flusso abbia le sue dimensioni (massimo 1,5 s)
+  function videoReady(v) {
+    return new Promise((ok) => {
+      if (v.videoWidth > 0) { ok(); return; }
+      const done = () => { v.removeEventListener('loadedmetadata', done); v.removeEventListener('resize', done); clearTimeout(tm); ok(); };
+      const tm = setTimeout(done, 1500);
+      v.addEventListener('loadedmetadata', done);
+      v.addEventListener('resize', done);
+    });
+  }
+  // Safari a volte disegna il nuovo flusso piccolo al centro: si forza il ridisegno a tutto schermo
+  function refitVideo() {
+    const v = $('video');
+    v.style.objectFit = 'fill';
+    void v.offsetWidth;
+    v.style.objectFit = '';
+    v.style.transform = CAM.css === 1 ? '' : 'scale(' + CAM.css + ')';
+  }
+  $('video').addEventListener('resize', () => { if (!camBusy) refitVideo(); });
 
   // Elenca le fotocamere posteriori (dopo il permesso Safari e Chrome mostrano i nomi)
   async function scanCams() {
@@ -3137,6 +3192,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       $('start').hidden = true;
       $('hud').hidden = false;
       if (F.sun) sunToggle(true);
+      if (pitchWasReset !== null) toast('Inclinazione azzerata (era ' + fmtDeg(Math.round(pitchWasReset * 10) / 10) + '): ora viene solo dai sensori del telefono.', 7000);
       requestAnimationFrame(frame);
     } catch (err) {
       msg.textContent = (err && err.name === 'NotAllowedError')
