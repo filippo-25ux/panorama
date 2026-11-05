@@ -5,3 +5,5 @@
   `python3 -I make_peaks.py IT.zip ../beta/peaks-it.json`
 - `test_peaks.py` prova la beta in Chromium con GPS, bussola e fotocamera simulati e vette finte:
   `python3 test_peaks.py <cartella del repository> <cartella per gli screenshot>` (serve Playwright).
+- `test_foto.py` prova zoom, scatto, galleria, modifica e condivisione della beta con GPS, bussola e fotocamera simulati:
+  `python3 test_foto.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
