@@ -528,6 +528,24 @@ body.aligning .panel { display: none; }
   const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta', church: 'chiesa', tower: 'torre', castle: 'castello' };
   const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1, church: 1.5, tower: 1.7, castle: 1.8 };
   const LAND_TYPES = { church: 1, tower: 1, castle: 1 };
+  const PEAKS_URL = 'peaks-it.json'; // vette (GeoNames, CC BY 4.0): [nome, lat, lon, quota]
+  const REFR = 0.13;                // coefficiente di rifrazione atmosferica
+  // Importanza: le vette alte contano di più di una collinetta
+  function weightOf(it) {
+    if (it.t === 'peak' && it.e !== null && it.e !== undefined) return 1.5 + Math.min(2, Math.max(0, (it.e - 300) / 1000));
+    return TYPE_WEIGHT[it.t];
+  }
+  // Testo sotto il nome dell'etichetta: per le vette anche la quota
+  function subOf(it) {
+    const q = (it.t === 'peak' && it.e !== null && it.e !== undefined) ? ' ' + Math.round(it.e).toLocaleString('it-IT') + ' m' : '';
+    return TYPE_LABEL[it.t] + q + ', ' + fmtDist(it.d);
+  }
+  // Angolo sopra/sotto l'orizzonte, con curvatura terrestre e rifrazione
+  function elevOf(it) {
+    if (it.e === null || it.e === undefined || S.alt === null) return 0;
+    const drop = it.d * it.d / (2 * EARTH) * (1 - REFR);
+    return Math.atan2(it.e - drop - S.alt, it.d) / RAD;
+  }
   const ENDPOINTS = [
     'https://overpass-api.de/api/interpreter',
     'https://overpass.private.coffee/api/interpreter',
@@ -620,7 +638,7 @@ body.aligning .panel { display: none; }
   let loading = false, loadingLand = false;
   let retryAt = 0, retryLandAt = 0;
   let statusMsg = 'In attesa del GPS…';
-  let netNote = '', landNote = '';
+  let netNote = '', landNote = '', peakNote = '';
   let here = '';
   let sunCand = null;
   let toastTimer = null, undoState = null;
@@ -701,7 +719,7 @@ body.aligning .panel { display: none; }
       it.d = g.d;
       it.b = g.b;
       it.skip = g.d < 150;
-      it.score = TYPE_WEIGHT[it.t] / Math.sqrt(Math.max(g.d, 300) / 1000);
+      it.score = weightOf(it) / Math.sqrt(Math.max(g.d, 300) / 1000);
       if (!LAND_TYPES[it.t] && it.t !== 'peak' && (!near || g.d < near.d)) near = it;
     }
     if (near && near.d <= 500) here = 'Sei a ' + near.n;
@@ -724,11 +742,19 @@ body.aligning .panel { display: none; }
   async function loadStatic() {
     try {
       const arr = await fetchJSON('../places-it.json', 20000);
-      staticItems = arr.map((a, i) => ({ id: 's' + i, n: a[0], lat: a[1], lon: a[2], t: typeFromPop(a[3], a[4]), e: null }));
+      staticItems = staticItems.concat(arr.map((a, i) => ({ id: 's' + i, n: a[0], lat: a[1], lon: a[2], t: typeFromPop(a[3], a[4]), e: null })));
       builtFor = null;
       refreshItems();
     } catch (e) {
       netNote = 'Archivio interno non caricato: ' + describeError(e);
+    }
+    try {
+      const pk = await fetchJSON(PEAKS_URL, 20000);
+      staticItems = staticItems.concat(pk.map((a, i) => ({ id: 'p' + i, n: a[0], lat: a[1], lon: a[2], t: 'peak', e: a[3] })));
+      builtFor = null;
+      refreshItems();
+    } catch (e) {
+      if (!/HTTP 404/.test(describeError(e))) peakNote = 'Archivio vette non caricato: ' + describeError(e);
     }
   }
 
@@ -872,7 +898,7 @@ body.aligning .panel { display: none; }
     }).catch((e) => {
       retryAt = Date.now() + 90000;
       netNote = staticItems.length
-        ? 'Dati online (vette, frazioni) non disponibili: uso solo l’archivio interno.'
+        ? 'Dati online (frazioni, vette minori) non disponibili: uso solo l’archivio interno.'
         : 'Errori: ' + ((e && e.message) || '').slice(0, 260);
     }).then(() => { loading = false; });
   }
@@ -1622,7 +1648,7 @@ body.aligning .panel { display: none; }
     const b = document.createElement('b');
     b.textContent = it.n;
     const i = document.createElement('i');
-    i.textContent = TYPE_LABEL[it.t] + ', ' + fmtDist(it.d);
+    i.textContent = subOf(it);
     pill.appendChild(b);
     pill.appendChild(i);
     const pin = document.createElement('div');
@@ -1665,6 +1691,7 @@ body.aligning .panel { display: none; }
     if (S.alOff) parts.push('allineamento ' + fmtDeg(Math.round(S.alOff * 10) / 10) + ' (solo qui)');
     if (netNote) parts.push(netNote);
     if (landNote) parts.push(landNote);
+    if (peakNote) parts.push(peakNote);
     setText('foot', parts.join(' · '));
     setText('here', here);
 
@@ -1703,8 +1730,7 @@ body.aligning .panel { display: none; }
       for (const c of cand) {
         if (shown >= MAX_LABELS) break;
         const it = c.it;
-        let elev = 0;
-        if (it.e !== null && S.alt !== null) elev = Math.atan2(it.e - S.alt, it.d) / RAD;
+        const elev = elevOf(it);
         const x = W / 2 + Math.tan(c.rel * RAD) / tanH * W / 2;
         const ay = H / 2 + Math.tan((pitch - elev) * RAD) / tanV * H / 2;
         if (ay > bottomLimit || ay < topLimit + LABEL_H) continue;
@@ -1729,7 +1755,7 @@ body.aligning .panel { display: none; }
         shown++;
         used[it.id] = true;
 
-        const subText = TYPE_LABEL[it.t] + ', ' + fmtDist(it.d);
+        const subText = subOf(it);
         if (lab.subText !== subText) { lab.subText = subText; lab.sub.textContent = subText; }
         lab.pill.style.display = 'flex';
         lab.pill.style.left = left + 'px';
@@ -1773,7 +1799,7 @@ body.aligning .panel { display: none; }
       setText('aimName', 'Sensori non attivi');
       setText('aimInfo', 'Controlla il permesso ai sensori di movimento.');
     } else if (aim) {
-      let info = TYPE_LABEL[aim.it.t] + ', ' + fmtDist(aim.it.d);
+      let info = subOf(aim.it);
       if (Math.abs(aim.rel) > 1.5) {
         info += ', ' + (aim.rel > 0 ? 'più a destra di ' : 'più a sinistra di ') + Math.round(Math.abs(aim.rel)) + '°';
       }
