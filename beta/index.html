@@ -248,14 +248,14 @@ html, body {
 
 /* Etichette toccabili */
 .pill { pointer-events: auto; cursor: pointer; }
-#toast { top: calc(150px + env(safe-area-inset-top, 0px)); }
+#toast { top: calc(176px + env(safe-area-inset-top, 0px)); }
 
 /* Mini-mappa */
 #miniWrap {
   position: absolute;
-  top: calc(10px + env(safe-area-inset-top, 0px));
+  top: calc(44px + env(safe-area-inset-top, 0px));
   left: 12px;
-  width: 128px; height: 128px;
+  width: 112px; height: 112px;
   pointer-events: auto;
   z-index: 3;
 }
@@ -287,7 +287,7 @@ html, body {
   z-index: 3;
 }
 #miniCenter {
-  position: absolute; left: 50%; top: 134px;
+  position: absolute; left: 56px; top: 162px;
   transform: translateX(-50%);
   padding: 6px 12px;
   font: inherit; font-size: 0.8rem; font-weight: 600;
@@ -330,6 +330,34 @@ html, body {
 .mk.peak i { background: #8be28b; }
 .mk.aim i, .mk.sel i { background: var(--accent); transform: scale(1.35); }
 .mk.aim span, .mk.sel span { display: block; font-weight: 700; }
+
+/* Ghiera della bussola */
+#tape { position: absolute; top: env(safe-area-inset-top, 0px); left: 0; display: block; pointer-events: none; }
+.top { padding-top: calc(36px + env(safe-area-inset-top, 0px)); }
+.deg { font-size: 2.3rem; }
+.btn:disabled { opacity: 0.4; }
+.btn.alt { color: var(--ink); background: rgba(255, 255, 255, 0.2); }
+.btn.warn { box-shadow: 0 0 0 3px #ffb347; }
+body.aligning .panel { display: none; }
+#alignLayer { position: absolute; left: 0; right: 0; top: 170px; bottom: 0; touch-action: none; pointer-events: auto; z-index: 2; }
+#alignBar {
+  position: fixed; left: 12px; right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 14px 16px; z-index: 4; pointer-events: auto;
+  color: var(--ink); background: var(--glass);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-radius: 16px;
+}
+#alignBar b { display: block; font-size: 1.15rem; }
+#alText { display: block; margin-top: 2px; font-size: 0.92rem; color: var(--soft); }
+#alChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip {
+  padding: 7px 11px; font: inherit; font-size: 0.85rem; font-weight: 600;
+  color: var(--ink); background: rgba(255, 255, 255, 0.16);
+  border: 2px solid transparent; border-radius: 999px;
+}
+.chip.on { border-color: var(--accent); background: rgba(143, 211, 255, 0.28); }
+.chip i { font-style: normal; font-weight: 400; opacity: 0.75; }
 </style>
 </head>
 <body>
@@ -350,11 +378,24 @@ html, body {
 <main id="hud" hidden>
   <div id="labels"></div>
   <div id="sunMark"><span>Sole</span></div>
+  <canvas id="tape" aria-hidden="true"></canvas>
   <div class="top">
     <div class="deg" id="deg">–</div>
     <div class="card" id="card">&nbsp;</div>
   </div>
   <div class="cross" aria-hidden="true"></div>
+  <div id="alignLayer" hidden></div>
+  <div id="alignBar" hidden>
+    <b id="alTitle"></b>
+    <span id="alText"></span>
+    <div id="alChips"></div>
+    <div class="actions">
+      <button class="btn" id="alLeft" type="button" aria-label="Sposta le etichette di 1 grado a sinistra" hidden>◀ 1°</button>
+      <button class="btn" id="alRight" type="button" aria-label="Sposta le etichette di 1 grado a destra" hidden>1° ▶</button>
+      <button class="btn" id="alOk" type="button">Allinea qui</button>
+      <button class="btn alt" id="alCancel" type="button">Annulla</button>
+    </div>
+  </div>
   <div id="miniWrap" hidden>
     <div id="mini"><div id="miniMap"></div><div id="miniAttr"><span class="s">© OSM</span><span class="l">© OpenStreetMap contributors</span></div></div>
     <button id="miniExpand" type="button" aria-label="Ingrandisci o riduci la mappa">⤢</button>
@@ -367,6 +408,7 @@ html, body {
     <span id="aimInfo">In attesa del GPS…</span>
     <div id="here"></div>
     <div class="actions">
+      <button class="btn" id="alignBtn" type="button">Allinea la bussola</button>
       <button class="btn" id="calib" type="button" hidden>Calibra su questo luogo</button>
       <button class="btn sun" id="sunBtn" type="button" hidden>Sole rilevato</button>
     </div>
@@ -511,7 +553,7 @@ html, body {
   }
 
   const S = {
-    heading: null, compAcc: null, pitch: null,
+    heading: null, compAcc: null, pitch: null, alOff: 0, alPos: null,
     lat: null, lon: null, gpsAcc: null, alt: null, gpsMsg: null,
     fov: 65, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3
   };
@@ -529,6 +571,7 @@ html, body {
   let sunCand = null;
   let toastTimer = null, undoState = null;
   const walk = { active: false, samples: [], until: 0 };
+  const align = { step: null, target: null, first: null, list: [], h0: null, prev: 0 };
   const pool = {};
   const shownText = {};
 
@@ -839,6 +882,7 @@ html, body {
     S.alt = (typeof p.coords.altitude === 'number') ? p.coords.altitude : null;
     S.gpsMsg = null;
     S.declAuto = declAt(S.lat, S.lon);
+    checkAlignMoved();
     refreshItems();
     maybeFetch();
     maybeFetchLand();
@@ -852,7 +896,8 @@ html, body {
   }
 
   function trueHeading() {
-    return (S.heading + S.declAuto + S.off + 360) % 360;
+    const h0 = (align.step === 'fine' && align.h0 !== null) ? align.h0 : S.heading;
+    return (h0 + S.declAuto + S.off + S.alOff + 360) % 360;
   }
 
   /* ---------- Calibrazione ---------- */
@@ -1088,6 +1133,190 @@ html, body {
     if (it) selectItem(it);
   });
 
+  /* ---------- Ghiera della bussola ---------- */
+  const tape = $('tape'), tctx = tape.getContext('2d');
+  const TAPE_H = 34;
+  function drawTape(hd) {
+    const W = window.innerWidth, d = window.devicePixelRatio || 1;
+    if (tape.width !== Math.round(W * d)) {
+      tape.width = Math.round(W * d); tape.height = Math.round(TAPE_H * d);
+      tape.style.width = W + 'px'; tape.style.height = TAPE_H + 'px';
+    }
+    tctx.setTransform(d, 0, 0, d, 0, 0);
+    tctx.clearRect(0, 0, W, TAPE_H);
+    if (hd === null) return;
+    const span = 64, R = (W / 2 - 12) / Math.sin(span * RAD), cx = W / 2, base = TAPE_H - 3;
+    tctx.textAlign = 'center'; tctx.textBaseline = 'top';
+    tctx.font = '700 11px -apple-system, system-ui, sans-serif';
+    tctx.shadowColor = 'rgba(0,0,0,0.8)'; tctx.shadowBlur = 3;
+    const names = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SO', 270: 'O', 315: 'NO' };
+    for (let a = Math.ceil((hd - span) / 5) * 5; a <= hd + span; a += 5) {
+      const rel = a - hd, c = Math.cos(rel * RAD);
+      const x = cx + R * Math.sin(rel * RAD);
+      const deg = ((a % 360) + 360) % 360;
+      const major = deg % 30 === 0 || deg % 45 === 0, mid = deg % 10 === 0;
+      const len = (major ? 15 : mid ? 10 : 6) * (0.55 + 0.45 * c);
+      tctx.globalAlpha = Math.max(0, Math.min(1, (c - 0.3) / 0.45));
+      tctx.strokeStyle = deg === 0 ? '#ff6b5a' : '#ffffff';
+      tctx.lineWidth = major ? 2 : 1.2;
+      tctx.beginPath(); tctx.moveTo(x, base); tctx.lineTo(x, base - len); tctx.stroke();
+      if (major) {
+        tctx.fillStyle = deg === 0 ? '#ff6b5a' : '#ffffff';
+        tctx.fillText(names[deg] !== undefined ? names[deg] : String(deg), x, 2);
+      }
+    }
+    tctx.globalAlpha = 1; tctx.shadowBlur = 0;
+    tctx.strokeStyle = '#8fd3ff'; tctx.lineWidth = 3;
+    tctx.beginPath(); tctx.moveTo(cx, base + 1); tctx.lineTo(cx, base - 21); tctx.stroke();
+  }
+
+  /* ---------- Allineamento guidato (valido solo per il punto in cui sei) ---------- */
+  function saveAlign() {
+    try {
+      if (S.alPos) localStorage.setItem('pano.align', JSON.stringify({ off: S.alOff, lat: S.alPos.lat, lon: S.alPos.lon, t: Date.now() }));
+      else localStorage.removeItem('pano.align');
+    } catch (e) {}
+  }
+  (function loadAlign() {
+    try {
+      const a = JSON.parse(localStorage.getItem('pano.align') || 'null');
+      if (a && typeof a.off === 'number' && Date.now() - a.t < 2 * 3600 * 1000) { S.alOff = a.off; S.alPos = { lat: a.lat, lon: a.lon }; }
+    } catch (e) {}
+  })();
+  function checkAlignMoved() {
+    if (!S.alPos || S.lat === null || align.step) return;
+    if (geo(S.lat, S.lon, S.alPos.lat, S.alPos.lon).d > 200) {
+      S.alOff = 0; S.alPos = null; saveAlign();
+      toast('Allineamento azzerato perché ti sei spostato. Rifallo da qui con «Allinea la bussola».', 7000);
+    }
+  }
+
+  function alCands(excl) {
+    const hd = trueHeading(), out = [];
+    for (const it of items) {
+      if (it.skip || it.d === undefined || LAND_TYPES[it.t] || it.d < 2000) continue;
+      if (Math.abs(norm180(it.b - hd)) > 60) continue;
+      if (excl && (it === excl || Math.abs(norm180(it.b - excl.b)) < 8)) continue;
+      out.push(it);
+    }
+    out.sort((a, b) => b.score - a.score);
+    return out.slice(0, 8);
+  }
+
+  function alChips() {
+    const box = $('alChips');
+    box.textContent = '';
+    align.list.forEach((it, i) => {
+      const c = document.createElement('button');
+      c.type = 'button'; c.className = 'chip' + (align.target === it ? ' on' : ''); c.dataset.i = String(i);
+      c.appendChild(document.createTextNode(it.n + ' '));
+      const s = document.createElement('i'); s.textContent = fmtDist(it.d);
+      c.appendChild(s);
+      box.appendChild(c);
+    });
+    if (!align.list.length) { const m = document.createElement('span'); m.textContent = 'Nessun luogo adatto in questa direzione: ruota il telefono.'; box.appendChild(m); }
+  }
+
+  function alUI(title, text, ok, cancel, fine) {
+    $('alTitle').textContent = title;
+    $('alText').textContent = text;
+    $('alOk').textContent = ok;
+    $('alCancel').textContent = cancel;
+    $('alLeft').hidden = !fine; $('alRight').hidden = !fine;
+    $('alChips').hidden = !!fine;
+    $('alignLayer').hidden = !fine;
+    $('alOk').disabled = !fine && !align.target;
+  }
+
+  function alPick() {
+    align.step = 'pick'; align.target = null; align.list = alCands(null);
+    alUI('Allinea la bussola', 'Guarda un luogo che riconosci davvero e mettilo al centro del mirino. Poi toccane il nome qui sotto e premi «Allinea qui».', 'Allinea qui', 'Annulla', false);
+    alChips();
+  }
+
+  function alStart() {
+    if (S.heading === null || S.lat === null || !items.length) { toast('Servono sensori, GPS e luoghi caricati.', 3500); return; }
+    align.prev = S.alOff;
+    document.body.classList.add('aligning');
+    $('alignBar').hidden = false;
+    alPick();
+  }
+
+  function alFinish() {
+    align.step = null; align.target = null; align.first = null; align.h0 = null;
+    document.body.classList.remove('aligning');
+    $('alignBar').hidden = true; $('alignLayer').hidden = true;
+  }
+
+  $('alignBtn').addEventListener('click', alStart);
+
+  $('alChips').addEventListener('click', (e) => {
+    const c = e.target.closest('.chip');
+    if (!c) return;
+    align.target = align.list[Number(c.dataset.i)] || null;
+    alChips();
+    $('alOk').disabled = !align.target;
+  });
+
+  $('alLeft').addEventListener('click', () => { S.alOff = norm180(S.alOff + 1); });
+  $('alRight').addEventListener('click', () => { S.alOff = norm180(S.alOff - 1); });
+
+  $('alCancel').addEventListener('click', () => {
+    if (align.step === 'verify') { saveAlign(); toast('Allineamento salvato (verifica saltata).', 3500); }
+    else { S.alOff = align.prev; toast('Allineamento annullato.', 2500); }
+    alFinish();
+  });
+
+  $('alOk').addEventListener('click', () => {
+    if (align.step === 'pick') {
+      if (!align.target) return;
+      const rel = norm180(align.target.b - trueHeading());
+      S.alOff = norm180(S.alOff + rel);
+      S.alPos = { lat: S.lat, lon: S.lon };
+      align.first = align.target; align.h0 = S.heading; align.step = 'fine';
+      alUI('Rifinisci', 'Tieni fermo il telefono. Trascina il dito a destra o a sinistra finché l’etichetta evidenziata coincide con il luogo vero (oppure usa i pulsanti da 1°). Poi premi «Fatto».', 'Fatto', 'Annulla', true);
+    } else if (align.step === 'fine') {
+      const moved = Math.abs(norm180(S.heading - align.h0));
+      if (moved > 6) { S.alOff = align.prev; toast('Hai mosso il telefono durante la rifinitura: riprova tenendolo fermo.', 5000); alFinish(); return; }
+      align.h0 = null; align.step = 'verify'; align.target = null;
+      align.list = alCands(align.first);
+      alUI('Verifica', 'Ora inquadra un altro luogo che riconosci, in una direzione diversa, mettilo al centro e toccane il nome. Se vuoi puoi saltare.', 'Verifica', 'Salta verifica', false);
+      alChips();
+    } else if (align.step === 'verify') {
+      if (!align.target) return;
+      const rel = norm180(align.target.b - trueHeading());
+      const r = Math.round(Math.abs(rel) * 10) / 10;
+      if (Math.abs(rel) <= 5) {
+        S.alOff = norm180(S.alOff + rel / 2);
+        saveAlign();
+        toast('Allineata ✓ Scarto sul secondo luogo: ' + r + '°.', 6000);
+      } else {
+        saveAlign();
+        toast('Scarto di ' + r + '° sul secondo luogo: qui la bussola è disturbata (metallo, cemento armato). Spostati o riprova.', 9000);
+      }
+      alFinish();
+    }
+    if (align.step === 'fine') saveAlign();
+  });
+
+  let alDrag = null;
+  const alLayer = $('alignLayer');
+  alLayer.addEventListener('pointerdown', (e) => {
+    if (align.step !== 'fine') return;
+    alDrag = { x: e.clientX, base: S.alOff };
+    try { alLayer.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  alLayer.addEventListener('pointermove', (e) => {
+    if (!alDrag) return;
+    const W = window.innerWidth, H = window.innerHeight;
+    const ppd = (W / 2) / (Math.tan(S.fov * RAD / 2) * W / H) * RAD;
+    S.alOff = norm180(alDrag.base - (e.clientX - alDrag.x) / ppd);
+  });
+  const alEnd = () => { alDrag = null; };
+  alLayer.addEventListener('pointerup', alEnd);
+  alLayer.addEventListener('pointercancel', alEnd);
+  window.__pano = { S: S, items: () => items, trueHeading: trueHeading, align: align };
+
   /* ---------- Disegno ---------- */
   function setText(id, text) {
     if (shownText[id] !== text) {
@@ -1126,6 +1355,7 @@ html, body {
     const heading = (S.heading === null) ? null : trueHeading();
     const pitch = (S.pitch === null) ? null : S.pitch + S.pitchOff;
 
+    drawTape(heading);
     if (heading !== null) {
       setText('deg', Math.round(heading) + '°');
       setText('card', DIRS[Math.round(heading / 45) % 8]);
@@ -1141,6 +1371,7 @@ html, body {
       const t = Math.round(pitch);
       parts.push('inclinazione ' + (t > 0 ? '+' : '') + t + '°');
     }
+    if (S.alOff) parts.push('allineamento ' + fmtDeg(Math.round(S.alOff * 10) / 10) + ' (solo qui)');
     if (netNote) parts.push(netNote);
     if (landNote) parts.push(landNote);
     setText('foot', parts.join(' · '));
@@ -1174,7 +1405,7 @@ html, body {
       // Etichette: le più importanti per prime, ognuna su una "corsia" libera sopra il suo punto
       cand.sort((a, b) => b.it.score - a.it.score);
       const placed = [];
-      const topLimit = 120;
+      const topLimit = 160;
       const bottomLimit = H - 170;
       let shown = 0;
 
@@ -1212,7 +1443,7 @@ html, body {
         lab.pill.style.display = 'flex';
         lab.pill.style.left = left + 'px';
         lab.pill.style.top = top + 'px';
-        lab.pill.classList.toggle('sel', !!aim && aim.it === it);
+        lab.pill.classList.toggle('sel', (!!aim && aim.it === it) || (align.step === 'fine' && align.target === it));
         lab.pin.style.display = 'block';
         lab.pin.style.left = x + 'px';
         lab.pin.style.top = (top + LABEL_H) + 'px';
@@ -1262,6 +1493,7 @@ html, body {
     }
     $('calib').hidden = !(aim && Math.abs(aim.rel) <= 30);
     if (aim) setText('calib', 'Calibra: il centro è ' + aim.it.n);
+    $('alignBtn').classList.toggle('warn', S.compAcc !== null && (S.compAcc > 25 || S.compAcc < 0));
     const sunOk = sunCand && Date.now() - sunCand.t < 3000;
     $('sunBtn').hidden = !sunOk;
     if (sunOk) setText('sunBtn', 'Sole rilevato: correggi di ' + fmtDeg(Math.round(sunCand.dOff * 10) / 10));
@@ -1289,7 +1521,7 @@ html, body {
     if (!b) return;
     if (b.dataset.k === 'cam') { startCamera().catch(() => {}); return; }
     if (b.dataset.k === 'walk') { startWalk(); return; }
-    if (b.dataset.k === 'zero') { S.off = 0; S.pitchOff = 0; toast('Taratura azzerata.', 3000); }
+    if (b.dataset.k === 'zero') { S.off = 0; S.pitchOff = 0; S.alOff = 0; S.alPos = null; saveAlign(); toast('Taratura azzerata.', 3000); }
     if (b.dataset.k === 'land') {
       S.land = !S.land; retryLandAt = 0;
       if (!S.land) landNote = '';
