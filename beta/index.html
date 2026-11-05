@@ -470,9 +470,44 @@ body.aligning #horizon.on { display: block; }
 #video { transform-origin: 50% 50%; transition: opacity 0.15s; }
 #video.switching { opacity: 0; }
 /* riga in basso di Esplora: galleria – scatto – allinea */
-#calRow { margin: 8px 0 0; min-height: 0; }
-.bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 0; }
-.bar .rb { margin: 0; }
+/* riga in basso: bussola a sinistra, fotocamera a destra */
+.bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 0; }
+.bar .cam { display: flex; align-items: center; gap: 16px; }
+.comp {
+  height: 52px; padding: 0 16px 0 12px; border: 0; border-radius: 26px;
+  display: flex; align-items: center; gap: 8px;
+  font: inherit; font-size: 0.95rem; font-weight: 600; color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.comp[aria-expanded="true"] { background: rgba(143, 211, 255, 0.2); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.comp i { width: 9px; height: 9px; border-radius: 50%; background: var(--q-none); }
+.comp.sunready i { background: var(--sun) !important; box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.35); }
+.bar .shut { width: 56px; height: 56px; }
+.bar .shut span { width: 42px; height: 42px; }
+#bmenu {
+  position: absolute; left: 12px; width: 290px; max-width: calc(100% - 24px); z-index: 5;
+  padding: 14px; display: flex; flex-direction: column; gap: 8px; pointer-events: auto;
+  border-radius: 18px; background: rgba(18, 24, 32, 0.97); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+#bmenu[hidden] { display: none; }
+.bmState { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; line-height: 1.3; color: rgba(255, 255, 255, 0.74); }
+.bmState i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--q-none); }
+.bmi {
+  padding: 10px 12px; border: 0; border-radius: 12px; text-align: left;
+  display: flex; flex-direction: column; gap: 2px;
+  font: inherit; color: #fff; background: rgba(255, 255, 255, 0.12);
+}
+.bmi[hidden] { display: none; }
+.bmi b { font-size: 0.92rem; font-weight: 700; }
+.bmi span { font-size: 0.76rem; line-height: 1.3; color: rgba(255, 255, 255, 0.72); }
+.bmi.main { background: var(--accent); color: #06121c; }
+.bmi.main span { color: rgba(6, 18, 28, 0.78); }
+.bmi.sun { background: var(--sun); color: #1d1200; }
+.bmi.sun span { color: rgba(29, 18, 0, 0.78); }
+.bmi.off { background: rgba(255, 255, 255, 0.05); }
+.bmi.off b { color: rgba(255, 255, 255, 0.7); }
+.bmNote { margin: 2px 2px 0; font-size: 0.72rem; color: rgba(255, 255, 255, 0.55); }
+body.sheetopen #bmenu, body.aligning #bmenu, body.shooting #bmenu { display: none; }
 .gal { width: 46px; height: 46px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center; }
 .gal .thumb {
   display: block; width: 32px; height: 32px; border-radius: 7px;
@@ -667,6 +702,15 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     <div class="sp"></div>
   </div>
   <div id="flash"></div>
+  <div id="bmenu" hidden>
+    <div class="bmState"><i id="bmDot"></i><span id="bmState">Bussola non ancora allineata in questo punto</span></div>
+    <button type="button" class="bmi main" id="calib" hidden><b id="calibQ"></b><span>Tocca se sì: correggo la bussola su questo luogo</span></button>
+    <div class="bmi off" id="calibNone"><b>Nessun luogo al centro</b><span>Metti al centro del mirino un paese o una vetta che riconosci</span></div>
+    <button type="button" class="bmi sun" id="sunBtn" hidden><b>Sole visibile</b><span id="sunSub"></span></button>
+    <button type="button" class="bmi" id="alignBtn"><b>Allinea guidato</b><span>Scegli tu un luogo o il sole e rifinisci col dito</span></button>
+    <button type="button" class="bmi" id="walkBtn"><b>Calibra camminando</b><span>Cammina dritto qualche passo col telefono puntato avanti</span></button>
+    <p class="bmNote">Ogni correzione si può annullare dall'avviso che compare subito dopo.</p>
+  </div>
   <div id="toast" hidden><span id="toastText"></span><button id="toastBtn" type="button" hidden>Annulla</button></div>
   <div class="panel" id="sheet">
     <button id="grab" type="button" aria-label="Apri o chiudi il pannello" aria-expanded="false"><i></i></button>
@@ -676,14 +720,12 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <span id="sunLine" hidden></span>
       <div id="here"></div>
     </div>
-    <div class="actions" id="calRow" hidden>
-      <button class="btn" id="calib" type="button" hidden>Calibra su questo luogo</button>
-      <button class="btn sun" id="sunBtn" type="button" hidden>Sole rilevato</button>
-    </div>
     <div class="bar">
-      <button class="gal" id="galBtn" type="button" aria-label="Galleria"><span class="thumb"></span></button>
-      <button class="shut" id="shotBtn" type="button" aria-label="Fotografa"><span></span></button>
-      <button class="rb" id="alignBtn" type="button" aria-label="Allinea la bussola"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="#8fd3ff" stroke-width="1.8" fill="none"></circle><path d="M12 5.5 L14.5 12 L12 18.5 L9.5 12 Z" fill="#8fd3ff"></path></svg></button>
+      <button class="comp" id="compBtn" type="button" aria-expanded="false" aria-controls="bmenu"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="#8fd3ff" stroke-width="1.8" fill="none"></circle><path d="M12 5.5 L14.5 12 L12 18.5 L9.5 12 Z" fill="#8fd3ff"></path></svg><span>Bussola</span><i id="compDot"></i></button>
+      <div class="cam">
+        <button class="gal" id="galBtn" type="button" aria-label="Galleria"><span class="thumb"></span></button>
+        <button class="shut" id="shotBtn" type="button" aria-label="Fotografa"><span></span></button>
+      </div>
     </div>
     <div id="more">
       <h3>Punto di ripresa</h3>
@@ -756,7 +798,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         </div>
         <p class="hint" id="declInfo"></p>
         <p class="hint" id="camInfo"></p>
-        <p class="hint"><b>Come calibrare la bussola.</b> Punta la croce al centro su un luogo che vedi bene, meglio un campanile, una torre o una vetta, poi premi “Calibra su questo luogo”. Con il sole visibile, inquadralo e premi “Sole rilevato”. Camminando, usa “Calibra camminando” e tieni il telefono puntato avanti.</p>
+        <p class="hint"><b>Come correggere la bussola.</b> Tocca «Bussola» in basso a sinistra. Se al centro del mirino c'è il luogo proposto, toccalo e la bussola si corregge su quello. Con il sole ben visibile compare anche «Sole visibile». «Allinea guidato» ti fa scegliere il luogo e rifinire col dito; «Calibra camminando» usa il GPS mentre cammini dritto.</p>
         <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo.</p>
       </div>
       <div class="foot" id="foot"></div>
@@ -1755,7 +1797,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     $('alignBar').hidden = true; $('alignLayer').hidden = true;
   }
 
-  $('alignBtn').addEventListener('click', alStart);
+  $('alignBtn').addEventListener('click', () => { setMenu(false); alStart(); });
 
   $('alChips').addEventListener('click', (e) => {
     const c = e.target.closest('.chip');
@@ -2212,14 +2254,16 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       setText('aimName', 'Punta verso un paese');
       setText('aimInfo', statusMsg);
     }
-    $('calib').hidden = !(aim && Math.abs(aim.rel) <= 30);
-    if (aim) setText('calib', 'Calibra: il centro è ' + aim.it.n);
-    $('alignBtn').classList.toggle('warn', S.compAcc !== null && (S.compAcc > 25 || S.compAcc < 0));
+    const canCal = !!(aim && Math.abs(aim.rel) <= 30);
+    $('calib').hidden = !canCal;
+    $('calibNone').hidden = canCal;
+    if (aim) setText('calibQ', 'Al centro c\'è ' + aim.it.n + '?');
     const sunOk = sunCand && Date.now() - sunCand.t < 2000;
     $('sunBtn').hidden = !sunOk;
-    $('calRow').hidden = $('calib').hidden && $('sunBtn').hidden;
+    $('compBtn').classList.toggle('sunready', !!sunOk);
+    updateCompState();
     if ($('sheet').classList.contains('open')) updateSpot(heading, pitch);
-    if (sunOk) setText('sunBtn', 'Sole rilevato: correggi di ' + fmtDeg(Math.round(sunCand.dOff * 10) / 10));
+    if (sunOk) setText('sunSub', 'Il sole è ben visibile: tocca per correggere la bussola di ' + fmtDeg(Math.round(sunCand.dOff * 10) / 10));
     const aid = aim ? aim.it.id : null;
     if (aid !== aimId) { aimId = aid; refreshMarkerClasses(); }
     frame.aim = aim;
@@ -2274,6 +2318,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 
   // Pannello: si apre toccando la maniglia o trascinando in su, si chiude trascinando in giù
   function setSheet(open) {
+    if (open && !$('bmenu').hidden) setMenu(false);
     $('sheet').classList.toggle('open', open);
     document.body.classList.toggle('sheetopen', open);
     $('grab').setAttribute('aria-expanded', String(open));
@@ -2312,13 +2357,50 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   $('calib').addEventListener('click', () => {
     const aim = frame.aim;
     if (!aim || Math.abs(aim.rel) > 30) return;
+    setMenu(false);
     applyCorrection(aim.rel, 0, aim.it.n);
   });
   $('sunBtn').addEventListener('click', () => {
     if (!sunCand) return;
     const c = sunCand; sunCand = null;
+    setMenu(false);
     applyCorrection(c.dOff, c.dPitch, 'Sole');
   });
+  $('walkBtn').addEventListener('click', () => { setMenu(false); startWalk(); });
+
+  /* ---------- Menù della bussola ---------- */
+  function setMenu(open) {
+    if (open) setSheet(false);
+    $('bmenu').hidden = !open;
+    $('compBtn').setAttribute('aria-expanded', String(open));
+    if (open) placeMenu();
+  }
+  function placeMenu() {
+    const r = $('sheet').getBoundingClientRect();
+    $('bmenu').style.bottom = Math.round(window.innerHeight - r.top + 8) + 'px';
+  }
+  $('compBtn').addEventListener('click', () => setMenu($('bmenu').hidden));
+  document.addEventListener('pointerdown', (e) => {
+    if ($('bmenu').hidden) return;
+    if (e.target.closest('#bmenu') || e.target.closest('#compBtn')) return;
+    setMenu(false);
+  });
+  let lastCompState = '';
+  function updateCompState() {
+    const q = qualInfo();
+    const bad = S.compAcc !== null && (S.compAcc > 25 || S.compAcc < 0);
+    const txt = (S.alPos && S.alQ !== null) ? 'Bussola allineata in questo punto (±' + Math.round(S.alQ) + '°)'
+      : bad ? 'Bussola poco affidabile: allontanati da metalli e muovi il telefono a «8», poi correggi'
+      : 'Bussola non ancora allineata in questo punto';
+    const col = q.color || q.dot || '';
+    const k = txt + '|' + col;
+    if (k === lastCompState) return;
+    lastCompState = k;
+    $('bmState').textContent = txt;
+    $('bmDot').style.background = col;
+    $('compDot').style.background = col;
+    $('compBtn').setAttribute('aria-label', 'Bussola: ' + txt);
+  }
   $('toastBtn').addEventListener('click', () => { if (undoState) undoState(); });
 
   /* ---------- Punto di ripresa ---------- */
