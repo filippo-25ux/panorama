@@ -165,8 +165,16 @@ def main():
         res['nord_senza'] = look(0)
         res['ovest_senza'] = look(270)
         page.evaluate("document.querySelector('#more input[data-f=\"dem\"]').click()")
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(300)
         res['nord_riacceso'] = look(0)
+        # appena riacceso il rilievo, i paesi devono tornare subito alla quota del terreno
+        res['ovest_riacceso'] = look(270)
+        RPX = """(() => { const c = document.getElementById('ridge'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; })()"""
+        res['creste_sempre'] = page.evaluate(RPX)
+        page.evaluate("document.querySelector('#more input[data-f=\"ridge\"]').click()")
+        page.wait_for_timeout(300)
+        res['creste_spente'] = page.evaluate(RPX)
+        page.evaluate("document.querySelector('#more input[data-f=\"ridge\"]').click()")
         # sole il 21 marzo: sorge a est, dietro «Poggio Est» (2,3° sopra l'orizzonte)
         page.evaluate("document.querySelector('#more input[data-f=\"sun\"]').click()")
         page.wait_for_timeout(300)
@@ -273,6 +281,9 @@ def main():
     b = res['al_annulla']
     check(abs(b['off'] + 5) < 0.3 and b['q'] == 2 and b['fov'] == fov, f'Annulla rimette tutto com\'era (correzione {b["off"]:.2f}°, campo visivo {b["fov"]}°)')
     check(res['al_pulsante_senza'] == 'Allinea guidato' and res['al_passo_senza'] == 'pick', 'senza rilievo: «Allinea guidato» con luogo o sole')
+    cr = [x for x in res['ovest_riacceso'] if 'Collina' in x['text']]
+    check(bool(cr) and abs(cr[0]['ay'] - ay_exp) < 6, 'rilievo riacceso: Collina subito alla quota giusta')
+    check(res['creste_sempre'] > 300 and res['creste_spente'] == 0, f'linea delle creste tenue sempre visibile ({res["creste_sempre"]} px) e spegnibile')
     check(not res['errors'], 'nessun errore JavaScript')
     print('TUTTO OK' if ok else 'CI SONO PROBLEMI')
 

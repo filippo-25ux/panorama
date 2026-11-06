@@ -649,7 +649,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v15 · allinea col profilo dei monti</p>
+    <p class="sub">Beta v16 · linea delle creste sempre visibile</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -755,6 +755,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <label class="sw" style="--ic: #ffffff"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
       <label class="sw" style="--ic: #8be28b"><i class="swi" data-t="peak"></i><span>Vette</span><em id="nPeak"></em><input type="checkbox" data-f="peak"></label>
       <label class="sw" style="--ic: #8fd3ff"><i class="swi" data-t="relief"></i><span>Rilievo del terreno<small>nasconde le vette coperte da monti più vicini</small></span><em id="demState"></em><input type="checkbox" data-f="dem"></label>
+      <label class="sw" style="--ic: #8fd3ff"><i class="swi" data-t="ridge"></i><span>Linea delle creste<small>tratteggio leggero sul profilo dei monti</small></span><input type="checkbox" data-f="ridge"></label>
       <label class="sw" style="--ic: #c8a2ff"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
       <label class="sw" style="--ic: #ffd166"><i class="swi" data-t="sun"></i><span>Percorso del sole</span><input type="checkbox" data-f="sun"></label>
       <div id="sunRow" hidden>
@@ -924,6 +925,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     else if (t === 'tower') body = '<path class="s" d="M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2" stroke-width="1.6"/>';
     else if (t === 'castle') body = '<path class="s" d="M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z" stroke-width="1.4"/>';
     else if (t === 'sun') body = '<circle class="f" cx="7" cy="7" r="3"/><path class="s" d="M7 0.5 V2.5 M7 11.5 V13.5 M0.5 7 H2.5 M11.5 7 H13.5 M2.4 2.4 L3.8 3.8 M10.2 10.2 L11.6 11.6 M2.4 11.6 L3.8 10.2 M10.2 3.8 L11.6 2.4" stroke-width="1.3"/>';
+    else if (t === 'ridge') body = '<path class="s" d="M0.5 10 L3.5 6.5 L6 8.5 L9 4 L13.5 8" stroke-width="1.6" stroke-dasharray="2.2 1.6" stroke-linejoin="round"/>';
     else if (t === 'relief') body = '<path class="s" d="M0.5 12 L4.6 5.5 L7.2 9 L9.8 3.5 L13.5 12" stroke-width="1.6" stroke-linejoin="round"/>';
     else if (t === 'river') body = '<path class="s" d="M0.5 7.5 C2.8 4 4.6 4 7 7.5 S11.2 11 13.5 7.5" stroke-width="2"/>';
     else body = '<circle class="f" cx="7" cy="7" r="4.5"/>';
@@ -1010,7 +1012,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     lat: null, lon: null, gpsAcc: null, alt: null, altAcc: null, gpsMsg: null,
     fov: 70, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
     fovs: { std: 70, uw: 100, tele: 17 },   // campo visivo verticale di partenza per obiettivo
-    shotNames: true, shotHi: false, dem: true
+    shotNames: true, shotHi: false, dem: true, ridge: true
   };
   // Fotocamera: obiettivi trovati, obiettivo in uso, zoom a scatti
   const CAM = { ids: {}, kind: 'std', base: 'std', names: [], scanned: false, track: null, hw: null, zoom: 1, dz: 1, css: 1, mode: '', stops: [1, 1.5, 2] };
@@ -1059,12 +1061,13 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (typeof s.pitchOff === 'number' && s.pitchOff !== 0 && !s.pitchSensors) pitchWasReset = s.pitchOff;
       if (s.land === true) S.land = true;
       if (s.dem === false) S.dem = false;
+      if (s.ridge === false) S.ridge = false;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -1371,7 +1374,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   function demApply() {
     const P = (S.dem && DEM.prof) ? DEM.prof : null;
     for (const it of items) {
-      if (!S.dem) { it.ge = undefined; it.hid = false; continue; }
+      if (!S.dem) { it.ge = undefined; it.hid = false; it.geGen = -1; continue; }
       if (it.geGen !== DEM.gen && it.d !== undefined) {
         const g = demGet(it.lat, it.lon, demZoomFor(it.d));
         if (g !== null) { it.ge = Math.round(g); it.geGen = DEM.gen; }
@@ -2264,8 +2267,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     return h0 * (1 - w) + h1 * w;
   }
   function drawRidge(W, H, heading, pitch, tanH, tanV) {
-    const P = DEM.prof;
-    if (align.step !== 'ridge' || !P || heading === null || pitch === null) {
+    const P = DEM.prof, aligning = align.step === 'ridge';
+    if (!(aligning || (S.ridge && ridgeReady())) || !P || heading === null || pitch === null) {
       if (ridgeDrawn) { ridgeCtx.setTransform(1, 0, 0, 1, 0, 0); ridgeCtx.clearRect(0, 0, ridgeCv.width, ridgeCv.height); ridgeDrawn = false; }
       return;
     }
@@ -2285,12 +2288,13 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (!cur) { cur = []; segs.push(cur); }
       cur.push(x, y);
     }
-    align.relief = hi >= lo ? hi - lo : 0;
     ridgeCtx.lineJoin = 'round'; ridgeCtx.lineCap = 'round';
+    // Durante l'allineamento: azzurra e marcata; nell'uso normale: bianca, sottile e trasparente
+    ridgeCtx.globalAlpha = aligning ? 1 : 0.42;
     for (const pass of [0, 1]) {
-      ridgeCtx.setLineDash(pass ? [9, 6] : []);
-      ridgeCtx.strokeStyle = pass ? qcol('--accent', '#8fd3ff') : 'rgba(0,0,0,0.45)';
-      ridgeCtx.lineWidth = pass ? 2.4 : 5;
+      ridgeCtx.setLineDash(pass ? (aligning ? [9, 6] : [5, 6]) : []);
+      ridgeCtx.strokeStyle = pass ? (aligning ? qcol('--accent', '#8fd3ff') : '#ffffff') : (aligning ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.3)');
+      ridgeCtx.lineWidth = pass ? (aligning ? 2.4 : 1.3) : (aligning ? 5 : 3);
       for (const sg of segs) {
         if (sg.length < 4) continue;
         ridgeCtx.beginPath(); ridgeCtx.moveTo(sg[0], sg[1]);
@@ -2299,6 +2303,9 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       }
     }
     ridgeCtx.setLineDash([]);
+    ridgeCtx.globalAlpha = 1;
+    if (!aligning) return;
+    align.relief = hi >= lo ? hi - lo : 0;
     const corr = Math.round(norm180(S.alOff - align.r0) * 10) / 10;
     setText('alInfo', 'Correzione ' + fmtDeg(corr) + ' · campo visivo ' + String(S.fov).replace('.', ',') + '°' +
       (align.relief < 1 ? ' · qui le creste sono quasi piatte: meglio un luogo o il sole' : ''));
@@ -2754,7 +2761,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     document.querySelectorAll('#segD button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.dn) === F.dens);
     });
-    const st = { town: F.town, peak: F.peak, land: S.land, sun: F.sun, dem: S.dem };
+    const st = { town: F.town, peak: F.peak, land: S.land, sun: F.sun, dem: S.dem, ridge: S.ridge };
     demStateUI();
     document.querySelectorAll('[data-f]').forEach((el) => {
       if (el.type === 'checkbox') el.checked = st[el.dataset.f];
@@ -2767,7 +2774,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (k === 'town') F.town = v;
     if (k === 'peak') F.peak = v;
     if (k === 'sun') { F.sun = v; sunToggle(v); }
-    if (k === 'dem') { S.dem = v; DEM.retryAt = 0; demApply(); demUpdate(); }
+    if (k === 'dem') { S.dem = v; DEM.retryAt = 0; demApply(); demUpdate(); syncMarkers(); }
+    if (k === 'ridge') S.ridge = v;
     if (k === 'land') {
       S.land = v; retryLandAt = 0;
       if (!v) landNote = '';
@@ -3543,8 +3551,21 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     } finally {
       camBusy = false;
       refitVideo();
+      await videoFrames($('video'), 3);
+      refitVideo();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
       $('video').classList.remove('switching');
     }
+  }
+  // Aspetta n fotogrammi veri del video (Safari li mostra piccoli al centro per un attimo); massimo 0,9 s
+  function videoFrames(v, n) {
+    return new Promise((ok) => {
+      const tm = setTimeout(ok, 900);
+      if (typeof v.requestVideoFrameCallback !== 'function') { clearTimeout(tm); setTimeout(ok, 350); return; }
+      let k = 0;
+      const step = () => { if (++k >= n) { clearTimeout(tm); ok(); } else v.requestVideoFrameCallback(step); };
+      v.requestVideoFrameCallback(step);
+    });
   }
 
   // Aspetta che il nuovo flusso abbia le sue dimensioni (massimo 1,5 s)
@@ -3660,12 +3681,16 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   // Piccolo scatto tattile: vibrazione dove esiste, interruttore nascosto su iPhone (iOS 18)
   const hapLbl = document.createElement('label');
   hapLbl.setAttribute('aria-hidden', 'true');
-  hapLbl.style.cssText = 'position:fixed;left:-200px;top:0;opacity:0;pointer-events:none';
+  hapLbl.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;overflow:hidden;opacity:0.01;pointer-events:none;z-index:-1';
   const hapIn = document.createElement('input');
   hapIn.type = 'checkbox'; hapIn.setAttribute('switch', ''); hapIn.tabIndex = -1;
   hapLbl.appendChild(hapIn);
   document.body.appendChild(hapLbl);
+  let hapT = 0;
   function haptic() {
+    const t = Date.now();
+    if (t - hapT < 60) return;
+    hapT = t;
     try { if (navigator.vibrate) { navigator.vibrate(8); return; } hapLbl.click(); } catch (e) {}
   }
 
@@ -3686,7 +3711,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   }
   $('zoom').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    zoomDrag = { id: e.pointerId };
+    zoomDrag = { id: e.pointerId, from: zoomIndex() };
     try { $('zoom').setPointerCapture(e.pointerId); } catch (err) {}
     zoomAwake(true);
     selectStop(zoomAt(e.clientY));
@@ -3695,7 +3720,10 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (!zoomDrag) return;
     selectStop(zoomAt(e.clientY));
   });
-  const zoomEnd = () => { zoomDrag = null; zoomAwake(false); };
+  const zoomEnd = (e) => {
+    if (zoomDrag && e && e.type === 'pointerup' && zoomIndex() !== zoomDrag.from) haptic();
+    zoomDrag = null; zoomAwake(false);
+  };
   $('zoom').addEventListener('pointerup', zoomEnd);
   $('zoom').addEventListener('pointercancel', zoomEnd);
   $('zoom').addEventListener('keydown', (e) => {
