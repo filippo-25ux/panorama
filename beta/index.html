@@ -623,6 +623,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 #spot .kv { display: flex; align-items: baseline; gap: 10px; min-height: 30px; font-size: 0.92rem; }
 #spot .kv span { flex: none; width: 104px; color: rgba(255, 255, 255, 0.6); }
 #spCoord { font-size: 0.86rem; }
+#spCatMap { text-decoration: none; }
 #spot .kv b { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
 .mini { flex: none; padding: 5px 10px; border: 0; border-radius: 999px; font: inherit; font-size: 0.8rem; font-weight: 600; color: #06121c; background: var(--accent); }
 .lens { font-style: normal; font-size: 0.8rem; color: rgba(255, 255, 255, 0.55); }
@@ -1073,7 +1074,7 @@ body.hasmap .peek { padding-right: 100px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v23 · nuova veste</span>
+          <span class="ver">Beta v24 · Comune e catasto</span>
         </div>
       </div>
     </section>
@@ -1193,13 +1194,15 @@ body.hasmap .peek { padding-right: 100px; }
       <h3>Punto di ripresa</h3>
       <div id="spot">
         <div class="kv"><span>Luogo</span><b id="spPlace">–</b></div>
+        <div class="kv"><span>Comune</span><b id="spCom">–</b></div>
+        <div class="kv"><span>Catasto</span><b id="spCat">–</b><a class="mini" id="spCatMap" href="https://geoportale.cartografia.agenziaentrate.gov.it/" target="_blank" rel="noopener">Mappa</a></div>
         <div class="kv"><span>Quota GPS</span><b id="spAlt">–</b></div>
         <div class="kv"><span>Quota terreno</span><b id="spGround">–</b></div>
         <div class="kv"><span>Coordinate</span><b id="spCoord">–</b><button type="button" class="mini" id="spCopy">Copia</button></div>
         <div class="kv"><span>Precisione GPS</span><b id="spAcc">–</b></div>
         <div class="kv"><span>Data e ora</span><b id="spTime">–</b></div>
         <div class="kv"><span>Direzione</span><b id="spDir">–</b></div>
-        <p class="hint">Questi dati vengono salvati con ogni foto. La quota del GPS è indicativa (di solito ±10–20 m); la quota del terreno viene dal rilievo (celle di circa 30 m).</p>
+        <p class="hint">Questi dati vengono salvati con ogni foto. La quota del GPS è indicativa (di solito ±10–20 m); la quota del terreno viene dal rilievo (celle di circa 30 m). Comune e particella catastale sono indicativi, non hanno valore di certificato (fanno fede CDU e visura); vicino ai confini contano anche i metri di errore del GPS.</p>
       </div>
       <h3>Cosa mostrare</h3>
       <label class="sw t-town"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
@@ -1273,6 +1276,7 @@ body.hasmap .peek { padding-right: 100px; }
       </div>
       <div class="foot" id="foot"></div>
       <p class="hint">Dati dei luoghi: GeoNames (CC BY 4.0), ISTAT (CC BY 3.0 IT) e © OpenStreetMap contributors</p>
+      <p class="hint">Confini dei Comuni: ISTAT, 1° gennaio 2026 (CC BY), elaborati da openpolis. Particelle catastali: Agenzia delle Entrate (CC BY 4.0).</p>
       <p class="hint">Rilievo del terreno: Terrain Tiles (Mapzen, Registry of Open Data on AWS). Europa: prodotto con dati e informazioni Copernicus finanziati dall’Unione Europea (strati EU-DEM). SRTM e GMTED2010 per gentile concessione dello U.S. Geological Survey.</p>
     </div>
   </div>
@@ -3389,8 +3393,11 @@ body.hasmap .peek { padding-right: 100px; }
     if (!open) $('sheet').scrollTop = 0;
     refreshSettingsUI();
     if (!open) setTimeout(() => { if (map) { map.resize(); updateMap(); } }, 300);
+    if (!open && camPaused && pausedBySheet) resumeCam();
   }
   $('grab').addEventListener('click', () => setSheet(!$('sheet').classList.contains('open')));
+  // v24: toccando la scheda (nome e dati) si apre il pannello
+  document.querySelector('.peek').addEventListener('click', () => { if (!$('sheet').classList.contains('open')) setSheet(true); });
   let sheetY = null;
   $('sheet').addEventListener('touchstart', (e) => { sheetY = e.touches[0].clientY; }, { passive: true });
   $('sheet').addEventListener('touchend', (e) => {
@@ -3507,6 +3514,8 @@ body.hasmap .peek { padding-right: 100px; }
       heading: S.heading === null ? null : trueHeading(),
       pitch: S.pitch === null ? null : S.pitch + S.pitchOff,
       ground: S.dem && DEM.ground !== null ? Math.round(DEM.ground) : null, dem: !!(S.dem && DEM.prof),
+      comune: COM.cur ? COM.cur.n : null, prov: COM.cur ? COM.cur.p : null, istat: COM.cur ? COM.cur.i : null,
+      catasto: CAT.cur && COM.cur && CAT.cur.c === COM.cur.k ? CAT.cur : null,
       aligned: !!S.alPos, lens: CAM.kind, zoom: zoomLabel(CAM.kind === 'tele' ? 'T' : CAM.zk), fov: S.fov, dz: CAM.dz
     };
   }
@@ -3516,6 +3525,8 @@ body.hasmap .peek { padding-right: 100px; }
     if (now - spotLast < 500) return;
     spotLast = now;
     setText('spPlace', S.lat === null ? 'in attesa del GPS' : (placeText() || '–'));
+    setText('spCom', comuneText());
+    setText('spCat', catastoText());
     setText('spAlt', S.alt === null ? 'non disponibile' : Math.round(S.alt) + ' m s.l.m.' + (S.altAcc ? ' (±' + Math.round(S.altAcc) + ' m)' : ''));
     setText('spGround', !S.dem ? 'rilievo spento' : DEM.ground === null ? (DEM.state === 'err' ? 'non disponibile' : 'in caricamento…') : '≈ ' + Math.round(DEM.ground) + ' m s.l.m.');
     setText('spCoord', S.lat === null ? '–' : fmtCoord(S.lat, S.lon));
@@ -3872,6 +3883,8 @@ body.hasmap .peek { padding-right: 100px; }
     const m = rec.meta || {};
     const parts = [];
     if (m.place) parts.push(m.place);
+    if (m.comune) parts.push('Comune di ' + m.comune + (m.prov ? ' (' + m.prov + ')' : ''));
+    if (m.catasto) parts.push('catasto: foglio ' + m.catasto.f + ', particella ' + m.catasto.p);
     if (m.alt !== null && m.alt !== undefined) parts.push('quota ' + Math.round(m.alt) + ' m');
     if (m.lat !== null && m.lat !== undefined) parts.push(fmtCoord(m.lat, m.lon));
     if (m.gpsAcc !== null && m.gpsAcc !== undefined) parts.push('GPS ±' + Math.round(m.gpsAcc) + ' m');
@@ -4383,12 +4396,114 @@ body.hasmap .peek { padding-right: 100px; }
   }
   $('devOk').addEventListener('click', () => { $('devNote').hidden = true; });
 
+  /* ---------- v24: Comune e catasto del punto di ripresa ---------- */
+  // Comune: confini ISTAT nel sito (un file per regione), tenuti nella memoria del telefono: dopo la prima volta funziona senza rete.
+  // Catasto: servizio WMS dell'Agenzia delle Entrate (serve la rete; se il servizio non risponde al sito lo si dice).
+  const COM = { regs: null, data: {}, loading: {}, cur: null, at: null, state: 'idle' };
+  const CAT = { cur: null, state: 'idle', at: null, tried: 0, msg: '' };
+  async function cachedJson(url) {
+    let cache = null;
+    try { cache = await caches.open('orientis-comuni-v1'); const hit = await cache.match(url); if (hit) return hit.json(); } catch (e) { cache = null; }
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (cache) { try { await cache.put(url, r.clone()); } catch (e) {} }
+    return r.json();
+  }
+  function inRing(x, y, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 2; i < ring.length; j = i, i += 2) {
+      const xi = ring[i], yi = ring[i + 1], xj = ring[j], yj = ring[j + 1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  function inComune(c, x, y) {
+    const bb = c[4];
+    if (x < bb[0] * 1e4 || x > bb[2] * 1e4 || y < bb[1] * 1e4 || y > bb[3] * 1e4) return false;
+    for (const poly of c[5]) {
+      if (!inRing(x, y, poly[0])) continue;
+      let hole = false;
+      for (let k = 1; k < poly.length; k++) if (inRing(x, y, poly[k])) { hole = true; break; }
+      if (!hole) return true;
+    }
+    return false;
+  }
+  async function updateComune() {
+    if (S.lat === null) return;
+    if (COM.busy) return;
+    if (COM.at && geo(COM.at.lat, COM.at.lon, S.lat, S.lon).d < 30 && COM.state !== 'err') { updateCatasto(); return; }
+    const lat = S.lat, lon = S.lon, x = lon * 1e4, y = lat * 1e4;
+    COM.busy = true;
+    try {
+      if (!COM.regs) COM.regs = await cachedJson('comuni/regioni.json');
+      let found = null;
+      for (const code in COM.regs) {
+        const b = COM.regs[code];
+        if (lon < b[0] - 0.01 || lon > b[2] + 0.01 || lat < b[1] - 0.01 || lat > b[3] + 0.01) continue;
+        if (!COM.data[code]) COM.data[code] = (await cachedJson('comuni/R' + code + '.json')).c;
+        for (const c of COM.data[code]) if (inComune(c, x, y)) { found = c; break; }
+        if (found) break;
+      }
+      COM.cur = found ? { n: found[0], p: found[1], i: found[2], k: found[3] } : null;
+      COM.state = found ? 'ok' : 'fuori';
+      COM.at = { lat: lat, lon: lon };
+    } catch (e) { COM.state = 'err'; }
+    COM.busy = false;
+    updateCatasto();
+  }
+  function comuneText() {
+    if (S.lat === null) return 'in attesa del GPS';
+    if (COM.cur) return COM.cur.n + (COM.cur.p ? ' (' + COM.cur.p + ')' : '');
+    return COM.state === 'err' ? 'non disponibile (serve la rete la prima volta)' : COM.state === 'fuori' ? 'fuori dall’Italia (o in mare)' : 'in caricamento…';
+  }
+  // «IT.AGE.PLA.G273_0033A0.673» → Comune G273, foglio 33, particella 673
+  function parseParcel(id) {
+    const m = /([A-Z]\d{3})([A-Z0-9]?)_(\d{4})([A-Z0-9])([A-Z0-9])\.([^<\s]+)/.exec(id || '');
+    if (!m) return null;
+    return { c: m[1], sez: m[2] || '', f: String(Number(m[3])), all: m[4] === '0' ? '' : m[4], p: m[6], id: m[0] };
+  }
+  async function updateCatasto() {
+    if (S.lat === null || !COM.cur || !navigator.onLine) { if (!navigator.onLine && CAT.state !== 'ok') CAT.state = 'offline'; return; }
+    const now = Date.now();
+    const moved = !CAT.at || geo(CAT.at.lat, CAT.at.lon, S.lat, S.lon).d > 12;
+    if (!moved || CAT.state === 'loading' || now - CAT.tried < (CAT.state === 'err' ? 60000 : 8000)) return;
+    CAT.tried = now; CAT.state = 'loading';
+    const lat = S.lat, lon = S.lon, d = 0.00001;
+    const url = 'https://wms.cartografia.agenziaentrate.gov.it/inspire/wms/ows01.php?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo' +
+      '&SRS=EPSG:4258&BBOX=' + [lon - d, lat - d, lon + d, lat + d].map((v) => v.toFixed(6)).join(',') +
+      '&WIDTH=9&HEIGHT=9&X=4&Y=4&LAYERS=CP.CadastralParcel&QUERY_LAYERS=CP.CadastralParcel&STYLES=&FORMAT=image/png&INFO_FORMAT=text/html';
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const to = setTimeout(() => { if (ctl) ctl.abort(); }, 9000);
+    try {
+      const r = await fetch(url, ctl ? { signal: ctl.signal } : undefined);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const html = await r.text();
+      const m = /localId<\/th>\s*<td>([^<]+)/i.exec(html) || /nationalCadastralReference<\/th>\s*<td>([^<]+)/i.exec(html) || /([A-Z]\d{3}[A-Z0-9]?_\d{4}[A-Z0-9]{2}\.[0-9A-Z]+)/.exec(html);
+      const pc = m ? parseParcel(m[1]) : null;
+      CAT.cur = pc; CAT.state = pc ? 'ok' : 'none'; CAT.at = { lat: lat, lon: lon };
+    } catch (e) {
+      CAT.state = 'err';
+      CAT.msg = e && e.name === 'AbortError' ? 'il servizio dell’Agenzia non risponde' : e && e.name === 'TypeError' ? 'il servizio dell’Agenzia non risponde al sito' : String(e && e.message || e);
+    } finally { clearTimeout(to); }
+  }
+  function catastoText() {
+    if (!COM.cur) return '–';
+    if (CAT.state === 'ok' && CAT.cur) return 'foglio ' + CAT.cur.f + ', particella ' + CAT.cur.p;
+    if (CAT.state === 'loading' || CAT.state === 'idle') return 'in caricamento…';
+    if (CAT.state === 'none') return 'nessuna particella qui (strada, acqua o zona non mappata)';
+    if (CAT.state === 'offline') return 'serve la rete';
+    return 'non disponibile: ' + CAT.msg;
+  }
+  setInterval(() => { if (!$('hud').hidden) updateComune(); }, 2000);
+
   /* ---------- v22: la fotocamera la disegna l'app ---------- */
   const camCv = $('camCv'), camCtx = camCv.getContext('2d', { alpha: false });
   let camDrawOn = false, lastCamDraw = 0;
   function camDraw() {
     lastCamDraw = Date.now();
     const v = $('video');
+    // v24: col pannello aperto (copre tutto) la fotocamera resta accesa ma non si ridisegna
+    if (sheetIsOpen()) { nextCamDraw(); return; }
     if (!camPaused && v.videoWidth && !v.classList.contains('switching')) {
       const W = window.innerWidth, H = window.innerHeight;
       const r = Math.min(window.devicePixelRatio || 1, 2);
@@ -4405,33 +4520,45 @@ body.hasmap .peek { padding-right: 100px; }
   }
   function nextCamDraw() {
     const v = $('video');
-    if (typeof v.requestVideoFrameCallback === 'function' && v.videoWidth && !camPaused) v.requestVideoFrameCallback(camDraw);
-    else setTimeout(camDraw, camPaused ? 500 : 50);
+    if (typeof v.requestVideoFrameCallback === 'function' && v.videoWidth && !camPaused && !sheetIsOpen()) v.requestVideoFrameCallback(camDraw);
+    else setTimeout(camDraw, camPaused || sheetIsOpen() ? 500 : 50);
   }
   // se Safari smette di avvisare dei fotogrammi nuovi (cambio di flusso), si riparte
   setInterval(() => { if (camDrawOn && Date.now() - lastCamDraw > 1500) nextCamDraw(); }, 1000);
   function startCamDraw() { if (!camDrawOn) { camDrawOn = true; nextCamDraw(); } }
+  function sheetIsOpen() { return $('sheet').classList.contains('open'); }
 
   /* ---------- v20: pausa automatica per risparmiare batteria ---------- */
   // Telefono rivolto a terra (o al cielo) per 20 s: fotocamera spenta. Si riprende alzandolo o toccando lo schermo.
   let camPaused = false, oddSince = 0, okSince = 0;
-  function pauseCam() {
+  let pausedBySheet = false, sheetSince = 0;
+  function pauseCam(quiet) {
     if (camPaused) return;
-    camPaused = true;
+    camPaused = true; pausedBySheet = !!quiet;
     stopDet();
     const st = $('video').srcObject;
     if (st && st.getTracks) st.getTracks().forEach((t) => { t.onended = null; t.stop(); });
-    $('pauseNote').hidden = false;
+    if (!quiet) $('pauseNote').hidden = false;
   }
   function resumeCam() {
     if (!camPaused) return;
-    camPaused = false; oddSince = 0;
+    camPaused = false; oddSince = 0; pausedBySheet = false;
     $('pauseNote').hidden = true;
     startCamera().then(() => { camDrawOn = false; startCamDraw(); }).catch(() => {});
   }
   $('pauseNote').addEventListener('click', resumeCam);
   setInterval(() => {
-    if ($('hud').hidden || S.pitch === null) return;
+    if ($('hud').hidden) return;
+    // v24: pannello aperto per più di un minuto → fotocamera spenta; si riaccende chiudendo il pannello
+    const nowS = Date.now();
+    if (sheetIsOpen() && !shooting) {
+      sheetSince = sheetSince || nowS;
+      if (!camPaused && nowS - sheetSince > 60000) pauseCam(true);
+      return;
+    }
+    sheetSince = 0;
+    if (camPaused && pausedBySheet) { resumeCam(); return; }
+    if (S.pitch === null) return;
     const p = S.pitch + S.pitchOff, now = Date.now();
     const odd = p < -60 || p > 75;
     if (camPaused) {

@@ -57,6 +57,9 @@ def main():
                 u = r.request.url
                 if u.startswith('http://127.0.0.1'):
                     return r.continue_()
+                if 'agenziaentrate' in u and scheme == 'light':   # risposta finta del catasto (formato INSPIRE dell'Agenzia)
+                    return r.fulfill(status=200, content_type='text/html', headers={'Access-Control-Allow-Origin': '*'},
+                                     body='<table><tr><th>InspireId localId</th><td>IT.AGE.PLA.A399_0042A0.123</td></tr></table>')
                 if 'maplibre-gl' in u and ML and os.path.isdir(ML):
                     return r.fulfill(path=ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js'))
                 return r.abort()
@@ -71,7 +74,7 @@ def main():
             check(theme(page) == scheme, f'automatico: iPhone in tema {scheme} → app in tema {scheme}')
             page.wait_for_timeout(3600)   # animazione della pagina iniziale
             page.screenshot(path=f'{OUT}/v23-{scheme}-avvio.png')
-            check(page.locator('.ver').inner_text().startswith('Beta v23'), f'tema {scheme}: pagina iniziale con «Beta v23»')
+            check(page.locator('.ver').inner_text().startswith('Beta v2'), f'tema {scheme}: pagina iniziale con «Beta v2x»')
             if scheme == 'light':
                 page.click('#obHow'); page.wait_for_timeout(900)
                 page.screenshot(path=f'{OUT}/v23-come-1.png')
@@ -89,7 +92,15 @@ def main():
             if page.locator('#alCancel').first.is_visible():
                 page.locator('#alCancel').first.click(); page.wait_for_timeout(300)
             page.screenshot(path=f'{OUT}/v23-{scheme}-esplora.png')
-            page.click('#grab'); page.wait_for_timeout(1200)
+            page.click('.peek'); page.wait_for_timeout(2500)
+            check(page.locator('#sheet').get_attribute('class').find('open') >= 0, f'tema {scheme}: toccando la scheda si apre il pannello')
+            com = page.inner_text('#spCom'); cat = page.inner_text('#spCat')
+            print('     Comune: ' + com + ' · Catasto: ' + cat)
+            check(com.startswith('Ariano Irpino'), f'tema {scheme}: Comune del punto di ripresa = Ariano Irpino (AV)')
+            if scheme == 'light':
+                check(cat == 'foglio 42, particella 123', 'catasto (risposta finta): «foglio 42, particella 123»')
+            else:
+                check(cat.startswith('non disponibile'), 'catasto senza risposta: «non disponibile» con il motivo')
             page.screenshot(path=f'{OUT}/v23-{scheme}-pannello.png')
             page.evaluate("document.getElementById('segT').scrollIntoView()")
             page.wait_for_timeout(300)
