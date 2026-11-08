@@ -518,6 +518,10 @@ body.aligning #horizon.on { display: block; }
 /* avviso per dispositivi senza bussola o fotocamera posteriore */
 #devNote { position: fixed; left: 16px; right: 16px; top: 30%; z-index: 80; padding: 18px; border-radius: 18px; background: rgba(14, 18, 24, 0.96); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); text-align: center; }
 #devNote[hidden] { display: none; }
+#pauseNote { position: fixed; inset: 0; z-index: 70; border: 0; padding: 24px; background: rgba(8, 12, 16, 0.92); color: #fff; font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+#pauseNote[hidden] { display: none; }
+#pauseNote b { font-size: 1.1rem; }
+#pauseNote span { font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); }
 #devNote b { display: block; font-size: 1.05rem; margin-bottom: 6px; }
 #devNote p { margin: 0 0 14px; font-size: 0.92rem; line-height: 1.4; color: rgba(255, 255, 255, 0.8); }
 #devNote button { border: 0; border-radius: 12px; padding: 10px 22px; font: inherit; font-weight: 700; background: var(--accent); color: #06121c; }
@@ -679,7 +683,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v19 · bussola semplificata</p>
+    <p class="sub">Beta v20 · consuma meno batteria</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -688,6 +692,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   </div>
 </section>
 
+<button type="button" id="pauseNote" hidden><b>In pausa per risparmiare batteria</b><span>Alza il telefono o tocca lo schermo per riprendere</span></button>
 <div id="devNote" hidden role="alertdialog"><b>Serve un telefono</b><p></p><button type="button" id="devOk">Ho capito</button></div>
 <main id="hud" hidden>
   <div id="labels"></div>
@@ -1740,8 +1745,9 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   }
 
   /* ---------- Calibrazione ---------- */
-  function toast(msg, ms, undo) {
+  function toast(msg, ms, undo, btnText) {
     $('toast').classList.remove('ok');
+    $('toastBtn').textContent = btnText || 'Annulla';
     $('toastText').textContent = msg;
     $('toastBtn').hidden = !undo;
     undoState = undo || null;
@@ -1803,12 +1809,46 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     sunHist.length = 0;
     if (sunCand && now - sunCand.t > 1500) sunCand = null;
   }
+  // v20: il sole si cerca su una copia del flusso in un video nascosto, così il video visibile non viene mai toccato
+  let detVideo = null, detUntil = 0;
+  function detSource() {
+    const main = $('video'), st = main.srcObject;
+    if (!st || !st.getVideoTracks) return null;
+    const t = st.getVideoTracks()[0];
+    if (!t || t.readyState !== 'live') return null;
+    if (detVideo && detVideo.__src === t) return detVideo.videoWidth ? detVideo : null;
+    stopDet();
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('aria-hidden', 'true');
+    v.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none';
+    v.__src = t; v.__clone = t.clone();
+    v.srcObject = new MediaStream([v.__clone]);
+    document.body.appendChild(v);
+    v.play().catch(() => {});
+    detVideo = v;
+    return null;   // pronta dal giro dopo
+  }
+  function stopDet() {
+    if (!detVideo) return;
+    try { detVideo.__clone.stop(); } catch (e) {}
+    detVideo.srcObject = null; detVideo.remove(); detVideo = null;
+  }
   function sunAnalyze() {
-    if (S.lat === null || S.heading === null || S.pitch === null) return;
-    const v = $('video');
-    if (!v.videoWidth || v.paused) return;
+    if (camPaused || shooting || S.lat === null || S.heading === null || S.pitch === null) { if (Date.now() > detUntil) stopDet(); return; }
+    // serve solo se la correzione col sole è accesa o il menù Bussola è aperto
+    if (!S.autoSun && $('bmenu').hidden) { if (Date.now() > detUntil) stopDet(); return; }
     const sun = sunPos(new Date(), S.lat, S.lon);
-    if (sun.alt < 1) { sunCand = null; return; }
+    if (sun.alt < 1) { sunCand = null; if (Date.now() > detUntil) stopDet(); return; }
+    {
+      const W0 = window.innerWidth, H0 = window.innerHeight;
+      const tH = tanVis() * W0 / H0;
+      if (Math.abs(norm180(sun.az - trueHeading())) > Math.atan(tH) / RAD + 15) { if (Date.now() > detUntil) stopDet(); return; }
+    }
+    // con lo zoom del sensore la copia del flusso non è ingrandita: in quel caso niente ricerca
+    if (CAM.mode === 'sensore') { stopDet(); return; }
+    detUntil = Date.now() + 10000;
+    const v = detSource();
+    if (!v || !v.videoWidth) return;
     const W = window.innerWidth, H = window.innerHeight;
     const tanV = tanVis(), tanH = tanV * W / H;
     const relSun = norm180(sun.az - trueHeading());
@@ -1833,7 +1873,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       // L'inclinazione dei sensori è affidabile: un punto chiaro più alto o più basso del sole vero è una nuvola
       if (Math.abs(dOff) > 40 || Math.abs(dPitch) > SUN_VTOL) { sunCandFail(now); return; }
       sunHist.push({ d: dOff, t: now });
-      while (sunHist.length && now - sunHist[0].t > 3600) sunHist.shift();
+      while (sunHist.length && now - sunHist[0].t > 6000) sunHist.shift();   // v20: 5 misure in ~5 s
       if (sunHist.length < 5) return;
       let lo = 1e9, hi = -1e9, sum = 0;
       for (const h of sunHist) { lo = Math.min(lo, h.d); hi = Math.max(hi, h.d); sum += h.d; }
@@ -1847,9 +1887,19 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   let autoSunAt = 0;
   function autoSunFix(c) {
     if (!S.autoSun || align.step || shooting || Date.now() - autoSunAt < 60000 || S.lat === null) return;
+    // v20: sole basso (sotto 10°) = riverberi e foschia: niente correzione automatica
+    if (sunPos(new Date(), S.lat, S.lon).alt < 10) return;
     autoSunAt = Date.now();
     sunHist.length = 0;
     const d = Math.round(c.dOff * 10) / 10;
+    // scarto grande, o diverso da un allineamento fatto a mano col profilo: si chiede invece di correggere
+    if (Math.abs(d) > 8 || (S.alPos && S.alQ !== null && S.alQ <= 2 && Math.abs(d) > 2)) {
+      toast('Sole visibile: la bussola sembra sbagliare di ' + fmtDeg(d) + '. Correggo?', 9000, () => {
+        S.alOff = norm180(S.alOff + d); S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = 3; saveAlign();
+        toast('✓ Bussola corretta col sole (' + fmtDeg(d) + ').', 4000); $('toast').classList.add('ok');
+      }, 'Correggi');
+      return;
+    }
     if (Math.abs(d) < 0.8) {          // già giusta: lo si annota senza disturbare
       if (!S.alPos || S.alQ === null || S.alQ > 3) { S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = 3; saveAlign(); }
       return;
@@ -2822,8 +2872,18 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     const aid = aim ? aim.it.id : null;
     if (aid !== aimId) { aimId = aid; refreshMarkerClasses(); }
     frame.aim = aim;
-
-    requestAnimationFrame(frame);
+  }
+  // v20: il disegno parte da qui. Massimo 30 volte al secondo; se il telefono è fermo, 4 volte al secondo.
+  let lastDraw = 0, lastKey = '';
+  function tick(now) {
+    if (!camPaused) {
+      const hk = S.heading === null ? 'x' : Math.round(trueHeading() * 20);
+      const pk = S.pitch === null ? 'x' : Math.round((S.pitch + S.pitchOff) * 20);
+      const key = hk + '|' + pk + '|' + S.alOff + '|' + S.off + '|' + selId + '|' + S.fov + '|' + CAM.dz + '|' + window.innerWidth + 'x' + window.innerHeight + '|' + (align.step || '') + '|' + document.body.className;
+      const dt = now - lastDraw;
+      if (dt >= 32 && (key !== lastKey || dt > 250)) { lastDraw = now; lastKey = key; frame(); }
+    }
+    requestAnimationFrame(tick);
   }
 
   /* ---------- Impostazioni: pulsanti ---------- */
@@ -3602,6 +3662,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     try {
       const v = $('video');
       const old = v.srcObject;
+      stopDet();   // v20: la copia per il sole va chiusa insieme al flusso
       v.classList.add('switching');
       v.style.transform = '';
       if (old && old.getTracks) old.getTracks().forEach((t) => t.stop());
@@ -3610,6 +3671,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       // Risoluzione sicura (Full HD) per guardare; alta (4K) solo nella schermata di scatto, se scelta
       const hi = shooting && S.shotHi;
       const size = hi ? { width: { ideal: 3840 }, height: { ideal: 2160 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
+      size.frameRate = { ideal: 30, max: 30 };   // v20: niente 60 fotogrammi, stessa qualità a vista
       let stream = null;
       if (id) {
         try { stream = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ deviceId: { exact: id } }, size), audio: false }); }
@@ -3883,7 +3945,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   buildZoomStops();
 
   function checkCamera() {
-    if (document.visibilityState !== 'visible' || camBusy) return;
+    if (document.visibilityState !== 'visible' || camBusy || camPaused) return;
     const v = $('video');
     const s = v.srcObject;
     const t = s && s.getVideoTracks && s.getVideoTracks()[0];
@@ -3901,6 +3963,37 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     box.hidden = false;
   }
   $('devOk').addEventListener('click', () => { $('devNote').hidden = true; });
+
+  /* ---------- v20: pausa automatica per risparmiare batteria ---------- */
+  // Telefono rivolto a terra (o al cielo) per 20 s: fotocamera spenta. Si riprende alzandolo o toccando lo schermo.
+  let camPaused = false, oddSince = 0, okSince = 0;
+  function pauseCam() {
+    if (camPaused) return;
+    camPaused = true;
+    stopDet();
+    const st = $('video').srcObject;
+    if (st && st.getTracks) st.getTracks().forEach((t) => { t.onended = null; t.stop(); });
+    $('pauseNote').hidden = false;
+  }
+  function resumeCam() {
+    if (!camPaused) return;
+    camPaused = false; oddSince = 0;
+    $('pauseNote').hidden = true;
+    startCamera().catch(() => {});
+  }
+  $('pauseNote').addEventListener('click', resumeCam);
+  setInterval(() => {
+    if ($('hud').hidden || S.pitch === null) return;
+    const p = S.pitch + S.pitchOff, now = Date.now();
+    const odd = p < -60 || p > 75;
+    if (camPaused) {
+      if (!odd) { okSince = okSince || now; if (now - okSince > 800) resumeCam(); } else okSince = 0;
+      return;
+    }
+    okSince = 0;
+    const busy = shooting || align.step || !$('gal').hidden || !$('edit').hidden || $('sheet').classList.contains('open') || full;
+    if (odd && !busy) { oddSince = oddSince || now; if (now - oddSince > 20000) pauseCam(); } else oddSince = 0;
+  }, 1000);
 
   /* ---------- Avvio ---------- */
   $('go').addEventListener('click', async () => {
@@ -3941,15 +4034,15 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       }
       setInterval(maybeFetch, 4000);
       setInterval(maybeFetchLand, 4000);
-      setInterval(sunAnalyze, 600);
+      setInterval(sunAnalyze, 1000);   // v20: una volta al secondo, solo quando serve
       loadMapLib(tryInitMap);
-      setInterval(updateMap, 120);
+      setInterval(() => { if (!camPaused) updateMap(); }, 400);   // v20: meno spesso
 
       $('start').hidden = true;
       $('hud').hidden = false;
       if (F.sun) sunToggle(true);
       if (pitchWasReset !== null) toast('Inclinazione azzerata (era ' + fmtDeg(Math.round(pitchWasReset * 10) / 10) + '): ora viene solo dai sensori del telefono.', 7000);
-      requestAnimationFrame(frame);
+      requestAnimationFrame(tick);
       // v17: dispositivi senza bussola o senza fotocamera posteriore (es. PC): messaggio chiaro invece di una schermata ferma
       setTimeout(() => {
         const noComp = S.heading === null;
