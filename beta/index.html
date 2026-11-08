@@ -798,6 +798,118 @@ button, input, select { font-family: inherit; }
 #devNote button { background: var(--pri); color: var(--pri-tx); }
 #pauseNote { background: color-mix(in srgb, var(--bg) 94%, transparent); color: var(--tx); }
 #pauseNote span { color: var(--tx2); }
+
+/* ===== v23 – veste grafica, tappa 2: schermata principale variante A ===== */
+:root { --sun-tx: #9a6a00; --card-shadow: 0 0 0 0.5px var(--glass-line), 0 10px 30px rgba(0, 0, 0, 0.18); }
+:root[data-theme="dark"] { --sun-tx: #ffc928; }
+/* in alto: ghiera a filetti e gradi in pastiglia */
+#tape { top: calc(4px + env(safe-area-inset-top, 0px)); filter: drop-shadow(0 0.5px 1.5px rgba(0, 0, 0, 0.45)); }
+.top { padding: calc(38px + env(safe-area-inset-top, 0px)) 16px 0; gap: 0; text-shadow: none; }
+.degpill {
+  display: inline-flex; align-items: baseline; gap: 5px; padding: 4px 12px; border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  color: #fff; font-variant-numeric: tabular-nums;
+}
+.degpill .deg { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
+.degpill .card { font-size: 15px; font-weight: 400; opacity: 0.8; color: #fff; }
+/* filtri in colonna a sinistra, speculari allo zoom a destra */
+#filters {
+  left: 12px; right: auto; top: 50%; transform: translateY(-50%);
+  flex-direction: column; justify-content: flex-start; gap: 6px;
+}
+.flt {
+  width: 34px; height: 34px; opacity: 1;
+  background: rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.25);
+}
+.flt.f-town { --ic: #ffffff; } .flt.f-peak { --ic: #8fd99a; } .flt.f-land { --ic: #c8a2ff; } .flt.f-sun { --ic: #ffc928; }
+.flt[aria-pressed="false"] { --ic: rgba(255, 255, 255, 0.45); opacity: 1; background: rgba(0, 0, 0, 0.12); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18); }
+/* zoom a pastiglie sul bordo destro */
+#zoom {
+  position: absolute; right: 12px; left: auto; top: 50%; width: auto; height: auto; margin: 0; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 6px; opacity: 1; pointer-events: auto; z-index: 3;
+}
+#zoom .zp {
+  width: 34px; height: 34px; padding: 0; border: 0; border-radius: 17px;
+  display: flex; align-items: center; justify-content: center;
+  font: inherit; font-size: 11px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums;
+  background: rgba(0, 0, 0, 0.25); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+#zoom .zp[aria-pressed="true"] { background: rgba(255, 255, 255, 0.85); color: #1d1d1f; font-weight: 700; }
+body.aligning #zoom { display: none; }
+/* mirino */
+.cross { width: 46px; height: 46px; margin: -23px 0 0 -23px; border: 0; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 0 0.5px rgba(0, 0, 0, 0.25); }
+.cross::after { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; background: #ffc928; box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.2); }
+/* scheda sospesa in basso (pannello chiuso) */
+.panel {
+  left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 0 18px 14px; border-radius: 28px; max-height: 60vh;
+  color: var(--tx); background: var(--glass-card);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: var(--card-shadow);
+}
+.panel.open { left: 0; right: 0; bottom: 0; padding: env(safe-area-inset-top, 0px) 16px calc(14px + env(safe-area-inset-bottom, 0px)); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#grab { height: 20px; }
+#grab i { width: 36px; height: 5px; margin: 8px auto 0; background: var(--line); }
+.peek { min-height: 88px; padding-top: 4px; }
+body.hasmap .peek { padding-right: 100px; }
+#aimName { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; color: var(--tx); }
+#aimInfo { font-size: 14px; color: var(--tx2); margin-top: 3px; }
+#here { font-size: 12.5px; color: var(--tx2); }
+#sunLine { color: var(--sun-tx); font-size: 13px; }
+.panel .bar { margin-top: 12px; padding: 12px 0 0; border-top: 0.5px solid var(--line); }
+.panel.open .bar { border-top: 0; }
+.comp { height: 44px; padding: 0 14px 0 10px; border-radius: 22px; font-size: 15px; font-weight: 500; color: var(--tx); background: var(--fill); }
+.comp svg { color: var(--tx); }
+.comp i { width: 7px; height: 7px; }
+.comp[aria-expanded="true"] { background: var(--fill2); box-shadow: inset 0 0 0 1px var(--line); }
+.bar .cam { gap: 18px; }
+.gal, .bar .gal { width: 58px; height: 58px; padding: 0; border: 0; background: transparent; }
+.gal svg, .shut svg { display: block; width: 100%; height: 100%; }
+.shut, .bar .shut { width: 58px; height: 58px; box-shadow: none; background: transparent; border-radius: 50%; }
+.shut .ring { fill: var(--fill); }
+.shut .sunc { transition: transform 0.25s cubic-bezier(.2, .7, .2, 1); }
+.shut:active .sunc, .shut.press .sunc { transform: translateY(-9px); }
+.brand { display: flex; justify-content: center; margin-top: 10px; color: var(--tx); opacity: 0.88; }
+.panel.open .brand { display: none; }
+/* minimappa tonda nella scheda, stessa veste nei due temi */
+#miniWrap:not(.full) { right: 28px; width: 88px; height: 88px; }
+#miniWrap:not(.full) #mini { border-radius: 50%; border: 0; box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.12); background: #e4eaec; }
+#miniWrap:not(.full) .maplibregl-ctrl-bottom-right, #miniWrap:not(.full) .maplibregl-ctrl-bottom-left { display: none; }
+#miniWrap:not(.full) #miniAttr { color: #3a3a3c; text-shadow: 0 0 2px #fff, 0 0 2px #fff; font-weight: 500; }
+/* il menù Bussola nella scheda: stessi colori del pannello */
+.panel .bmi { color: var(--tx); background: var(--fill); }
+.panel .bmi span, .panel .bmState, .panel .bmNote { color: var(--tx2); }
+.panel #bmClose { color: var(--tx); }
+.panel .bmAdv { color: var(--acc); }
+.panel #bmenu .bmi.big { background: var(--pri); color: var(--pri-tx); }
+.panel #bmenu .bmi.big span { color: var(--pri-tx); opacity: 0.7; }
+.panel #fig8 { background: var(--fill); color: var(--tx2); }
+.panel .bmNote.off i { background: var(--tx3); }
+/* schede sospese sopra la fotocamera: avvisi, allineamento, scheda della mappa grande */
+#toast, #alignBar, #miniCard {
+  color: var(--tx); background: var(--glass-card);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: var(--card-shadow); border-radius: 20px;
+}
+#toast.ok { background: var(--ok-bg); color: var(--ok-tx); box-shadow: inset 0 0 0 1px var(--ok-line), 0 10px 30px rgba(0, 0, 0, 0.18); }
+#toast button { background: var(--pri); color: var(--pri-tx); }
+#toast { top: calc(84px + env(safe-area-inset-top, 0px)); left: 58px; right: 58px; }
+#alText, #miniCard span { color: var(--tx2); }
+#alignBar .btn { background: var(--pri); color: var(--pri-tx); }
+#alignBar .btn.alt { background: var(--fill2); color: var(--tx); }
+#alAlt { color: var(--acc); }
+#alignBar .chip { color: var(--tx); background: var(--fill); }
+#alignBar .chip.on { border-color: var(--acc); }
+#miniCard .btn { background: var(--pri); color: var(--pri-tx); }
+#alignBar, #miniCard { left: 10px; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+/* scatto a tutto schermo: stessi tasti, più grandi */
+#shotBar .gal { width: 62px; height: 62px; }
+#shotBar .shut { width: 78px; height: 78px; box-shadow: none; }
+#shotBar .shut .ring { fill: rgba(0, 0, 0, 0.28); }
+#miniWrap.full #miniExpand { width: 44px; height: 44px; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); font-weight: 500; }
+#miniWrap.full #miniCenter { background: var(--glass-card); color: var(--tx); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); border-radius: 14px; }
+.ov { background: rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 </style>
 <script>
 /* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
@@ -847,15 +959,14 @@ button, input, select { font-family: inherit; }
   <canvas id="ridge" aria-hidden="true"></canvas>
   <canvas id="tape" aria-hidden="true"></canvas>
   <div class="top">
-    <div class="deg" id="deg">–</div>
-    <div class="card" id="card">&nbsp;</div>
-    <div id="qual"><i></i><span></span></div>
+    <div class="degpill"><span class="deg" id="deg">–</span><span class="card" id="card"></span></div>
+    <div id="qual" hidden><i></i><span></span></div>
   </div>
   <div id="filters">
-    <button class="flt" type="button" data-f="town" aria-label="Paesi e città" aria-pressed="true" style="--c: #ffffff; --ic: #ffffff"></button>
-    <button class="flt" type="button" data-f="peak" aria-label="Vette" aria-pressed="true" style="--c: #8be28b; --ic: #8be28b"></button>
-    <button class="flt" type="button" data-f="land" aria-label="Chiese, torri, castelli" aria-pressed="false" style="--c: #c8a2ff; --ic: #c8a2ff"></button>
-    <button class="flt" type="button" data-f="sun" aria-label="Percorso del sole" aria-pressed="false" style="--c: #ffd166; --ic: #ffd166"></button>
+    <button class="flt f-town" type="button" data-f="town" aria-label="Paesi e città" aria-pressed="true"></button>
+    <button class="flt f-peak" type="button" data-f="peak" aria-label="Vette" aria-pressed="true"></button>
+    <button class="flt f-land" type="button" data-f="land" aria-label="Chiese, torri, castelli" aria-pressed="false"></button>
+    <button class="flt f-sun" type="button" data-f="sun" aria-label="Percorso del sole" aria-pressed="false"></button>
   </div>
   <div class="cross" aria-hidden="true"></div>
   <div id="horizon" aria-hidden="true"><span>orizzonte (altezza degli occhi)</span></div>
@@ -880,18 +991,15 @@ button, input, select { font-family: inherit; }
     <button id="miniCenter" type="button" hidden>Ricentra</button>
     <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
   </div>
-  <div id="zoom" role="slider" tabindex="0" aria-label="Zoom della fotocamera" aria-valuetext="1×">
-    <div id="zoomTrack"><div id="zoomTicks"></div><div id="zoomKnob">1×</div></div>
-    <div id="zoomBubble">1×</div>
-  </div>
+  <div id="zoom" role="group" aria-label="Zoom della fotocamera"></div>
   <div id="shotTop" hidden>
     <button class="ov" id="shotClose" type="button" aria-label="Chiudi lo scatto"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 3 L13 13 M13 3 L3 13" stroke="#ffffff" stroke-width="2" stroke-linecap="round"></path></svg></button>
     <button class="ov" id="shotHi" type="button" aria-pressed="false"><span>Qualità normale</span></button>
     <button class="ov" id="shotNames" type="button" aria-pressed="true"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14"><path d="M1.5 12.5 L7 2.5 L12.5 12.5 Z" fill="#8be28b"></path></svg><span>Nomi sì</span></button>
   </div>
   <div id="shotBar" hidden>
-    <button class="gal" id="galBtn2" type="button" aria-label="Galleria"><span class="thumb"></span></button>
-    <button class="shut" id="shotGo" type="button" aria-label="Scatta"><span></span></button>
+    <button class="gal" id="galBtn2" type="button" aria-label="Galleria"><svg aria-hidden="true" width="58" height="58" viewBox="0 0 58 58"><defs><clipPath id="galc2"><circle cx="29" cy="29" r="23.5"></circle></clipPath></defs><g clip-path="url(#galc2)"><rect width="58" height="58" fill="#a9c9de"></rect><path d="M0 36 L14 26 L26 33 L38 22 L58 32 V58 H0 Z" fill="#62806b"></path><path d="M0 44 L58 40 V58 H0 Z" fill="#334a39"></path><circle cx="38" cy="15" r="4" fill="#ffc928"></circle></g></svg></button>
+    <button class="shut" id="shotGo" type="button" aria-label="Scatta"><svg aria-hidden="true" width="58" height="58" viewBox="0 0 58 58"><defs><clipPath id="shc2"><rect x="0" y="0" width="58" height="34"></rect></clipPath></defs><circle class="ring" cx="29" cy="29" r="29"></circle><circle cx="29" cy="29" r="23.5" fill="#e6e8eb"></circle><path d="M12 34 H46" stroke="#8e959c" stroke-width="1" opacity="0.55" stroke-linecap="round"></path><g clip-path="url(#shc2)"><circle class="sunc" cx="29" cy="34" r="8" fill="#ffc928"></circle></g></svg></button>
     <div class="sp"></div>
   </div>
   <div id="flash"></div>
@@ -926,12 +1034,13 @@ button, input, select { font-family: inherit; }
       <button type="button" class="bmi" id="walkBtn" hidden><b>Camminando</b><span>Qualche passo dritto</span></button>
     </div>
     <div class="bar">
-      <button class="comp" id="compBtn" type="button" aria-expanded="false" aria-controls="bmenu"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="#8fd3ff" stroke-width="1.8" fill="none"></circle><path d="M12 5.5 L14.5 12 L12 18.5 L9.5 12 Z" fill="#8fd3ff"></path></svg><span>Bussola</span><i id="compDot"></i></button>
+      <button class="comp" id="compBtn" type="button" aria-expanded="false" aria-controls="bmenu"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 5.5 L14 12 L12 18.5 L10 12 Z" stroke-linejoin="round"></path></svg><span>Bussola</span><i id="compDot"></i></button>
       <div class="cam">
-        <button class="gal" id="galBtn" type="button" aria-label="Galleria"><span class="thumb"></span></button>
-        <button class="shut" id="shotBtn" type="button" aria-label="Fotografa"><span></span></button>
+        <button class="gal" id="galBtn" type="button" aria-label="Galleria"><svg aria-hidden="true" width="58" height="58" viewBox="0 0 58 58"><defs><clipPath id="galc1"><circle cx="29" cy="29" r="23.5"></circle></clipPath></defs><g clip-path="url(#galc1)"><rect width="58" height="58" fill="#a9c9de"></rect><path d="M0 36 L14 26 L26 33 L38 22 L58 32 V58 H0 Z" fill="#62806b"></path><path d="M0 44 L58 40 V58 H0 Z" fill="#334a39"></path><circle cx="38" cy="15" r="4" fill="#ffc928"></circle></g></svg></button>
+        <button class="shut" id="shotBtn" type="button" aria-label="Fotografa"><svg aria-hidden="true" width="58" height="58" viewBox="0 0 58 58"><defs><clipPath id="shc1"><rect x="0" y="0" width="58" height="34"></rect></clipPath></defs><circle class="ring" cx="29" cy="29" r="29"></circle><circle cx="29" cy="29" r="23.5" fill="#e6e8eb"></circle><path d="M12 34 H46" stroke="#8e959c" stroke-width="1" opacity="0.55" stroke-linecap="round"></path><g clip-path="url(#shc1)"><circle class="sunc" cx="29" cy="34" r="8" fill="#ffc928"></circle></g></svg></button>
       </div>
     </div>
+    <div class="brand" id="brandMini" aria-hidden="true"><svg width="62" height="19" viewBox="-2 -15.5 61.7 19"><text x="0" y="0" font-size="16" font-weight="300" fill="currentColor" style="font-family: var(--font)">orientis</text><circle cx="57.05" cy="-1.44" r="1.44" fill="#ffc928"></circle></svg></div>
     <div id="more">
       <h3>Punto di ripresa</h3>
       <div id="spot">
@@ -1116,17 +1225,17 @@ button, input, select { font-family: inherit; }
   function iconSvg(t, size) {
     const z = size || 14;
     let body;
-    if (t === 'peak') body = '<path class="f" d="M1.5 12.5 L7 2.5 L12.5 12.5 Z"/>';
-    else if (t === 'city') body = '<circle class="s" cx="7" cy="7" r="5.6" stroke-width="1.4"/><circle class="f" cx="7" cy="7" r="3.2"/>';
-    else if (t === 'hamlet') body = '<circle class="s" cx="7" cy="7" r="3.4" stroke-width="1.8"/>';
-    else if (t === 'church') body = '<path class="s" d="M7 1.5 V12.5 M3 5 H11" stroke-width="2"/>';
-    else if (t === 'tower') body = '<path class="s" d="M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2" stroke-width="1.6"/>';
-    else if (t === 'castle') body = '<path class="s" d="M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z" stroke-width="1.4"/>';
-    else if (t === 'sun') body = '<circle class="f" cx="7" cy="7" r="3"/><path class="s" d="M7 0.5 V2.5 M7 11.5 V13.5 M0.5 7 H2.5 M11.5 7 H13.5 M2.4 2.4 L3.8 3.8 M10.2 10.2 L11.6 11.6 M2.4 11.6 L3.8 10.2 M10.2 3.8 L11.6 2.4" stroke-width="1.3"/>';
-    else if (t === 'ridge') body = '<path class="s" d="M0.5 9.5 L3.5 6 L6 8 L9 3.5 L13.5 7.5" stroke-width="1.5" stroke-dasharray="1.8 1.8" stroke-linecap="round" stroke-linejoin="round"/>';
-    else if (t === 'relief') body = '<path class="f" d="M0.5 13 L4.4 6.2 L6.6 9.2 L9.6 3.4 L13.5 13 Z" opacity="0.45"/><path class="f" d="M0.5 13 L3.6 9 L5.6 11 L8.8 7 L13.5 13 Z"/>';
-    else if (t === 'river') body = '<path class="s" d="M0.5 7.5 C2.8 4 4.6 4 7 7.5 S11.2 11 13.5 7.5" stroke-width="2"/>';
-    else body = '<circle class="f" cx="7" cy="7" r="4.5"/>';
+    if (t === 'peak') body = '<path class="s" d="M1.5 12.5 L7 2.5 L12.5 12.5 Z" stroke-width="1.4"/>';
+    else if (t === 'city') body = '<circle class="s" cx="7" cy="7" r="5.4" stroke-width="1.4"/><circle class="f" cx="7" cy="7" r="2.2"/>';
+    else if (t === 'hamlet') body = '<circle class="s" cx="7" cy="7" r="3.4" stroke-width="1.4"/>';
+    else if (t === 'church') body = '<path class="s" d="M7 1 V3.5 M5.8 2.2 H8.2 M4 13 V6.5 L7 4.5 L10 6.5 V13 Z" stroke-width="1.3"/>';
+    else if (t === 'tower') body = '<path class="s" d="M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2" stroke-width="1.3"/>';
+    else if (t === 'castle') body = '<path class="s" d="M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z" stroke-width="1.3"/>';
+    else if (t === 'sun') body = '<circle class="f" cx="7" cy="7" r="4"/>';
+    else if (t === 'ridge') body = '<path class="s" d="M0.5 10 L3.5 6 L6 8.5 L9 4 L13.5 8.5" stroke-width="1.3" stroke-dasharray="1.6 1.8"/>';
+    else if (t === 'relief') body = '<path class="f" d="M0.5 12.5 L4.6 6 L6.8 9 L9.2 4.5 L13.5 12.5 Z" opacity="0.85"/>';
+    else if (t === 'river') body = '<path class="s" d="M1 5 C3 3.8 4.5 6.2 7 5 S11 3.8 13 5 M1 9.5 C3 8.3 4.5 10.7 7 9.5 S11 8.3 13 9.5" stroke-width="1.3"/>';
+    else body = '<circle class="s" cx="7" cy="7" r="4.6" stroke-width="1.5"/>';
     return '<svg class="ic" aria-hidden="true" width="' + z + '" height="' + z + '" viewBox="0 0 14 14">' + body + '</svg>';
   }
   // Il luogo è acceso nei filtri?
@@ -1213,7 +1322,7 @@ button, input, select { font-family: inherit; }
     shotNames: true, shotHi: false, dem: true, ridge: true, autoSun: true
   };
   // Fotocamera: obiettivi trovati, obiettivo in uso, zoom a scatti
-  const CAM = { ids: {}, kind: 'std', base: 'std', names: [], scanned: false, track: null, hw: null, zoom: 1, dz: 1, css: 1, mode: '', stops: [1, 1.5, 2] };
+  const CAM = { ids: {}, kind: 'std', base: 'std', names: [], scanned: false, track: null, hw: null, zoom: 1, zk: '1', dz: 1, css: 1, mode: '', stops: ['1', '2'] };
   const LENS_NAME = { uw: 'ultra grandangolo', std: 'standard', tele: 'teleobiettivo' };
   // Metà del campo visivo verticale sullo schermo (tangente), tenendo conto dello zoom
   // (CAM.zoom è lo scatto scelto rispetto all'obiettivo più ampio; CAM.dz l'ingrandimento applicato all'obiettivo in uso)
@@ -2126,9 +2235,9 @@ button, input, select { font-family: inherit; }
       map.addLayer({ id: 'sunrise', type: 'line', source: 'sunrise', paint: { 'line-color': '#ff9f1c', 'line-width': 3, 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'sunset', type: 'line', source: 'sunset', paint: { 'line-color': '#e4572e', 'line-width': 3, 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'fan', type: 'fill', source: 'fan', paint: { 'fill-color': '#8fd3ff', 'fill-opacity': 0.18 } });
-      map.addLayer({ id: 'cone', type: 'fill', source: 'cone', paint: { 'fill-color': '#8fd3ff', 'fill-opacity': 0.42 } });
-      map.addLayer({ id: 'coneLine', type: 'line', source: 'cone', paint: { 'line-color': '#1b6fa8', 'line-width': 2 } });
-      map.addLayer({ id: 'me', type: 'circle', source: 'me', paint: { 'circle-radius': 6, 'circle-color': '#1b6fa8', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
+      map.addLayer({ id: 'cone', type: 'fill', source: 'cone', paint: { 'fill-color': '#ffc928', 'fill-opacity': 0.34 } });
+      map.addLayer({ id: 'coneLine', type: 'line', source: 'cone', paint: { 'line-color': '#e0a800', 'line-width': 1, 'line-opacity': 0.6 } });
+      map.addLayer({ id: 'me', type: 'circle', source: 'me', paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-color': '#1d1d1f', 'circle-stroke-width': 1.4 } });
       mapReady = true;
       $('miniWrap').hidden = false;
       document.body.classList.add('hasmap');
@@ -2231,8 +2340,10 @@ button, input, select { font-family: inherit; }
   });
 
   /* ---------- Ghiera della bussola ---------- */
+  const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Inter", "Segoe UI", Roboto, sans-serif';
   const tape = $('tape'), tctx = tape.getContext('2d');
-  const TAPE_H = 34;
+  const TAPE_H = 30;
+  // v23: ghiera a filetti (tacca ogni 2°, filetto lungo ogni 10° con il numero, punti cardinali), tacca centrale gialla
   function drawTape(hd) {
     const W = window.innerWidth, d = window.devicePixelRatio || 1;
     if (tape.width !== Math.round(W * d)) {
@@ -2242,34 +2353,37 @@ button, input, select { font-family: inherit; }
     tctx.setTransform(d, 0, 0, d, 0, 0);
     tctx.clearRect(0, 0, W, TAPE_H);
     if (hd === null) return;
-    const span = 64, R = (W / 2 - 12) / Math.sin(span * RAD), cx = W / 2, base = TAPE_H - 3;
-    tctx.textAlign = 'center'; tctx.textBaseline = 'top';
-    tctx.font = '700 11px -apple-system, system-ui, sans-serif';
-    tctx.shadowColor = 'rgba(0,0,0,0.8)'; tctx.shadowBlur = 3;
+    const ppd = 4.75, cx = W / 2, half = cx / ppd + 2;
     const names = { 0: 'N', 45: 'NE', 90: 'E', 135: 'SE', 180: 'S', 225: 'SO', 270: 'O', 315: 'NO' };
-    for (let a = Math.ceil((hd - span) / 5) * 5; a <= hd + span; a += 5) {
-      const rel = a - hd, c = Math.cos(rel * RAD);
-      const x = cx + R * Math.sin(rel * RAD);
+    tctx.textAlign = 'center'; tctx.textBaseline = 'top';
+    tctx.font = '500 10px ' + FONT;
+    tctx.lineCap = 'butt';
+    for (let a = Math.ceil((hd - half) / 1) * 1; a <= hd + half; a += 1) {
       const deg = ((a % 360) + 360) % 360;
-      const major = deg % 30 === 0 || deg % 45 === 0, mid = deg % 10 === 0;
-      const len = (major ? 15 : mid ? 10 : 6) * (0.55 + 0.45 * c);
-      tctx.globalAlpha = Math.max(0, Math.min(1, (c - 0.3) / 0.45));
+      const x = cx + (a - hd) * ppd;
+      const fade = Math.max(0, Math.min(1, Math.min(x, W - x) / 36));
+      if (fade <= 0) continue;
+      const card = names[deg] !== undefined;
+      const major = deg % 10 === 0, minor = deg % 2 === 0;
+      if (!major && !minor && !card) continue;
       tctx.strokeStyle = deg === 0 ? '#ff6b5a' : '#ffffff';
-      tctx.lineWidth = major ? 2 : 1.2;
-      tctx.beginPath(); tctx.moveTo(x, base); tctx.lineTo(x, base - len); tctx.stroke();
-      if (major) {
+      tctx.globalAlpha = fade * (major || card ? 0.95 : 0.6);
+      tctx.lineWidth = major || card ? 1 : 0.6;
+      tctx.beginPath(); tctx.moveTo(x, major || card ? 17 : 21); tctx.lineTo(x, 26); tctx.stroke();
+      if (card || (major && Math.abs(((deg + 22.5) % 45) - 22.5) > 4)) {
         tctx.fillStyle = deg === 0 ? '#ff6b5a' : '#ffffff';
-        tctx.fillText(names[deg] !== undefined ? names[deg] : String(deg), x, 2);
+        tctx.globalAlpha = fade * 0.9;
+        tctx.font = (card ? '600 10px ' : '500 10px ') + FONT;
+        tctx.fillText(card ? names[deg] : String(deg), x, 3);
       }
     }
-    tctx.globalAlpha = 1; tctx.shadowBlur = 0;
-    tctx.strokeStyle = qualInfo().color || '#8fd3ff'; tctx.lineWidth = 3;
-    tctx.beginPath(); tctx.moveTo(cx, base + 1); tctx.lineTo(cx, base - 21); tctx.stroke();
+    tctx.globalAlpha = 1;
+    tctx.strokeStyle = '#ffc928'; tctx.lineWidth = 2; tctx.lineCap = 'round';
+    tctx.beginPath(); tctx.moveTo(cx, 14); tctx.lineTo(cx, 28); tctx.stroke();
   }
 
   /* ---------- Qualità dell'allineamento ---------- */
-  const rootCss = getComputedStyle(document.documentElement);
-  const qcol = (n, d) => (rootCss.getPropertyValue(n).trim() || d);
+  const qcol = (n, d) => (getComputedStyle(document.documentElement).getPropertyValue(n).trim() || d);
   function qualInfo() {
     if (S.alPos && S.alQ !== null) {
       const v = S.alQ;
@@ -2394,7 +2508,7 @@ button, input, select { font-family: inherit; }
     if (typeof align.prevFov !== 'number' || !align.prevFovKind) return;
     if (S.fovs[align.prevFovKind] === align.prevFov && (CAM.kind !== align.prevFovKind || S.fov === align.prevFov)) return;
     S.fovs[align.prevFovKind] = align.prevFov;
-    if (CAM.kind === align.prevFovKind) { S.fov = align.prevFov; if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true); }
+    if (CAM.kind === align.prevFovKind) { S.fov = align.prevFov; if (CAM.kind !== 'tele') applyZoom(dzFor((CAM.zoom = zoomVal()), CAM.kind), true); }
   }
   function setFovLive(f) {
     S.fov = Math.round(Math.min(130, Math.max(8, f)) * 2) / 2;
@@ -2452,7 +2566,7 @@ button, input, select { font-family: inherit; }
   $('alOk').addEventListener('click', () => {
     if (align.step === 'intro') { alBegin(); return; }
     if (align.step === 'ridge') {
-      if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true);
+      if (CAM.kind !== 'tele') applyZoom(dzFor((CAM.zoom = zoomVal()), CAM.kind), true);
       S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = ridgeReady() ? 2 : 3;
       saveAlign(); saveSettings(); refreshSettingsUI();
       const dFov = S.fov - (typeof align.prevFov === 'number' && align.prevFovKind === CAM.kind ? align.prevFov : S.fov);
@@ -2532,7 +2646,7 @@ button, input, select { font-family: inherit; }
     alPtr.delete(e.pointerId);
     if (alPinch && alPtr.size < 2) {
       alPinch = null;
-      if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true);
+      if (CAM.kind !== 'tele') applyZoom(dzFor((CAM.zoom = zoomVal()), CAM.kind), true);
       refreshSettingsUI();
     }
     if (alPtr.size === 1) { const v = [...alPtr.values()][0]; alDrag = { x: v.x, base: S.alOff }; } else if (!alPtr.size) alDrag = null;
@@ -2839,6 +2953,16 @@ button, input, select { font-family: inherit; }
     lab.pin.style.display = 'none';
   }
 
+  // v23: colonne di filtri e zoom a metà schermo, ma sempre sopra la scheda in basso (che col menù Bussola si allunga)
+  function placeColumns(H) {
+    const low = (shooting ? $('shotBar') : $('sheet')).getBoundingClientRect().top - 12;
+    for (const el of [$('filters'), $('zoom')]) {
+      const h = el.offsetHeight;
+      if (!h) continue;
+      const c = Math.round(Math.max(130 + h / 2, Math.min(H / 2, low - h / 2))) + 'px';
+      if (el.style.top !== c) el.style.top = c;
+    }
+  }
   function frame() {
     const W = window.innerWidth, H = window.innerHeight;
     const heading = (S.heading === null) ? null : trueHeading();
@@ -2846,6 +2970,7 @@ button, input, select { font-family: inherit; }
 
     drawTape(heading);
     updateQual();
+    placeColumns(H);
     if (!full) {
       const pk = document.querySelector('.peek').getBoundingClientRect();
       const mt = Math.round(pk.top + (pk.height - 88) / 2) + 'px';
@@ -2904,7 +3029,11 @@ button, input, select { font-family: inherit; }
       cand.sort((a, b) => b.it.score - a.it.score);
       const order = aim ? [aim].concat(cand.filter((c) => c !== aim)) : cand;
       const placed = [];
-      const topLimit = $('filters').getBoundingClientRect().bottom + 8;
+      const topLimit = document.querySelector('.degpill').getBoundingClientRect().bottom + 8;
+      for (const el of [$('filters'), $('zoom')]) {   // v23: le etichette non coprono le due colonne di tasti
+        const r = el.getBoundingClientRect();
+        if (r.height > 0 && getComputedStyle(el).display !== 'none') placed.push({ l: r.left - 4, r: r.right + 4, t: r.top - 4, b: r.bottom + 4 });
+      }
       const bottomLimit = (shooting ? $('shotBar') : $('sheet')).getBoundingClientRect().top - 10;
       let names = 0, dots = 0;
       const nNames = DENS[F.dens];
@@ -3044,7 +3173,7 @@ button, input, select { font-family: inherit; }
     $('vFov').textContent = S.fov + '°';
     $('fovLens').textContent = LENS_NAME[CAM.kind];
     $('camInfo').textContent = 'Obiettivo in uso: ' + LENS_NAME[CAM.kind] +
-      (CAM.kind !== 'tele' && CAM.zoom !== 1 ? ', zoom ' + zoomName(CAM.zoom) + ' (' + CAM.mode + (CAM.dz > 1 ? ' ' + zoomName(Math.round(CAM.dz * 100) / 100) : '') + ')' : '') +
+      (CAM.kind !== 'tele' && CAM.zoom !== 1 ? ', zoom ' + zoomLabel(CAM.zk) + ' (' + CAM.mode + (CAM.dz > 1 ? ' ' + zoomName(Math.round(CAM.dz * 100) / 100) : '') + ')' : '') +
       '. Il campo visivo si tara separatamente per ogni obiettivo. Fotocamere trovate: ' + (CAM.names.length ? CAM.names.join('; ') : '–') + '.';
     $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
     $('autoSun').checked = S.autoSun !== false;
@@ -3123,7 +3252,7 @@ button, input, select { font-family: inherit; }
     if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; retryLandAt = 0; refreshItems(); maybeFetch(); maybeFetchLand(); }
     if (b.dataset.k === 'fov') {
       S.fov = Math.min(130, Math.max(8, S.fov + Number(b.dataset.d))); S.fovs[CAM.kind] = S.fov;
-      if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true);
+      if (CAM.kind !== 'tele') applyZoom(dzFor((CAM.zoom = zoomVal()), CAM.kind), true);
     }
     if (b.dataset.k === 'off') S.off = Math.min(180, Math.max(-180, S.off + Number(b.dataset.d)));
     saveSettings();
@@ -3189,7 +3318,7 @@ button, input, select { font-family: inherit; }
 
   /* ---------- Punto di ripresa ---------- */
   const DIRN = ['nord', 'nord-est', 'est', 'sud-est', 'sud', 'sud-ovest', 'ovest', 'nord-ovest'];
-  const FONT = 'ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+
   function fmtCoord(lat, lon) {
     const f = (v) => Math.abs(v).toLocaleString('it-IT', { minimumFractionDigits: 5, maximumFractionDigits: 5 }) + '°';
     return f(lat) + (lat >= 0 ? ' N' : ' S') + ', ' + f(lon) + (lon >= 0 ? ' E' : ' O');
@@ -3217,7 +3346,7 @@ button, input, select { font-family: inherit; }
       heading: S.heading === null ? null : trueHeading(),
       pitch: S.pitch === null ? null : S.pitch + S.pitchOff,
       ground: S.dem && DEM.ground !== null ? Math.round(DEM.ground) : null, dem: !!(S.dem && DEM.prof),
-      aligned: !!S.alPos, lens: CAM.kind, zoom: CAM.kind === 'tele' ? 'T' : CAM.zoom, fov: S.fov, dz: CAM.dz
+      aligned: !!S.alPos, lens: CAM.kind, zoom: zoomLabel(CAM.kind === 'tele' ? 'T' : CAM.zk), fov: S.fov, dz: CAM.dz
     };
   }
   let spotLast = 0;
@@ -3584,7 +3713,7 @@ button, input, select { font-family: inherit; }
     if (m.lat !== null && m.lat !== undefined) parts.push(fmtCoord(m.lat, m.lon));
     if (m.gpsAcc !== null && m.gpsAcc !== undefined) parts.push('GPS ±' + Math.round(m.gpsAcc) + ' m');
     if (m.heading !== null && m.heading !== undefined) parts.push('direzione ' + dirText(m.heading) + (m.aligned ? ' (bussola allineata)' : ''));
-    if (m.lens) parts.push(LENS_NAME[m.lens] + (m.zoom && m.zoom !== 1 && m.zoom !== 'T' ? ' ' + zoomName(m.zoom) : ''));
+    if (m.lens) parts.push(LENS_NAME[m.lens] + (typeof m.zoom === 'string' && m.zoom !== 'T' ? ' ' + m.zoom : m.zoom && m.zoom !== 1 && m.zoom !== 'T' ? ' ' + zoomName(m.zoom) : ''));
     return parts.join(' · ');
   }
   function editKey(rec) { return rec.id + ':' + JSON.stringify(rec.edit || {}); }
@@ -3852,9 +3981,9 @@ button, input, select { font-family: inherit; }
         if (caps.zoom && typeof caps.zoom.max === 'number' && caps.zoom.max > (caps.zoom.min || 1)) CAM.hw = { min: caps.zoom.min || 1, max: caps.zoom.max };
       } catch (e) {}
       S.fov = S.fovs[CAM.kind];
-      if (CAM.kind !== 'tele' && CAM.zoom === 'T') CAM.zoom = 1;   // il tele non si è aperto
+      if (CAM.kind !== 'tele' && CAM.zk === 'T') { CAM.zk = CAM.stops.indexOf('1') >= 0 ? '1' : CAM.stops[0]; CAM.zoom = zoomVal(); drawZoom(); }   // il tele non si è aperto
       if (!CAM.scanned) await scanCams();
-      await applyZoom(CAM.kind === 'tele' ? 1 : dzFor(CAM.zoom, CAM.kind), true);
+      await applyZoom(CAM.kind === 'tele' ? 1 : dzFor((CAM.zoom = zoomVal()), CAM.kind), true);
       focusContinuous();
       refreshSettingsUI();
     } finally {
@@ -3969,7 +4098,7 @@ button, input, select { font-family: inherit; }
     if (tele) CAM.ids.tele = tele.deviceId;
     if (std) CAM.ids.std = std.deviceId;
     CAM.base = uw ? 'uw' : 'std';
-    buildZoomStops();
+    buildZoomStops(true);
     // Si parte dall'obiettivo più grandangolare disponibile
     if (uw && CAM.kind !== 'uw') {
       camBusy = false;
@@ -3997,52 +4126,60 @@ button, input, select { font-family: inherit; }
     drawZoom();
   }
 
-  function buildZoomStops() {
-    CAM.stops = [1, 1.5, 2];
+  // v23: zoom a pastiglie con gli scatti dell'iPhone: 0,5× (ultra grandangolo), 1× (standard), 2× (standard ingrandito), tele.
+  // CAM.zk è la pastiglia scelta; CAM.zoom resta l'ingrandimento rispetto all'obiettivo più ampio (ricalcolato dai campi visivi).
+  const tanH2 = (k) => Math.tan(S.fovs[k] * RAD / 2);
+  function stdRatio() { return CAM.base === 'uw' && CAM.ids.std ? tanH2('uw') / tanH2('std') : 1; }
+  function zoomVal(k) {
+    k = k || CAM.zk;
+    if (k === 'T') return 'T';
+    if (k === 'uw') return 1;
+    return (k === '2' ? 2 : 1) * stdRatio();
+  }
+  function zoomLabel(k) {
+    if (k === 'uw') return '0,5×';
+    if (k === 'T') {
+      const r = CAM.ids.std || CAM.base === 'std' ? tanH2('std') / tanH2('tele') : tanH2('uw') / tanH2('tele') / 2;
+      return String(Math.max(2, Math.round(r))) + '×';
+    }
+    return k === '2' ? '2×' : '1×';
+  }
+  function buildZoomStops(reset) {
+    CAM.stops = CAM.base === 'uw' ? (CAM.ids.std ? ['uw', '1', '2'] : ['uw', '1']) : ['1', '2'];
     if (CAM.ids.tele) CAM.stops.push('T');
-    const box = $('zoomTicks');
+    if (reset || !CAM.zk || CAM.stops.indexOf(CAM.zk) < 0) CAM.zk = CAM.stops[0];
+    CAM.zoom = zoomVal();
+    const box = $('zoom');
     box.innerHTML = '';
-    CAM.stops.forEach((st, i) => {
+    CAM.stops.forEach((k, i) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'zs';
+      b.className = 'zp';
       b.dataset.i = String(i);
-      b.setAttribute('aria-label', 'Zoom ' + zoomName(st));
-      b.innerHTML = '<i></i><span>' + (st === 'T' ? 'T' : String(st).replace('.', ',')) + '</span>';
+      b.dataset.k = k;
+      b.textContent = zoomLabel(k);
+      b.setAttribute('aria-label', 'Zoom ' + zoomLabel(k));
+      b.addEventListener('click', () => { haptic(); selectStop(i); });
       box.appendChild(b);
     });
-    layoutZoom();
     drawZoom();
   }
-  function zoomName(st) { return st === 'T' ? 'Tele' : String(st).replace('.', ',') + '×'; }
-  function zoomIndex() { return CAM.kind === 'tele' ? CAM.stops.indexOf('T') : Math.max(0, CAM.stops.indexOf(CAM.zoom)); }
-  const ZH = 168;   // altezza utile della ghiera
-  function stopY(i) { const n = CAM.stops.length; return n < 2 ? ZH / 2 : ZH - 12 - i * ((ZH - 24) / (n - 1)); }
-  function layoutZoom() {
-    document.querySelectorAll('#zoomTicks .zs').forEach((b) => { b.style.top = (stopY(Number(b.dataset.i)) - 16) + 'px'; });
-  }
-  function drawZoom() {
-    const i = zoomIndex(), st = CAM.stops[i];
-    const knob = $('zoomKnob');
-    knob.style.top = (stopY(i) - 13) + 'px';
-    knob.textContent = zoomName(st);
-    $('zoomBubble').textContent = zoomName(st);
-    $('zoomBubble').style.top = (stopY(i) - 20) + 'px';
-    $('zoom').setAttribute('aria-valuetext', zoomName(st));
-    document.querySelectorAll('#zoomTicks .zs').forEach((b) => b.classList.toggle('on', Number(b.dataset.i) === i));
-  }
+  function zoomName(st) { return st === 'T' ? 'Tele' : typeof st === 'string' ? st : String(Math.round(st * 100) / 100).replace('.', ',') + '×'; }
+  function zoomIndex() { return CAM.kind === 'tele' ? CAM.stops.indexOf('T') : Math.max(0, CAM.stops.indexOf(CAM.zk)); }
+  function drawZoom() { drawZoomPending(zoomIndex()); }
   async function selectStop(i) {
     if (i < 0 || i >= CAM.stops.length) return;
-    const st = CAM.stops[i];
-    if (st === CAM.stops[zoomIndex()]) return;
-    haptic();
-    if (st === 'T') { CAM.zoom = 'T'; drawZoomPending('T'); await startCamera('tele'); return; }
-    CAM.zoom = st;
-    const kind = lensFor(st);
-    if (kind !== CAM.kind) { drawZoomPending(st); await startCamera(kind); return; }
-    await applyZoom(dzFor(st, kind));
+    const k = CAM.stops[i];
+    if (i === zoomIndex() && CAM.zk === k) return;
+    CAM.zk = k;
+    drawZoomPending(i);
+    if (k === 'T') { CAM.zoom = 'T'; await startCamera('tele'); return; }
+    CAM.zoom = zoomVal();
+    const kind = lensFor(CAM.zoom);
+    if (kind !== CAM.kind) { await startCamera(kind); return; }
+    await applyZoom(dzFor(CAM.zoom, kind));
   }
-  function drawZoomPending(st) { $('zoomKnob').textContent = zoomName(st); $('zoomBubble').textContent = zoomName(st); }
+  function drawZoomPending(i) { document.querySelectorAll('#zoom .zp').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.i) === i))); }
 
   // Piccolo scatto tattile: vibrazione dove esiste, interruttore nascosto su iPhone (iOS 18)
   const hapLbl = document.createElement('label');
@@ -4060,43 +4197,8 @@ button, input, select { font-family: inherit; }
     try { if (navigator.vibrate) { navigator.vibrate(8); return; } hapLbl.click(); } catch (e) {}
   }
 
-  // Ghiera: si trascina col pollice, si ferma sulle tacche, dopo 2 s diventa semitrasparente
-  let zoomDrag = null, zoomIdle = null;
-  function zoomAwake(on) {
-    clearTimeout(zoomIdle);
-    $('zoom').classList.add('awake');
-    $('zoom').classList.toggle('drag', !!on);
-    if (!on) zoomIdle = setTimeout(() => $('zoom').classList.remove('awake'), 2000);
-  }
-  function zoomAt(clientY) {
-    const r = $('zoomTrack').getBoundingClientRect();
-    const y = clientY - r.top;
-    let best = 0, bd = 1e9;
-    CAM.stops.forEach((st, i) => { const d = Math.abs(stopY(i) - y); if (d < bd) { bd = d; best = i; } });
-    return best;
-  }
-  $('zoom').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    zoomDrag = { id: e.pointerId, from: zoomIndex() };
-    try { $('zoom').setPointerCapture(e.pointerId); } catch (err) {}
-    zoomAwake(true);
-    selectStop(zoomAt(e.clientY));
-  });
-  $('zoom').addEventListener('pointermove', (e) => {
-    if (!zoomDrag) return;
-    selectStop(zoomAt(e.clientY));
-  });
-  const zoomEnd = (e) => {
-    if (zoomDrag && e && e.type === 'pointerup' && zoomIndex() !== zoomDrag.from) haptic();
-    zoomDrag = null; zoomAwake(false);
-  };
-  $('zoom').addEventListener('pointerup', zoomEnd);
-  $('zoom').addEventListener('pointercancel', zoomEnd);
-  $('zoom').addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') selectStop(zoomIndex() + 1);
-    if (e.key === 'ArrowDown') selectStop(zoomIndex() - 1);
-  });
   buildZoomStops();
+  document.addEventListener('touchstart', () => {}, { passive: true });   // fa funzionare :active su Safari (il sole dello scatto che sorge)
 
   function checkCamera() {
     if (document.visibilityState !== 'visible' || camBusy || camPaused) return;

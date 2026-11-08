@@ -69,12 +69,11 @@ def main():
 
         # Zoom: le etichette devono allargarsi dal centro del doppio
         before = page.evaluate(PILLS)
-        box = page.locator('#zoom').bounding_box()
-        page.mouse.click(box['x'] + box['width'] / 2, box['y'] + 168 - 12 - 2 * (168 - 24) / 2)  # tacca 2x
+        page.click('#zoom .zp[data-k="2"]')  # pastiglia 2× (v23)
         page.wait_for_timeout(800)
         after = page.evaluate(PILLS)
         R['zoom_video'] = page.evaluate("document.getElementById('video').style.transform")
-        R['zoom_knob'] = page.inner_text('#zoomKnob')
+        R['zoom_knob'] = page.inner_text('#zoom .zp[aria-pressed="true"]')
         W = 402
         ratios = []
         for a in before:
@@ -83,7 +82,7 @@ def main():
                     ratios.append(round((c['x'] - W / 2) / (a['x'] - W / 2), 2))
         R['zoom_rapporti_distanza_dal_centro'] = ratios
         page.screenshot(path=f'{OUT}/2-zoom2x.png')
-        page.mouse.click(box['x'] + box['width'] / 2, box['y'] + 168 - 12)  # torna a 1x
+        page.click('#zoom .zp[data-k="1"]')  # torna a 1×
         page.wait_for_timeout(500)
 
         # Punto di ripresa nel pannello
