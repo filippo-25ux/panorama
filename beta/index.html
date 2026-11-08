@@ -824,6 +824,8 @@ button, input, select { font-family: inherit; }
   background: rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.25);
 }
+/* v24 (decisione dell'utente, 8 nov.): chiese, torri e castelli solo nel pannello, spenti di serie; fuori dalla colonna dei filtri */
+#filters .flt.f-land { display: none; }
 .flt.f-town { --ic: #ffffff; } .flt.f-peak { --ic: #8fd99a; } .flt.f-land { --ic: #c8a2ff; } .flt.f-sun { --ic: #ffc928; }
 .flt[aria-pressed="false"] { --ic: rgba(255, 255, 255, 0.45); opacity: 1; background: rgba(0, 0, 0, 0.12); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18); }
 /* zoom a pastiglie sul bordo destro */
