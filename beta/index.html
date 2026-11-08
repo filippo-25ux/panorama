@@ -39,6 +39,10 @@ html, body {
   object-fit: cover;
   background: #000;
 }
+/* v22: l'immagine la disegna l'app su questa tela (Safari a volte mostrava il video piccolo al centro);
+   il video resta sotto, quasi invisibile, solo come sorgente */
+#video { opacity: 0.01 !important; }
+#camCv { position: fixed; inset: 0; width: 100%; height: 100%; display: block; background: #000; pointer-events: none; }
 
 /* Schermata iniziale */
 #start {
@@ -679,11 +683,12 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <body>
 
 <video id="video" playsinline muted autoplay></video>
+<canvas id="camCv" aria-hidden="true"></canvas>
 
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v21 · immagine a tutto schermo</p>
+    <p class="sub">Beta v22 · fotocamera disegnata dall'app</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -1096,12 +1101,14 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   const shownText = {};
 
   /* ---------- Impostazioni e memoria locale ---------- */
+  let fovWasReset = false;
   function loadSettings() {
     try {
       const s = JSON.parse(localStorage.getItem('pano.settings') || '{}');
       if (typeof s.fov === 'number') S.fovs.std = s.fov;
       if (s.fovs) for (const k in S.fovs) if (typeof s.fovs[k] === 'number') S.fovs[k] = s.fovs[k];
       if (!s.pitchSensors && S.fovs.std === 65) S.fovs.std = 70;   // campo visivo standard più realistico
+      if (!s.v22 && Object.keys(s).length) { S.fovs.std = 70; S.fovs.uw = 100; S.fovs.tele = 17; fovWasReset = true; }   // v22: tarati sull'immagine piccola
       S.fov = S.fovs.std;
       if (s.shotNames === false) S.shotNames = false;
       if (s.shotHi === true) S.shotHi = true;
@@ -1117,7 +1124,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, v22: true, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -1812,7 +1819,9 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   // v20: il sole si cerca su una copia del flusso in un video nascosto, così il video visibile non viene mai toccato
   let detVideo = null, detUntil = 0;
   function detSource() {
-    const main = $('video'), st = main.srcObject;
+    const m = $('video');
+    if (m.videoWidth) return m;   // v22: il video non è più quello che si vede: si legge direttamente
+    const main = m, st = main.srcObject;
     if (!st || !st.getVideoTracks) return null;
     const t = st.getVideoTracks()[0];
     if (!t || t.readyState !== 'live') return null;
@@ -2943,7 +2952,6 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     $('grab').setAttribute('aria-expanded', String(open));
     if (!open) $('sheet').scrollTop = 0;
     refreshSettingsUI();
-    reattachVideo(450);   // v17: dopo il pannello l'immagine poteva restare piccola al centro
     if (!open) setTimeout(() => { if (map) { map.resize(); updateMap(); } }, 300);
   }
   $('grab').addEventListener('click', () => setSheet(!$('sheet').classList.contains('open')));
@@ -3797,8 +3805,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if ($('sheet').classList.contains('open') && $('camDiag')) $('camDiag').textContent = camDiagText();
   }, 1000);
   // Quando la finestra cambia misura (barra di Safari, ritorno nella pagina) si ricollega il video
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => reattachVideo(350));
-  window.addEventListener('pageshow', () => reattachVideo(300));
+
 
   // Elenca le fotocamere posteriori (dopo il permesso Safari e Chrome mostrano i nomi)
   async function scanCams() {
@@ -3964,6 +3971,35 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   }
   $('devOk').addEventListener('click', () => { $('devNote').hidden = true; });
 
+  /* ---------- v22: la fotocamera la disegna l'app ---------- */
+  const camCv = $('camCv'), camCtx = camCv.getContext('2d', { alpha: false });
+  let camDrawOn = false, lastCamDraw = 0;
+  function camDraw() {
+    lastCamDraw = Date.now();
+    const v = $('video');
+    if (!camPaused && v.videoWidth && !v.classList.contains('switching')) {
+      const W = window.innerWidth, H = window.innerHeight;
+      const r = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = Math.round(W * r), ch = Math.round(H * r);
+      if (camCv.width !== cw || camCv.height !== ch) { camCv.width = cw; camCv.height = ch; }
+      // come «object-fit: cover» più l'ingrandimento digitale dello zoom
+      const sc = Math.max(W / v.videoWidth, H / v.videoHeight) * CAM.css;
+      const sw = W / sc, sh = H / sc;
+      try { camCtx.drawImage(v, (v.videoWidth - sw) / 2, (v.videoHeight - sh) / 2, sw, sh, 0, 0, cw, ch); } catch (e) {}
+    } else if (v.classList.contains('switching') || camPaused) {
+      camCtx.fillStyle = '#000'; camCtx.fillRect(0, 0, camCv.width, camCv.height);
+    }
+    nextCamDraw();
+  }
+  function nextCamDraw() {
+    const v = $('video');
+    if (typeof v.requestVideoFrameCallback === 'function' && v.videoWidth && !camPaused) v.requestVideoFrameCallback(camDraw);
+    else setTimeout(camDraw, camPaused ? 500 : 50);
+  }
+  // se Safari smette di avvisare dei fotogrammi nuovi (cambio di flusso), si riparte
+  setInterval(() => { if (camDrawOn && Date.now() - lastCamDraw > 1500) nextCamDraw(); }, 1000);
+  function startCamDraw() { if (!camDrawOn) { camDrawOn = true; nextCamDraw(); } }
+
   /* ---------- v20: pausa automatica per risparmiare batteria ---------- */
   // Telefono rivolto a terra (o al cielo) per 20 s: fotocamera spenta. Si riprende alzandolo o toccando lo schermo.
   let camPaused = false, oddSince = 0, okSince = 0;
@@ -3979,7 +4015,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (!camPaused) return;
     camPaused = false; oddSince = 0;
     $('pauseNote').hidden = true;
-    startCamera().catch(() => {});
+    startCamera().then(() => { camDrawOn = false; startCamDraw(); }).catch(() => {});
   }
   $('pauseNote').addEventListener('click', resumeCam);
   setInterval(() => {
@@ -4019,9 +4055,10 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         throw new Error('Questo browser non può usare la fotocamera. La pagina deve essere aperta con un indirizzo https.');
       }
       await startCamera();
+      startCamDraw();
       setInterval(checkCamera, 3000);
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') { setTimeout(checkCamera, 300); reattachVideo(700); }
+        if (document.visibilityState === 'visible') { setTimeout(checkCamera, 300); }
       });
 
       // 3. Posizione
@@ -4041,6 +4078,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       $('start').hidden = true;
       $('hud').hidden = false;
       if (F.sun) sunToggle(true);
+      if (fovWasReset) { saveSettings(); setTimeout(() => toast('Campo visivo riportato ai valori di partenza (era stato tarato sull\'immagine piccola).', 6000), 1500); }
       if (pitchWasReset !== null) toast('Inclinazione azzerata (era ' + fmtDeg(Math.round(pitchWasReset * 10) / 10) + '): ora viene solo dai sensori del telefono.', 7000);
       requestAnimationFrame(tick);
       // v17: dispositivi senza bussola o senza fotocamera posteriore (es. PC): messaggio chiaro invece di una schermata ferma

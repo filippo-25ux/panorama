@@ -57,10 +57,10 @@ def main():
         if az[1] > 2:
             page.evaluate('window.__o.h = %f' % ((az[0] - 4) % 360)); page.wait_for_timeout(3500)
             v2 = page.evaluate("document.querySelectorAll('video').length")
-            check(v2 == 2, 'sole in vista (alt %.0f°): copia nascosta del flusso accesa' % az[1])
+            check(v2 == 1, 'sole in vista (alt %.0f°): il sole si cerca sul video principale, nessuna copia' % az[1])
             page.evaluate('window.__o.h = %f' % ((az[0] + 176) % 360)); page.wait_for_timeout(12000)
             v3 = page.evaluate("document.querySelectorAll('video').length")
-            check(v3 == 1, 'sole fuori vista da 10 s: copia spenta')
+            check(v3 == 1, 'sole fuori vista: sempre un solo video')
             page.evaluate('window.__o.h = 200')
         else:
             print('     (sole sotto l\'orizzonte: prova della copia saltata)')
