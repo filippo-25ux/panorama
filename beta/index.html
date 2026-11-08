@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Panorama">
+<meta name="apple-mobile-web-app-title" content="Orientis">
 <meta name="theme-color" content="#000000">
-<title>Panorama – beta</title>
+<title>Orientis – beta</title>
 <style>
 :root {
   --ink: #ffffff;
@@ -907,6 +907,73 @@ body.hasmap .peek { padding-right: 100px; }
 #shotBar .gal { width: 62px; height: 62px; }
 #shotBar .shut { width: 78px; height: 78px; box-shadow: none; }
 #shotBar .shut .ring { fill: rgba(0, 0, 0, 0.28); }
+/* ===== v23 – tappa 4: pagina iniziale (A + C) ===== */
+#start { display: block; padding: 0; overflow: hidden; background: var(--bg); color: var(--tx); }
+#start[hidden] { display: none; }
+.obTrack { display: flex; width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; overscroll-behavior-x: contain; }
+.obTrack::-webkit-scrollbar { display: none; }
+.obPage { position: relative; flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
+.obMain { display: flex; flex-direction: column; }
+.obSky { position: relative; flex: 1 1 auto; min-height: 220px; background: #a9c9de; }
+.obLand { position: absolute; inset: 0 0 -24px 0; width: 100%; height: calc(100% + 24px); display: block; }
+.obT { font-family: var(--font); letter-spacing: -0.01em; }
+.obSheet {
+  position: relative; flex: none; margin-top: -24px; z-index: 1;
+  padding: 28px 28px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: 24px 24px 0 0; background: var(--bg);
+  display: flex; flex-direction: column; gap: 14px; max-width: 520px; width: 100%; align-self: center;
+}
+:root[data-theme="light"] .obSheet { background: #ffffff; }
+.obBrand { min-height: 54px; display: flex; flex-direction: column; justify-content: flex-end; color: var(--tx); }
+.brandTxt { font-size: 44px; font-weight: 300; letter-spacing: -0.035em; line-height: 1; }
+.obLead { margin: 0; font-size: 15px; line-height: 1.4; color: var(--tx2); }
+.obRule { height: 0.5px; background: var(--line); }
+.obAsk { margin: 0; font-size: 13px; color: var(--tx2); }
+.obPerm { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.obPerm li { display: flex; align-items: flex-start; gap: 14px; }
+.obPerm svg { flex: none; fill: none; stroke: var(--acc); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; margin-top: 1px; }
+.obPerm b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.obPerm span { display: block; font-size: 13px; line-height: 1.35; color: var(--tx2); }
+.obFill { flex: 1; min-height: 2px; }
+#go, .obGo { width: 100%; height: 52px; padding: 0; border: 0; border-radius: 14px; font: inherit; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; background: var(--pri); color: var(--pri-tx); }
+#msg { margin: 0; min-height: 0; color: #ff3b30; font-size: 14px; line-height: 1.4; }
+#msg:empty { display: none; }
+.obRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.obHowBtn, .obBack, .obSkip { height: 36px; padding: 0; border: 0; background: transparent; color: var(--acc); font: inherit; font-size: 15px; }
+.ver { font-size: 12px; color: var(--tx2); }
+/* pagine «Come funziona» (facoltative, si scorrono di lato) */
+.obHow { display: flex; flex-direction: column; padding: calc(10px + env(safe-area-inset-top, 0px)) 28px calc(24px + env(safe-area-inset-bottom, 0px)); gap: 22px; max-width: 520px; margin: 0 auto; }
+.obHead { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.obBrandS { font-size: 20px; font-weight: 400; color: var(--tx); }
+.obArt { flex: 0 1 auto; min-height: 0; }
+.obArt svg { display: block; width: 100%; height: auto; max-height: 42vh; border-radius: 22px; box-shadow: 0 0 0 0.5px var(--line); }
+.obTxt h2 { margin: 0 0 10px; font-size: 30px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; }
+.obTxt p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--tx2); }
+.obFoot { margin-top: auto; display: flex; flex-direction: column; gap: 18px; }
+.obDots { display: flex; gap: 7px; justify-content: center; }
+.obDots i { width: 7px; height: 7px; border-radius: 4px; background: var(--tx3); }
+.obDots i.on { background: var(--tx); }
+/* animazioni (ferme con «Riduci movimento») */
+.o-draw { stroke-dasharray: 640; stroke-dashoffset: 640; animation: o-draw 2.4s cubic-bezier(.2,.7,.2,1) .5s forwards; }
+@keyframes o-draw { to { stroke-dashoffset: 0; stroke-dasharray: 4 4; } }
+.o-pin { opacity: 0; animation: o-pin .45s ease-out forwards; }
+.o-p1 { animation-delay: 2.1s; } .o-p2 { animation-delay: 2.5s; }
+@keyframes o-pin { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.o-l1, .o-l2, .o-l3, .o-l4 { animation: o-rise 1s cubic-bezier(.2,.7,.2,1) both; }
+.o-l2 { animation-delay: .1s; } .o-l3 { animation-delay: .2s; } .o-l4 { animation-delay: .3s; }
+@keyframes o-rise { from { transform: translateY(30px); } to { transform: none; } }
+.o-sun { animation: o-sunup 1.6s cubic-bezier(.2,.7,.2,1) .2s both; }
+@keyframes o-sunup { from { transform: translateY(26px); opacity: 0; } to { transform: none; opacity: 1; } }
+.obPhone { transform-origin: 173px 260px; animation: ob-sway 4s ease-in-out infinite; }
+@keyframes ob-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.obSlide { animation: ob-slide 3s ease-in-out infinite; }
+@keyframes ob-slide { 0%, 100% { transform: translateX(16px); } 45%, 60% { transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .o-draw, .o-pin, .o-l1, .o-l2, .o-l3, .o-l4, .o-sun, .obPhone, .obSlide { animation: none; opacity: 1; stroke-dashoffset: 0; transform: none; }
+  .o-draw { stroke-dasharray: 4 4; }
+}
+@media (max-height: 700px) { .obPerm span { display: none; } .obPerm { gap: 8px; } .obSheet { gap: 10px; } }
+
 /* ===== v23 – tappa 3: etichette traslucide, colore per tipo, meno affollamento ===== */
 .pill {
   min-height: 26px; height: auto; max-width: 230px; padding: 5px 11px 5px 9px; gap: 5px; border-radius: 13px;
@@ -966,14 +1033,70 @@ body.hasmap .peek { padding-right: 100px; }
 <canvas id="camCv" aria-hidden="true"></canvas>
 
 <section id="start">
-  <div class="box">
-    <h1>Panorama</h1>
-    <p class="sub">Beta v22 · fotocamera disegnata dall'app</p>
-    <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
-    <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
-    <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
-    <button id="go" type="button">Avvia</button>
-    <p id="msg" role="alert"></p>
+  <div class="obTrack" id="obTrack">
+    <section class="obPage obMain" aria-label="Orientis">
+      <div class="obSky">
+      <svg class="obLand" viewBox="0 0 402 470" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <rect width="402" height="470" fill="#a9c9de"></rect>
+        <circle class="o-sun" cx="336" cy="128" r="16" fill="#ffc928"></circle>
+        <g class="o-l1"><path d="M0 330 L45 290 L90 312 L140 250 L180 276 L222 228 L262 268 L308 246 L352 288 L402 262 L402 520 L0 520 Z" fill="#8199ad"></path></g>
+        <g class="o-l2"><path d="M0 360 L62 330 L124 350 L186 316 L248 344 L310 322 L402 350 L402 520 L0 520 Z" fill="#62806b"></path></g>
+        <g class="o-l3"><path d="M0 410 L92 388 L176 418 L268 384 L402 414 L402 520 L0 520 Z" fill="#45634c"></path></g>
+        <g class="o-l4"><path d="M0 452 L402 440 L402 520 L0 520 Z" fill="#334a39"></path></g>
+        <path class="o-draw" d="M0 330 L45 290 L90 312 L140 250 L180 276 L222 228 L262 268 L308 246 L352 288 L402 262" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="4 4" stroke-linejoin="round" opacity="0.95"></path>
+        <g class="o-pin o-p1">
+          <rect x="170" y="160" width="106" height="24" rx="12" fill="#ffffff" fill-opacity="0.82" stroke="rgba(0,0,0,0.12)" stroke-width="0.5"></rect>
+          <path d="M181 177 L185.5 168 L190 177 Z" fill="none" stroke="#2f8f48" stroke-width="1.3" stroke-linejoin="round"></path>
+          <text x="195" y="176.5" font-size="12" font-weight="500" fill="#1d1d1f" class="obT">Montevergine</text>
+          <path d="M222 184 V226" stroke="#ffffff" stroke-width="1" opacity="0.9"></path>
+          <circle cx="222" cy="228" r="3" fill="#8fd99a" stroke="rgba(0,0,0,0.45)" stroke-width="0.75"></circle>
+        </g>
+        <g class="o-pin o-p2">
+          <rect x="30" y="236" width="104" height="24" rx="12" fill="#ffffff" fill-opacity="0.82" stroke="rgba(0,0,0,0.12)" stroke-width="0.5"></rect>
+          <circle cx="45" cy="248" r="3.6" fill="none" stroke="#1d1d1f" stroke-width="1.3"></circle>
+          <text x="54" y="252.5" font-size="12" font-weight="500" fill="#1d1d1f" class="obT">Ariano Irpino</text>
+          <path d="M84 260 V338" stroke="#ffffff" stroke-width="1" opacity="0.9"></path>
+          <circle cx="84" cy="340" r="3" fill="#ffffff" stroke="rgba(0,0,0,0.45)" stroke-width="0.75"></circle>
+        </g>
+      </svg>
+      </div>
+      <div class="obSheet">
+        <div class="obBrand brandSlot" id="brandBig"><span class="brandTxt">orientis</span></div>
+        <p class="obLead">Inquadra il paesaggio: paesi, vette e monti compaiono al loro posto.</p>
+        <div class="obRule"></div>
+        <p class="obAsk">Il telefono ti chiederà tre permessi:</p>
+        <ul class="obPerm">
+          <li><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26"><rect x="9" y="3.5" width="8" height="15" rx="2"></rect><path d="M5 9 C3.5 11 3.5 14 5 16 M21 9 C22.5 11 22.5 14 21 16"></path><path d="M10 22.5 H16"></path></svg><div><b>Movimento</b><span>per sapere dove punti il telefono</span></div></li>
+          <li><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26"><path d="M3.5 8.5 H8 L10 6 H16 L18 8.5 H22.5 V20 H3.5 Z"></path><circle cx="13" cy="14" r="3.6"></circle></svg><div><b>Fotocamera</b><span>per vedere il panorama</span></div></li>
+          <li><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26"><path d="M13 22.5 C13 22.5 6 16 6 10.5 A7 7 0 0 1 20 10.5 C20 16 13 22.5 13 22.5 Z"></path><circle cx="13" cy="10.5" r="2.4"></circle></svg><div><b>Posizione</b><span>per sapere da dove guardi</span></div></li>
+        </ul>
+        <div class="obFill"></div>
+        <button id="go" type="button">Avvia</button>
+        <p id="msg" role="alert"></p>
+        <div class="obRow">
+          <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
+          <span class="ver">Beta v23 · nuova veste</span>
+        </div>
+      </div>
+    </section>
+    <section class="obPage obHow" aria-label="Come funziona, 1 di 3">
+      <header class="obHead"><button type="button" class="obBack">‹ Indietro</button><span class="obBrandS brandSlot"></span><button type="button" class="obSkip">Salta</button></header>
+      <div class="obArt"><svg viewBox="0 0 346 300" aria-hidden="true"><rect width="346" height="300" fill="#a9c9de"></rect><path d="M0 190 L44 156 L88 172 L132 120 L172 146 L212 104 L252 138 L296 120 L346 150 L346 300 L0 300 Z" fill="#8199ad"></path><path d="M0 222 L80 200 L160 218 L240 188 L346 214 L346 300 L0 300 Z" fill="#62806b"></path><path d="M0 268 L346 256 L346 300 L0 300 Z" fill="#334a39"></path><g class="obPhone"><rect x="118" y="62" width="110" height="200" rx="22" fill="rgba(10,14,20,0.18)" stroke="#ffffff" stroke-width="2.5"></rect><rect x="150" y="72" width="46" height="10" rx="5" fill="#ffffff" opacity="0.9"></rect><path d="M122 186 L146 164 L168 176 L190 142 L224 168" fill="none" stroke="#ffffff" stroke-width="1.4" stroke-dasharray="4 4"></path><rect x="138" y="118" width="70" height="20" rx="10" fill="#ffffff" fill-opacity="0.85"></rect><text x="173" y="132" text-anchor="middle" font-size="10" font-weight="600" fill="#1d1d1f" class="obT">Montevergine</text><path d="M173 138 V152" stroke="#ffffff" stroke-width="1"></path></g></svg></div>
+      <div class="obTxt"><h2>Punta il telefono<br>verso il paesaggio</h2><p>Tienilo dritto, in verticale. Paesi, vette e chiese compaiono al loro posto; al centro del mirino trovi nome, quota e distanza.</p></div>
+      <div class="obFoot"><div class="obDots" role="img" aria-label="Pagina 1 di 3"><i class="on"></i><i></i><i></i></div><button type="button" class="obGo">Avvia</button></div>
+    </section>
+    <section class="obPage obHow" aria-label="Come funziona, 2 di 3">
+      <header class="obHead"><button type="button" class="obBack">‹ Indietro</button><span class="obBrandS brandSlot"></span><button type="button" class="obSkip">Salta</button></header>
+      <div class="obArt"><svg viewBox="0 0 346 300" aria-hidden="true"><rect width="346" height="300" fill="#a9c9de"></rect><path d="M0 170 L40 134 L86 154 L130 98 L172 128 L214 86 L254 120 L296 104 L346 132 L346 300 L0 300 Z" fill="#8199ad"></path><path d="M0 206 L74 184 L150 202 L226 172 L346 198 L346 300 L0 300 Z" fill="#62806b"></path><path d="M0 262 L346 250 L346 300 L0 300 Z" fill="#334a39"></path><polyline class="obSlide" points="-16,170 24,134 70,154 114,98 156,128 198,86 238,120 280,104 330,132" fill="none" stroke="#8fd3ff" stroke-width="1.6" stroke-dasharray="7 5" stroke-linejoin="round"></polyline><g stroke="#ffffff" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M136 236 H210 M136 236 L144 230 M136 236 L144 242 M210 236 L202 230 M210 236 L202 242"></path></g></svg></div>
+      <div class="obTxt"><h2>Allinea<br>sul profilo dei monti</h2><p>Se i nomi sono spostati, tocca Bussola, poi Allinea, e trascina finché la linea tratteggiata combacia con le creste. Col sole visibile si corregge da sola.</p></div>
+      <div class="obFoot"><div class="obDots" role="img" aria-label="Pagina 2 di 3"><i></i><i class="on"></i><i></i></div><button type="button" class="obGo">Avvia</button></div>
+    </section>
+    <section class="obPage obHow" aria-label="Come funziona, 3 di 3">
+      <header class="obHead"><button type="button" class="obBack">‹ Indietro</button><span class="obBrandS brandSlot"></span><button type="button" class="obSkip">Salta</button></header>
+      <div class="obArt"><svg viewBox="0 0 346 300" aria-hidden="true"><rect width="346" height="300" fill="#a9c9de"></rect><path d="M0 180 L50 146 L96 166 L146 112 L190 140 L236 100 L282 132 L346 116 L346 300 L0 300 Z" fill="#8199ad"></path><path d="M0 214 L90 192 L176 212 L266 184 L346 204 L346 300 L0 300 Z" fill="#62806b"></path><path d="M0 266 L346 254 L346 300 L0 300 Z" fill="#334a39"></path><circle cx="268" cy="62" r="13" fill="#ffc928"></circle><g transform="translate(144 222)"><circle cx="29" cy="29" r="29" fill="rgba(255,255,255,0.35)"></circle><circle cx="29" cy="29" r="23.5" fill="#e6e8eb"></circle><path d="M12 34 H46" stroke="#8e959c" stroke-width="1" opacity="0.55"></path><path d="M21 34 A8 8 0 0 1 37 34 Z" fill="#ffc928"></path></g><rect x="236" y="94" width="78" height="20" rx="10" fill="#ffffff" fill-opacity="0.85"></rect><text x="275" y="108" text-anchor="middle" font-size="10" font-weight="600" fill="#1d1d1f" class="obT">Monte Vulture</text><path d="M275 114 V136" stroke="#ffffff" stroke-width="1"></path></svg></div>
+      <div class="obTxt"><h2>Fotografa<br>e ritrova</h2><p>Lo scatto salva la foto con i nomi e il punto di ripresa. Nella galleria puoi ritagliare, raddrizzare e condividere, con le fonti dei dati.</p></div>
+      <div class="obFoot"><div class="obDots" role="img" aria-label="Pagina 3 di 3"><i></i><i></i><i class="on"></i></div><button type="button" class="obGo">Avvia</button></div>
+    </section>
   </div>
 </section>
 
@@ -1159,7 +1282,7 @@ body.hasmap .peek { padding-right: 100px; }
 
 <section id="gal" hidden aria-label="Galleria">
   <header class="gh">
-    <button type="button" class="back" id="galBack">‹ Panorama</button>
+    <button type="button" class="back" id="galBack">‹ Orientis</button>
     <b id="galCount"></b>
     <span class="sp"></span>
   </header>
@@ -1170,7 +1293,7 @@ body.hasmap .peek { padding-right: 100px; }
   </div>
   <div id="galInfo"></div>
   <div id="galHint" hidden>
-    <p><b>Per non perdere le foto</b> aggiungi Panorama alla schermata Home (in Safari: Condividi ↑ → Aggiungi alla schermata Home). Per tenerne una copia sicura: Condividi → Salva immagine. Le foto scattate in Safari e quelle nell'app della schermata Home restano separate.</p>
+    <p><b>Per non perdere le foto</b> aggiungi Orientis alla schermata Home (in Safari: Condividi ↑ → Aggiungi alla schermata Home). Per tenerne una copia sicura: Condividi → Salva immagine. Le foto scattate in Safari e quelle nell'app della schermata Home restano separate.</p>
     <button type="button" id="galHintX" aria-label="Chiudi il consiglio">✕</button>
   </div>
   <div id="galStrip"></div>
@@ -4323,8 +4446,19 @@ body.hasmap .peek { padding-right: 100px; }
   }, 1000);
 
   /* ---------- Avvio ---------- */
-  $('go').addEventListener('click', async () => {
+  // v23: pagine «Come funziona» facoltative: si scorrono di lato, Avvia da qualunque pagina
+  (function onboarding() {
+    const tr = $('obTrack');
+    const goPage = (n) => tr.scrollTo({ left: n * tr.clientWidth, behavior: 'smooth' });
+    $('obHow').addEventListener('click', () => goPage(1));
+    tr.querySelectorAll('.obBack').forEach((b, i) => b.addEventListener('click', () => goPage(i)));
+    tr.querySelectorAll('.obSkip').forEach((b) => b.addEventListener('click', () => goPage(0)));
+    tr.querySelectorAll('.obGo').forEach((b) => b.addEventListener('click', () => { goPage(0); startApp(); }));
+  })();
+  $('go').addEventListener('click', () => startApp());
+  async function startApp() {
     const btn = $('go');
+    if (btn.disabled) return;
     const msg = $('msg');
     btn.disabled = true;
     msg.textContent = '';
@@ -4387,7 +4521,7 @@ body.hasmap .peek { padding-right: 100px; }
         : (err && err.message) || 'Qualcosa è andato storto.';
       btn.disabled = false;
     }
-  });
+  }
 })();
 </script>
 </body>

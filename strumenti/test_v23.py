@@ -69,9 +69,23 @@ def main():
         for scheme in ('light', 'dark'):
             ctx, page, errs = open_page(scheme)
             check(theme(page) == scheme, f'automatico: iPhone in tema {scheme} → app in tema {scheme}')
+            page.wait_for_timeout(3600)   # animazione della pagina iniziale
             page.screenshot(path=f'{OUT}/v23-{scheme}-avvio.png')
-            page.click('#go')
-            page.wait_for_timeout(3500)
+            check(page.locator('.ver').inner_text().startswith('Beta v23'), f'tema {scheme}: pagina iniziale con «Beta v23»')
+            if scheme == 'light':
+                page.click('#obHow'); page.wait_for_timeout(900)
+                page.screenshot(path=f'{OUT}/v23-come-1.png')
+                x1 = page.evaluate("document.getElementById('obTrack').scrollLeft")
+                check(x1 > 300, '«Come funziona» porta alla pagina 1 di 3')
+                page.evaluate("const t = document.getElementById('obTrack'); t.scrollTo({ left: t.clientWidth * 2 })"); page.wait_for_timeout(700)
+                page.screenshot(path=f'{OUT}/v23-come-2.png')
+                page.evaluate("const t = document.getElementById('obTrack'); t.scrollTo({ left: t.clientWidth * 3 })"); page.wait_for_timeout(700)
+                page.screenshot(path=f'{OUT}/v23-come-3.png')
+                page.locator('.obGo').nth(2).click()   # Avvia dalla terza pagina
+                page.wait_for_timeout(3500)
+                check(page.locator('#hud').is_visible() and not page.locator('#start').is_visible(), 'Avvia dalla pagina 3 apre la fotocamera')
+            else:
+                page.click('#go'); page.wait_for_timeout(3500)
             if page.locator('#alCancel').first.is_visible():
                 page.locator('#alCancel').first.click(); page.wait_for_timeout(300)
             page.screenshot(path=f'{OUT}/v23-{scheme}-esplora.png')
