@@ -190,7 +190,7 @@ def main():
         page.evaluate("document.querySelector('#more input[data-f=\"sun\"]').click()")
         page.evaluate(f'window.__setOrient({(5 - decl) % 360}, 90)')
         page.wait_for_timeout(1200)
-        res['al_pulsante'] = page.inner_text('#alignBtnT')
+        res['al_pulsante'] = page.inner_text('#alignBtnT') + ' / ' + page.inner_text('#alignBtnS')
         page.evaluate("document.getElementById('alignBtn').click()")
         page.wait_for_timeout(800)
         res['al_passo'] = page.evaluate('window.__pano.align.step')
@@ -228,7 +228,22 @@ def main():
         page.evaluate("document.getElementById('alignBtn').click()")
         page.wait_for_timeout(400)
         res['al_passo_senza'] = page.evaluate('window.__pano.align.step')
-        page.click('#alCancel')
+        # v19: anche senza rilievo un solo gesto: si trascinano i nomi, poi «Fatto» e Annulla dall'avviso
+        b0 = page.evaluate('window.__pano.S.alOff')
+        page.mouse.move(120, 500); page.mouse.down()
+        for k in range(1, 11):
+            page.mouse.move(120 + 3 * ppd * k / 10, 500); page.wait_for_timeout(30)
+        page.mouse.up(); page.wait_for_timeout(300)
+        page.click('#alOk'); page.wait_for_timeout(400)
+        res['al_senza_fatto'] = page.evaluate('({ d: window.__pano.S.alOff - %f, q: window.__pano.S.alQ, ok: document.getElementById("toast").classList.contains("ok"), t: document.getElementById("toastText").textContent })' % b0)
+        page.click('#toastBtn'); page.wait_for_timeout(300)
+        res['al_senza_annulla'] = page.evaluate('({ off: window.__pano.S.alOff, t: document.getElementById("toastText").textContent })')
+        res['al_senza_b0'] = b0
+        # Avanzate: dal menù apre il pannello sulla sezione della bussola, con l'interruttore del sole
+        page.evaluate("document.getElementById('compBtn').click()"); page.wait_for_timeout(300)
+        page.evaluate("document.getElementById('advBtn').click()"); page.wait_for_timeout(800)
+        res['avanzate'] = page.evaluate("({ open: document.getElementById('sheet').classList.contains('open'), auto: document.getElementById('autoSun').checked, vis: (() => { const r = document.getElementById('advSec').getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; })() })")
+        page.click('#grab'); page.wait_for_timeout(400)
         res['foot'] = page.evaluate("document.getElementById('foot').textContent")
         res['errors'] = errs
         b.close()
@@ -272,7 +287,7 @@ def main():
     g = re.search(r'Alba (\d\d:\d\d).*Tramonto (\d\d:\d\d).*senza i monti: alba (\d\d:\d\d), tramonto (\d\d:\d\d)', res['sole_21_giugno'])
     check(bool(g) and g.group(1) == g.group(3), '21 giugno: alba a nord-est libera, uguale a quella sull\'orizzonte libero')
     check(bool(g) and g.group(2) < g.group(4), '21 giugno: tramonto anticipato dal colle di «Collina» a ovest-nord-ovest')
-    check(res['al_pulsante'] == 'Allinea col profilo', 'menù Bussola: «Allinea col profilo» col rilievo attivo')
+    check(res['al_pulsante'].startswith('Allinea / ') and 'monti' in res['al_pulsante'], 'menù Bussola: un solo pulsante «Allinea» (' + res['al_pulsante'] + ')')
     check(res['al_passo'] == 'ridge' and res['al_linea_px'] > 500, f'linea tratteggiata delle creste disegnata ({res["al_linea_px"]} px)')
     check('−5' in res['al_info'] or '-5' in res['al_info'], 'durante il trascinamento: ' + res['al_info'])
     a = res['al_dopo']
@@ -280,7 +295,12 @@ def main():
     check(abs(res['al_pinch'] - 60.5) < 0.6, f'due dita: campo visivo {res["al_pinch"]}° (atteso ~60,5)')
     b = res['al_annulla']
     check(abs(b['off'] + 5) < 0.3 and b['q'] == 2 and b['fov'] == fov, f'Annulla rimette tutto com\'era (correzione {b["off"]:.2f}°, campo visivo {b["fov"]}°)')
-    check(res['al_pulsante_senza'] == 'Allinea guidato' and res['al_passo_senza'] == 'pick', 'senza rilievo: «Allinea guidato» con luogo o sole')
+    check(res['al_pulsante_senza'] == 'Allinea' and res['al_passo_senza'] == 'ridge', 'senza rilievo: stesso gesto (trascina i nomi)')
+    sf = res['al_senza_fatto']
+    check(abs(abs(sf['d']) - 3) < 0.3 and sf['q'] == 3 and sf['ok'] and 'Fatto' in sf['t'], 'senza rilievo: trascinati 3°, «Fatto» verde (%s)' % sf['t'])
+    check(abs(res['al_senza_annulla']['off'] - res['al_senza_b0']) < 0.01, 'Annulla dall\'avviso rimette la correzione di prima')
+    av = res['avanzate']
+    check(av['open'] and av['auto'] and av['vis'], '«Avanzate ›» apre il pannello sulla bussola, correzione col sole accesa')
     cr = [x for x in res['ovest_riacceso'] if 'Collina' in x['text']]
     check(bool(cr) and abs(cr[0]['ay'] - ay_exp) < 6, 'rilievo riacceso: Collina subito alla quota giusta')
     check(res['creste_sempre'] > 300 and res['creste_spente'] == 0, f'linea delle creste tenue sempre visibile ({res["creste_sempre"]} px) e spegnibile')

@@ -192,6 +192,8 @@ html, body {
   border-radius: 8px;
 }
 
+#toast.ok { background: rgba(20, 70, 40, 0.9); box-shadow: inset 0 0 0 1px rgba(80, 220, 130, 0.5); }
+
 /* Pannello in basso */
 .panel {
   position: absolute;
@@ -501,6 +503,15 @@ body.aligning #horizon.on { display: block; }
 .bar .shut span { width: 42px; height: 42px; }
 #bmenu { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 0; }
 #bmenu[hidden] { display: none; }
+/* v19: menù semplificato: stato, un pulsante, nota sul sole, Avanzate */
+#bmenu #calib, #bmenu #calibNone, #bmenu #sunBtn, #bmenu #walkBtn { display: none !important; }
+#bmenu .bmi.big { min-height: 58px; align-items: center; text-align: center; background: #f5f5f7; color: #111; }
+#bmenu .bmi.big b { font-size: 1.05rem; }
+#bmenu .bmi.big span { color: rgba(0, 0, 0, 0.6); }
+.bmNote { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); }
+.bmNote i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ffc928; }
+.bmNote.off i { background: rgba(255, 255, 255, 0.3); }
+.bmAdv { align-self: flex-start; border: 0; background: none; padding: 4px 0; font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--accent); }
 #fig8 { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: rgba(143, 211, 255, 0.08); font-size: 0.82rem; line-height: 1.3; color: rgba(255, 255, 255, 0.8); }
 #fig8[hidden] { display: none; }
 #fig8 svg { flex: none; width: 104px; height: 42px; }
@@ -668,7 +679,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v18 · pannello a tutta pagina</p>
+    <p class="sub">Beta v19 · bussola semplificata</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -758,10 +769,10 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <button type="button" class="bmi main" id="calib" hidden><b id="calibQ"></b><span>Tocca se sì: correggo la bussola su questo luogo</span></button>
       <div class="bmi off" id="calibNone"><b>Nessun luogo al centro</b><span>Metti al centro un paese o una vetta che riconosci</span></div>
       <button type="button" class="bmi sun" id="sunBtn" hidden><b>Sole visibile</b><span id="sunSub"></span></button>
-      <div class="bmRow">
-        <button type="button" class="bmi" id="alignBtn"><b id="alignBtnT">Allinea guidato</b><span id="alignBtnS">Scegli un luogo o il sole</span></button>
-        <button type="button" class="bmi" id="walkBtn"><b>Camminando</b><span>Qualche passo dritto</span></button>
-      </div>
+      <button type="button" class="bmi big" id="alignBtn"><b id="alignBtnT">Allinea</b><span id="alignBtnS">trascina i nomi sul paesaggio</span></button>
+      <div class="bmNote"><i id="autoDot"></i><span id="autoNote">Col sole visibile si corregge da sola.</span></div>
+      <button type="button" class="bmAdv" id="advBtn">Avanzate ›</button>
+      <button type="button" class="bmi" id="walkBtn" hidden><b>Camminando</b><span>Qualche passo dritto</span></button>
     </div>
     <div class="bar">
       <button class="comp" id="compBtn" type="button" aria-expanded="false" aria-controls="bmenu"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" stroke="#8fd3ff" stroke-width="1.8" fill="none"></circle><path d="M12 5.5 L14.5 12 L12 18.5 L9.5 12 Z" fill="#8fd3ff"></path></svg><span>Bussola</span><i id="compDot"></i></button>
@@ -812,7 +823,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       <h3>Livelli sulla mappa</h3>
       <div class="soon">Frane e alluvioni (IdroGEO)<em>in arrivo</em></div>
       <div class="soon">Catasto<em>in arrivo</em></div>
-      <h3>Bussola e taratura</h3>
+      <h3 id="advSec">Bussola e taratura (avanzate)</h3>
+        <label class="sw"><span>Correzione automatica col sole<small>quando il sole è netto e fermo; ti avvisa sempre, con Annulla</small></span><input type="checkbox" id="autoSun"></label>
       <div id="settings">
         <div class="row">
           <span>Campo visivo <em class="lens" id="fovLens"></em></span>
@@ -1044,7 +1056,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     lat: null, lon: null, gpsAcc: null, alt: null, altAcc: null, gpsMsg: null,
     fov: 70, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
     fovs: { std: 70, uw: 100, tele: 17 },   // campo visivo verticale di partenza per obiettivo
-    shotNames: true, shotHi: false, dem: true, ridge: true
+    shotNames: true, shotHi: false, dem: true, ridge: true, autoSun: true
   };
   // Fotocamera: obiettivi trovati, obiettivo in uso, zoom a scatti
   const CAM = { ids: {}, kind: 'std', base: 'std', names: [], scanned: false, track: null, hw: null, zoom: 1, dz: 1, css: 1, mode: '', stops: [1, 1.5, 2] };
@@ -1094,12 +1106,13 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (s.land === true) S.land = true;
       if (s.dem === false) S.dem = false;
       if (s.ridge === false) S.ridge = false;
+      if (s.autoSun === false) S.autoSun = false;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -1728,6 +1741,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 
   /* ---------- Calibrazione ---------- */
   function toast(msg, ms, undo) {
+    $('toast').classList.remove('ok');
     $('toastText').textContent = msg;
     $('toastBtn').hidden = !undo;
     undoState = undo || null;
@@ -1825,7 +1839,30 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       for (const h of sunHist) { lo = Math.min(lo, h.d); hi = Math.max(hi, h.d); sum += h.d; }
       if (hi - lo > 1.5) { sunCandFail(now); return; }      // il punto salta: niente proposta
       sunCand = { dOff: sum / sunHist.length, dPitch: 0, t: now };
+      autoSunFix(sunCand);
     } catch (e) { /* il video non è leggibile: nessun rilevamento */ }
+  }
+
+  // v19: col sole netto e fermo la bussola si corregge da sola (solo in questo punto), con avviso e Annulla
+  let autoSunAt = 0;
+  function autoSunFix(c) {
+    if (!S.autoSun || align.step || shooting || Date.now() - autoSunAt < 60000 || S.lat === null) return;
+    autoSunAt = Date.now();
+    sunHist.length = 0;
+    const d = Math.round(c.dOff * 10) / 10;
+    if (Math.abs(d) < 0.8) {          // già giusta: lo si annota senza disturbare
+      if (!S.alPos || S.alQ === null || S.alQ > 3) { S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = 3; saveAlign(); }
+      return;
+    }
+    const prev = { off: S.alOff, q: S.alQ, pos: S.alPos };
+    S.alOff = norm180(S.alOff + d); S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = 3;
+    saveAlign();
+    toast('✓ Bussola corretta col sole (' + fmtDeg(d) + ').', 8000, () => {
+      S.alOff = prev.off; S.alQ = prev.q; S.alPos = prev.pos; saveAlign();
+      autoSunAt = Date.now() + 9 * 60000;   // per 10 minuti non riprova da sola
+      toast('Correzione annullata.', 3000);
+    });
+    $('toast').classList.add('ok');
   }
 
   /* ---------- Mini-mappa (MapLibre GL) ---------- */
@@ -2131,14 +2168,16 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     alBegin();
   }
   // Col rilievo pronto si allinea sul profilo dei monti; altrimenti su un luogo o sul sole
-  function alBegin() { if (ridgeReady()) alRidge(); else alPick(); }
+  function alBegin() { alRidge(); }   // v19: sempre un solo gesto
   function ridgeReady() {
     const P = DEM.prof;
     return !!(S.dem && P && S.lat !== null && geo(P.lat, P.lon, S.lat, S.lon).d < 300);
   }
   function alRidge() {
     align.step = 'ridge'; align.target = null; align.r0 = S.alOff; align.relief = null;
-    alUI('Allinea col profilo dei monti', 'Trascina col dito a destra o a sinistra finché la linea tratteggiata combacia con le creste. Se combacia al centro ma non ai lati, allarga o stringi con due dita. Conta la forma, non l’altezza.', 'Combacia: fatto', 'Annulla', 'ridge');
+    const rr = ridgeReady();
+    alUI('Allinea', 'Trascina col dito a destra o a sinistra finché i nomi cadono sui luoghi' + (rr ? ', o la linea azzurra sui monti' : '') + '. Se combacia al centro ma non ai lati, allarga o stringi con due dita.', 'Fatto', 'Annulla', 'ridge');
+    $('alAlt').textContent = 'Preferisci scegliere un luogo o il sole?';
   }
 
   function alSnapshot() { align.prev = S.alOff; align.prevQ = S.alQ; align.prevPitch = S.pitchOff; align.prevPos = S.alPos; align.prevFov = S.fov; align.prevFovKind = CAM.kind; }
@@ -2164,7 +2203,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     align.step = 'intro';
     document.body.classList.add('aligning');
     $('alignBar').hidden = false;
-    alUI('Prima di iniziare: allinea la bussola', 'Prima di tutto tara l’iPhone disegnando un «8» in aria con il telefono. Poi, se il sole è visibile, lo trovi in cima all’elenco (usa solo lo schermo, non guardarlo a occhio nudo); altrimenti scegli un luogo che conosci. Ci vuole circa un minuto.', 'Allinea ora', 'Più tardi', 'intro');
+    alUI('Prima di iniziare: allinea la bussola', 'Disegna un «8» in aria con il telefono, poi tocca «Allinea ora» e trascina col dito finché i nomi cadono sui luoghi. Con il sole visibile la bussola si corregge anche da sola.', 'Allinea ora', 'Più tardi', 'intro');
     $('alChips').textContent = '';
   }
   let introDone = false;
@@ -2211,10 +2250,18 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (align.step === 'intro') { alBegin(); return; }
     if (align.step === 'ridge') {
       if (CAM.kind !== 'tele') applyZoom(dzFor(CAM.zoom, CAM.kind), true);
-      S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = 2;
+      S.alPos = { lat: S.lat, lon: S.lon }; S.alQ = ridgeReady() ? 2 : 3;
       saveAlign(); saveSettings(); refreshSettingsUI();
       const dFov = S.fov - (typeof align.prevFov === 'number' && align.prevFovKind === CAM.kind ? align.prevFov : S.fov);
-      toast('Allineata col profilo dei monti ✓ Correzione ' + fmtDeg(Math.round(norm180(S.alOff - align.r0) * 10) / 10) + (dFov ? ', campo visivo ' + S.fov + '°' : '') + '.', 5000);
+      const snap = { off: align.prev, q: align.prevQ, pos: align.prevPos, fov: align.prevFov, kind: align.prevFovKind };
+      // v19: esito netto, con Annulla
+      toast('✓ Fatto: bussola corretta di ' + fmtDeg(Math.round(norm180(S.alOff - align.r0) * 10) / 10) + (dFov ? ', campo visivo ' + S.fov + '°' : '') + '.', 8000, () => {
+        S.alOff = snap.off; S.alQ = snap.q; S.alPos = snap.pos;
+        align.prevFov = snap.fov; align.prevFovKind = snap.kind; alRestoreFov();
+        saveAlign(); saveSettings(); refreshSettingsUI();
+        toast('Correzione annullata.', 3000);
+      });
+      $('toast').classList.add('ok');
       alFinish();
       return;
     }
@@ -2787,6 +2834,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       (CAM.kind !== 'tele' && CAM.zoom !== 1 ? ', zoom ' + zoomName(CAM.zoom) + ' (' + CAM.mode + (CAM.dz > 1 ? ' ' + zoomName(Math.round(CAM.dz * 100) / 100) : '') + ')' : '') +
       '. Il campo visivo si tara separatamente per ogni obiettivo. Fotocamere trovate: ' + (CAM.names.length ? CAM.names.join('; ') : '–') + '.';
     $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
+    $('autoSun').checked = S.autoSun !== false;
     $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione: misurata dai sensori del telefono (accelerometro e giroscopio).';
     document.querySelectorAll('#segR button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.r) === S.radius);
@@ -2880,6 +2928,11 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     applyCorrection(c.dOff, c.dPitch, 'Sole');
   });
   $('walkBtn').addEventListener('click', () => { setMenu(false); startWalk(); });
+  $('advBtn').addEventListener('click', () => {
+    setMenu(false); setSheet(true);
+    setTimeout(() => { const h = $('advSec'); const sh = $('sheet'); sh.scrollTop = h.offsetTop - 12; }, 300);
+  });
+  $('autoSun').addEventListener('change', (e) => { S.autoSun = e.target.checked; saveSettings(); lastCompState = ''; });
 
   /* ---------- Menù della bussola ---------- */
   // Il menù della bussola prende il posto delle informazioni nel pannello: l'immagine resta libera
@@ -2898,14 +2951,15 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     const rr = ridgeReady();
     if (rr !== lastAlignBtn) {
       lastAlignBtn = rr;
-      $('alignBtnT').textContent = rr ? 'Allinea col profilo' : 'Allinea guidato';
-      $('alignBtnS').textContent = rr ? 'Trascina la linea sui monti' : 'Scegli un luogo o il sole';
+      $('alignBtnS').textContent = rr ? 'trascina i nomi o la linea dei monti' : 'trascina i nomi sul paesaggio';
     }
+    const an = S.autoSun ? 'Col sole visibile si corregge da sola.' : 'Correzione automatica col sole spenta (Avanzate).';
+    if ($('autoNote').textContent !== an) { $('autoNote').textContent = an; $('autoNote').parentNode.classList.toggle('off', !S.autoSun); }
     const q = qualInfo();
     const bad = S.compAcc !== null && (S.compAcc > 25 || S.compAcc < 0);
-    const txt = (S.alPos && S.alQ !== null) ? 'Bussola allineata in questo punto (±' + Math.round(S.alQ) + '°)'
-      : bad ? 'Bussola poco affidabile: allontanati da metalli e muovi il telefono a «8», poi correggi'
-      : 'Bussola non ancora allineata in questo punto';
+    const txt = (S.alPos && S.alQ !== null) ? (S.alQ <= 4 ? 'Bussola precisa ±' : 'Bussola corretta ±') + Math.round(S.alQ) + '° in questo punto'
+      : bad ? 'Da controllare: la bussola è disturbata. Disegna un 8 e allinea.'
+      : 'Da controllare: qui la bussola può sbagliare di qualche grado. Basta un gesto.';
     const col = q.color || q.dot || '';
     const k = txt + '|' + col;
     if (k === lastCompState) return;
