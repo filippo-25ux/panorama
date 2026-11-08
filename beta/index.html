@@ -683,7 +683,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v20 · consuma meno batteria</p>
+    <p class="sub">Beta v21 · immagine a tutto schermo</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -3671,7 +3671,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       // Risoluzione sicura (Full HD) per guardare; alta (4K) solo nella schermata di scatto, se scelta
       const hi = shooting && S.shotHi;
       const size = hi ? { width: { ideal: 3840 }, height: { ideal: 2160 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
-      size.frameRate = { ideal: 30, max: 30 };   // v20: niente 60 fotogrammi, stessa qualità a vista
+      // v21: tolto il limite di 30 fotogrammi della v20 (con quel vincolo Safari mostrava l'immagine piccola); iPhone usa già 30 di serie
       let stream = null;
       if (id) {
         try { stream = await navigator.mediaDevices.getUserMedia({ video: Object.assign({ deviceId: { exact: id } }, size), audio: false }); }
