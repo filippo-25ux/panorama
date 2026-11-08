@@ -9,3 +9,6 @@
   `python3 test_foto.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
 - `test_rilievo.py` prova il rilievo del terreno con tasselli Terrarium finti (una cresta, una vetta nascosta, un paese in collina, uno dietro la cresta):
   `python3 test_rilievo.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]` (servono Playwright e numpy).
+- `test_v17.py`, `test_v20.py`: correzioni della v17 (pannello, diagnosi, minimappa, animazione 8, avviso senza bussola) e risparmio di batteria della v20.
+- `test_v23.py` prova la veste grafica: tema chiaro/scuro automatico e manuale (resta salvato), pagina iniziale con «Beta v23», pagine «Come funziona» e Avvia dalla terza pagina; salva le schermate nei due temi:
+  `python3 test_v23.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
