@@ -4549,11 +4549,11 @@ body.hasmap .peek { padding-right: 100px; }
   $('pauseNote').addEventListener('click', resumeCam);
   setInterval(() => {
     if ($('hud').hidden) return;
-    // v24: pannello aperto per più di un minuto → fotocamera spenta; si riaccende chiudendo il pannello
+    // v24: pannello aperto per più di 15 secondi → fotocamera spenta; si riaccende chiudendo il pannello
     const nowS = Date.now();
     if (sheetIsOpen() && !shooting) {
       sheetSince = sheetSince || nowS;
-      if (!camPaused && nowS - sheetSince > 60000) pauseCam(true);
+      if (!camPaused && nowS - sheetSince > 15000) pauseCam(true);
       return;
     }
     sheetSince = 0;
