@@ -8,6 +8,8 @@ REPO, OUT = sys.argv[1], sys.argv[2]
 ML = (sys.argv[3] + '/node_modules/maplibre-gl/dist/') if len(sys.argv) > 3 else ''
 os.makedirs(OUT, exist_ok=True)
 PORT = 8773
+import base64
+PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
 
 INIT = """
 (() => {
@@ -57,6 +59,8 @@ def main():
                 u = r.request.url
                 if u.startswith('http://127.0.0.1'):
                     return r.continue_()
+                if 'agenziaentrate' in u and 'GetMap' in u:   # immagine finta del catasto
+                    return r.fulfill(status=200, content_type='image/png', body=PNG)
                 if 'agenziaentrate' in u and scheme == 'light':   # risposta finta del catasto (formato INSPIRE dell'Agenzia)
                     return r.fulfill(status=200, content_type='text/html', headers={'Access-Control-Allow-Origin': '*'},
                                      body='<table><tr><th>InspireId localId</th><td>IT.AGE.PLA.A399_0042A0.123</td></tr></table>')
@@ -100,8 +104,18 @@ def main():
             if scheme == 'light':
                 check(cat == 'foglio 42, particella 123', 'catasto (risposta finta): «foglio 42, particella 123»')
             else:
-                check(cat.startswith('non disponibile'), 'catasto senza risposta: «non disponibile» con il motivo')
+                check('Mappa' in cat, 'catasto senza risposta: rimanda a «Mappa»')
             page.screenshot(path=f'{OUT}/v23-{scheme}-pannello.png')
+            if scheme == 'light' and page.evaluate("!!window.__panoMap"):
+                page.click('#spCatMap'); page.wait_for_timeout(2500)
+                src = page.evaluate("(document.getElementById('catImg') || {}).src || ''")
+                check('GetMap' in src and 'CadastralParcel' in src, '«Mappa» del catasto: mappa grande con le particelle dell\'Agenzia')
+                check(page.locator('#catBtn').get_attribute('aria-pressed') == 'true', 'tasto «Catasto» acceso sulla mappa grande')
+                page.screenshot(path=f'{OUT}/v24-catasto-mappa.png')
+                page.click('#catBtn'); page.wait_for_timeout(300)
+                check(page.evaluate("getComputedStyle(document.getElementById('catImg')).display") == 'none', 'tasto «Catasto» spegne il livello')
+                page.click('#miniExpand'); page.wait_for_timeout(500)
+                page.click('.peek'); page.wait_for_timeout(500)
             page.evaluate("document.getElementById('segT').scrollIntoView()")
             page.wait_for_timeout(300)
             page.screenshot(path=f'{OUT}/v23-{scheme}-pannello-aspetto.png')

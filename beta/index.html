@@ -912,6 +912,20 @@ body.hasmap .peek { padding-right: 100px; }
 #shotBar .gal { width: 62px; height: 62px; }
 #shotBar .shut { width: 78px; height: 78px; box-shadow: none; }
 #shotBar .shut .ring { fill: rgba(0, 0, 0, 0.28); }
+/* ===== v24: livello catasto sulla mappa grande (immagine WMS dell'Agenzia, senza server) ===== */
+#catImg { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0.9; mix-blend-mode: multiply; }
+#catBtn, #catHint { display: none; }
+#miniWrap.full #catBtn {
+  display: block; position: absolute; left: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 3;
+  height: 36px; padding: 0 14px; border: 0; border-radius: 18px; font: inherit; font-size: 14px; font-weight: 600;
+  color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow);
+}
+#miniWrap.full #catBtn[aria-pressed="true"] { background: var(--pri); color: var(--pri-tx); }
+#miniWrap.full #miniCenter { left: 50%; }
+#miniWrap.full #catHint:not([hidden]) {
+  display: block; position: absolute; left: 12px; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 3; max-width: 70%;
+  padding: 6px 10px; border-radius: 10px; font-size: 12px; color: var(--tx); background: var(--glass-card); box-shadow: var(--card-shadow);
+}
 /* ===== v23 – tappa 5: logo ===== */
 .lgS, .lgF { display: block; fill: currentColor; }
 .brand .lgS { height: 18px; width: 58.4px; }
@@ -1138,6 +1152,8 @@ body.hasmap .peek { padding-right: 100px; }
     <div id="sunLegend"><div><i class="r"></i>Alba</div><div><i class="s"></i>Tramonto</div><div><i class="w"></i>Percorso del sole nel giorno</div></div>
     <button id="miniExpand" type="button" aria-label="Ingrandisci o riduci la mappa">⤢</button>
     <button id="miniCenter" type="button" hidden>Ricentra</button>
+    <button id="catBtn" type="button" aria-pressed="false">Catasto</button>
+    <div id="catHint" hidden></div>
     <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
   </div>
   <div id="zoom" role="group" aria-label="Zoom della fotocamera"></div>
@@ -1195,7 +1211,7 @@ body.hasmap .peek { padding-right: 100px; }
       <div id="spot">
         <div class="kv"><span>Luogo</span><b id="spPlace">–</b></div>
         <div class="kv"><span>Comune</span><b id="spCom">–</b></div>
-        <div class="kv"><span>Catasto</span><b id="spCat">–</b><a class="mini" id="spCatMap" href="https://geoportale.cartografia.agenziaentrate.gov.it/" target="_blank" rel="noopener">Mappa</a></div>
+        <div class="kv"><span>Catasto</span><b id="spCat">–</b><button type="button" class="mini" id="spCatMap">Mappa</button></div>
         <div class="kv"><span>Quota GPS</span><b id="spAlt">–</b></div>
         <div class="kv"><span>Quota terreno</span><b id="spGround">–</b></div>
         <div class="kv"><span>Coordinate</span><b id="spCoord">–</b><button type="button" class="mini" id="spCopy">Copia</button></div>
@@ -1236,7 +1252,7 @@ body.hasmap .peek { padding-right: 100px; }
       <p class="hint">Automatico segue l'impostazione dell'iPhone (Impostazioni → Schermo e luminosità).</p>
       <h3>Livelli sulla mappa</h3>
       <div class="soon">Frane e alluvioni (IdroGEO)<em>in arrivo</em></div>
-      <div class="soon">Catasto<em>in arrivo</em></div>
+      <label class="sw"><span>Catasto<small>particelle e numeri dell’Agenzia delle Entrate sulla mappa grande; serve la rete</small></span><input type="checkbox" id="catLayer"></label>
       <h3 id="advSec">Bussola e taratura (avanzate)</h3>
         <label class="sw"><span>Correzione automatica col sole<small>quando il sole è netto e fermo; ti avvisa sempre, con Annulla</small></span><input type="checkbox" id="autoSun"></label>
       <div id="settings">
@@ -1525,12 +1541,13 @@ body.hasmap .peek { padding-right: 100px; }
       if (s.dem === false) S.dem = false;
       if (s.ridge === false) S.ridge = false;
       if (s.autoSun === false) S.autoSun = false;
+      if (s.catLayer === true) S.catLayer = true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, v22: true, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, v22: true, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -2400,8 +2417,59 @@ body.hasmap .peek { padding-right: 100px; }
       updateMap();
     });
     map.on('dragstart', () => setFollow(false));
+    map.on('move', () => { if (catOn()) catPlace(); });
+    map.on('moveend', () => { if (catOn()) catUpdate(); });
     window.__panoMap = map;
   }
+
+  // v24: livello catasto. Le immagini delle particelle (WMS dell'Agenzia delle Entrate) si possono mostrare anche se il
+  // servizio non permette di leggerne i dati al sito: le si mette sopra la mappa grande (che lì non ruota) e le si sposta con lei.
+  const CATL = { img: null, box: null, t: 0 };
+  function catOn() { return !!S.catLayer && full && mapReady; }
+  function catPlace() {
+    if (!CATL.img || !CATL.box) return;
+    const a = map.project([CATL.box[0], CATL.box[3]]), b = map.project([CATL.box[2], CATL.box[1]]);
+    const st = CATL.img.style;
+    st.left = a.x + 'px'; st.top = a.y + 'px'; st.width = (b.x - a.x) + 'px'; st.height = (b.y - a.y) + 'px';
+  }
+  function catHint(t) { $('catHint').hidden = !t; $('catHint').textContent = t || ''; }
+  function catUpdate() {
+    $('catBtn').setAttribute('aria-pressed', String(!!S.catLayer));
+    if (!catOn()) { if (CATL.img) CATL.img.style.display = 'none'; catHint(''); return; }
+    if (!CATL.img) {
+      CATL.img = document.createElement('img');
+      CATL.img.id = 'catImg'; CATL.img.alt = '';
+      CATL.img.addEventListener('load', () => { CATL.img.style.display = 'block'; catHint(''); });
+      CATL.img.addEventListener('error', () => { CATL.img.style.display = 'none'; catHint(navigator.onLine ? 'Mappa catastale non disponibile ora (servizio dell’Agenzia).' : 'Per il catasto serve la rete.'); });
+      map.getCanvasContainer().appendChild(CATL.img);
+    }
+    if (map.getZoom() < 15.5) { CATL.img.style.display = 'none'; catHint('Avvicina la mappa per vedere le particelle catastali.'); return; }
+    const c = map.getContainer(), bb = map.getBounds();
+    const r = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.min(2048, Math.round(c.clientWidth * r)), h = Math.min(2048, Math.round(c.clientHeight * r));
+    const box = [bb.getWest(), bb.getSouth(), bb.getEast(), bb.getNorth()];
+    const tol = (box[2] - box[0]) * 0.03;
+    if (CATL.box && CATL.img.src && box.every((v, i) => Math.abs(v - CATL.box[i]) < tol)) { catPlace(); return; }   // vista quasi uguale: niente nuova immagine
+    CATL.box = box;
+    CATL.img.src = 'https://wms.cartografia.agenziaentrate.gov.it/inspire/wms/ows01.php?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap' +
+      '&SRS=EPSG:4258&BBOX=' + box.map((v) => v.toFixed(6)).join(',') + '&WIDTH=' + w + '&HEIGHT=' + h +
+      '&LAYERS=CP.CadastralZoning,CP.CadastralParcel&STYLES=&FORMAT=image/png&TRANSPARENT=true';
+    catPlace();
+    catHint('Caricamento delle particelle…');
+  }
+  function setCatLayer(v) {
+    S.catLayer = !!v; saveSettings(); refreshSettingsUI(); catUpdate();
+  }
+  $('catBtn').addEventListener('click', (e) => { e.stopPropagation(); setCatLayer(!S.catLayer); });
+  $('catLayer').addEventListener('change', () => setCatLayer($('catLayer').checked));
+  // «Mappa» nel Punto di ripresa: mappa grande centrata su di te, vicina, col catasto acceso
+  $('spCatMap').addEventListener('click', () => {
+    if (!mapReady) { toast('La mappa non è ancora pronta.', 2500); return; }
+    setSheet(false);
+    S.catLayer = true; saveSettings();
+    setFull(true);
+    requestAnimationFrame(() => { if (map) { map.jumpTo({ center: [S.lon, S.lat], zoom: 17.5, bearing: 0 }); catUpdate(); } });
+  });
 
   function setFollow(v) {
     follow = v;
@@ -2467,7 +2535,7 @@ body.hasmap .peek { padding-right: 100px; }
     }
     if (!v) { $('miniCard').hidden = true; selId = null; refreshMarkerClasses(); }
     setFollow(true);
-    requestAnimationFrame(() => { if (map) { map.resize(); updateMap(); } });
+    requestAnimationFrame(() => { if (map) { map.resize(); updateMap(); catUpdate(); } });
   }
 
   function selectItem(it) {
@@ -3342,6 +3410,7 @@ body.hasmap .peek { padding-right: 100px; }
       '. Il campo visivo si tara separatamente per ogni obiettivo. Fotocamere trovate: ' + (CAM.names.length ? CAM.names.join('; ') : '–') + '.';
     $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
     $('autoSun').checked = S.autoSun !== false;
+    $('catLayer').checked = !!S.catLayer;
     $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione: misurata dai sensori del telefono (accelerometro e giroscopio).';
     const th = window.panoTheme ? window.panoTheme.get() : 'auto';
     document.querySelectorAll('#segT button').forEach((b) => { b.classList.toggle('on', b.dataset.th === th); });
@@ -4492,7 +4561,7 @@ body.hasmap .peek { padding-right: 100px; }
     if (CAT.state === 'loading' || CAT.state === 'idle') return 'in caricamento…';
     if (CAT.state === 'none') return 'nessuna particella qui (strada, acqua o zona non mappata)';
     if (CAT.state === 'offline') return 'serve la rete';
-    return 'non disponibile: ' + CAT.msg;
+    return 'qui non si legge in automatico: tocca «Mappa» per vedere foglio e particella';
   }
   setInterval(() => { if (!$('hud').hidden) updateComune(); }, 2000);
 
