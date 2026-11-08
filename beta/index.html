@@ -430,7 +430,8 @@ body.aligning .panel { display: none; }
 .pin::after { background: var(--pc, var(--accent)); }
 /* pannello in basso */
 .panel { left: 0; right: 0; bottom: 0; max-height: 46vh; overflow: hidden; padding: 0 16px calc(14px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0; background: rgba(10, 14, 20, 0.8); transition: max-height 0.25s ease; }
-.panel.open { max-height: 82vh; overflow-y: auto; background: rgba(14, 18, 24, 0.96); }
+/* v18: aperto copre tutta la pagina (prima si intravedevano ghiera, filtri e fotocamera sopra) */
+.panel.open { max-height: 100vh; max-height: 100dvh; height: 100vh; height: 100dvh; overflow-y: auto; border-radius: 0; padding-top: env(safe-area-inset-top, 0px); background: #0e1218; z-index: 20; }
 #grab { display: block; width: 100%; height: 22px; margin: 0; padding: 0; border: 0; background: none; }
 #grab i { display: block; width: 40px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: rgba(255, 255, 255, 0.45); }
 .peek { min-height: 88px; display: flex; flex-direction: column; justify-content: center; }
@@ -667,7 +668,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v17 · correzioni dopo la prova all'aperto</p>
+    <p class="sub">Beta v18 · pannello a tutta pagina</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
