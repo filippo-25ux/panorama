@@ -678,7 +678,148 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 .ov2 { flex: 1; height: 42px; border: 0; border-radius: 12px; font: inherit; font-size: 0.9rem; font-weight: 600; color: #fff; background: rgba(255, 255, 255, 0.12); }
 #edNames { box-shadow: inset 0 0 0 1.5px var(--accent); }
 #edNames[aria-pressed="false"] { box-shadow: none; color: rgba(255, 255, 255, 0.7); }
+
+/* ===== v23 – veste grafica, tappa 1: tema chiaro / scuro =====
+   Un solo posto per i colori. Sopra la fotocamera restano i colori per tipo; cambiano le superfici
+   (pannello, galleria, modifica, pagina iniziale, avvisi). Tema scelto da <html data-theme>. */
+:root, :root[data-theme="light"] {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Inter", "Segoe UI", Roboto, sans-serif;
+  --bg: #f2f4f3;            /* fondo delle pagine intere */
+  --sf: #ffffff;            /* superfici (righe, schede) */
+  --tx: #1d1d1f;            /* testo */
+  --tx2: #6e6e73;           /* testo secondario */
+  --tx3: rgba(60, 60, 67, 0.42);
+  --line: rgba(0, 0, 0, 0.1);
+  --fill: rgba(0, 0, 0, 0.05);  /* fondo dei tasti tenui (come il tasto Bussola) */
+  --fill2: rgba(0, 0, 0, 0.08);
+  --acc: #0a66c2;           /* collegamenti e scelte attive */
+  --acc-tx: #ffffff;
+  --pri: #1d1d1f;           /* tasto principale */
+  --pri-tx: #ffffff;
+  --glass-card: rgba(255, 255, 255, 0.78);   /* schede sospese sopra la fotocamera */
+  --glass-line: rgba(0, 0, 0, 0.1);
+  --pill: rgba(236, 238, 242, 0.8);          /* etichette non al centro */
+  --pill-tx: #1d1d1f;
+  --pill-tx2: #6e6e73;
+  --ok-bg: #e7f6ec; --ok-tx: #1b6b3a; --ok-line: rgba(52, 199, 89, 0.45);
+  /* colori per tipo dentro le superfici chiare */
+  --t-town: #1d1d1f; --t-peak: #2f8f48; --t-land: #7b4fd0; --t-river: #2b86c5; --t-sun: #e0a800; --t-relief: #2b86c5;
+  --q-good: #34c759; --q-mid: #ff9f0a; --q-bad: #ff3b30; --q-none: #aeaeb2;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #111814;            /* verde-ardesia scuro (colori del paesaggio) */
+  --sf: #1a231e;
+  --tx: #f5f5f7;
+  --tx2: rgba(245, 245, 247, 0.62);
+  --tx3: rgba(245, 245, 247, 0.38);
+  --line: rgba(255, 255, 255, 0.12);
+  --fill: rgba(255, 255, 255, 0.1);
+  --fill2: rgba(255, 255, 255, 0.16);
+  --acc: #8fd3ff;
+  --acc-tx: #06121c;
+  --pri: #f5f5f7;
+  --pri-tx: #111814;
+  --glass-card: rgba(28, 28, 30, 0.72);
+  --glass-line: rgba(255, 255, 255, 0.14);
+  --pill: rgba(28, 28, 30, 0.55);
+  --pill-tx: #f5f5f7;
+  --pill-tx2: rgba(245, 245, 247, 0.62);
+  --ok-bg: rgba(30, 80, 48, 0.92); --ok-tx: #d6f5e0; --ok-line: rgba(80, 220, 130, 0.5);
+  --t-town: #ffffff; --t-peak: #8fd99a; --t-land: #c8a2ff; --t-river: #7fc8ff; --t-sun: #ffc928; --t-relief: #8fd3ff;
+  --q-good: #6fe29a; --q-mid: #ffb347; --q-bad: #ff6b5a; --q-none: #8e8e93;
+  color-scheme: dark;
+}
+html, body { font-family: var(--font); }
+button, input, select { font-family: inherit; }
+
+/* pagina iniziale (provvisoria: la nuova arriva nella tappa 4) */
+#start { background: var(--bg); color: var(--tx); }
+#start .sub, #start p { color: var(--tx2); }
+#go { background: var(--pri); color: var(--pri-tx); }
+#go:focus-visible { outline-color: var(--acc); }
+
+/* pannello aperto a tutta pagina */
+.panel.open { background: var(--bg); color: var(--tx); }
+.panel.open #grab i { background: var(--tx3); }
+.panel.open .peek, .panel.open #aimInfo, .panel.open #here { color: var(--tx); }
+.panel.open #aimInfo, .panel.open #here { color: var(--tx2); }
+#more h3 { color: var(--tx2); }
+#more .hint, #more .foot { color: var(--tx2); }
+.sw small, .sw em { color: var(--tx2); }
+.sw input { accent-color: var(--acc); }
+.seg { box-shadow: inset 0 0 0 1px var(--line); background: var(--sf); }
+.seg button { color: var(--tx); }
+.seg button.on { background: var(--pri); color: var(--pri-tx); }
+.soon { color: var(--tx3); }
+#more .row button { color: var(--tx); background: var(--fill2); }
+#more .row button.on { background: var(--pri); color: var(--pri-tx); }
+.lens { color: var(--tx2); }
+#spot .kv span { color: var(--tx2); }
+.mini { background: var(--fill2); color: var(--tx); }
+#sunRow .dateRow button, #sunRow .sdChips button { color: var(--tx); background: var(--fill2); }
+#sdInfo { color: var(--tx2); }
+.panel.open .comp { color: var(--tx); background: var(--fill); }
+.panel.open .bmi { color: var(--tx); background: var(--fill); }
+.panel.open .bmi span, .panel.open .bmState, .panel.open .bmNote { color: var(--tx2); }
+.panel.open #bmClose { color: var(--tx); }
+.panel.open .bmAdv { color: var(--acc); }
+.panel.open #bmenu .bmi.big { background: var(--pri); color: var(--pri-tx); }
+.panel.open #bmenu .bmi.big span { color: var(--pri-tx); opacity: 0.7; }
+.panel.open #fig8 { background: var(--fill); color: var(--tx2); }
+/* icone dei tipi nelle superfici: toni adatti al tema */
+.sw.t-town { --ic: var(--t-town); } .sw.t-peak { --ic: var(--t-peak); } .sw.t-land { --ic: var(--t-land); }
+.sw.t-sun { --ic: var(--t-sun); } .sw.t-relief { --ic: var(--t-relief); }
+#segT { margin-top: 6px; }
+
+/* galleria e modifica */
+#gal, #edit { background: var(--bg); color: var(--tx); }
+.back { color: var(--acc); }
+#galEmpty, #galInfo { color: var(--tx2); }
+#galHint { background: var(--fill); color: var(--tx); }
+#galHint button { color: var(--tx); }
+#galStrip button { background-color: var(--fill2); }
+#galStrip button.on { box-shadow: 0 0 0 2px var(--acc); }
+.gacts button { color: var(--tx); }
+.gacts .del { color: #ff3b30; }
+.gacts button:not(.del) svg path, .gacts button:not(.del) svg circle { stroke: var(--acc); }
+.gacts .del svg path { stroke: #ff3b30; }
+#galToast { background: var(--sf); color: var(--tx); box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18); }
+.edRow input[type=range] { accent-color: var(--acc); }
+.ov2 { color: var(--tx); background: var(--fill2); }
+#edNames { box-shadow: inset 0 0 0 1.5px var(--acc); }
+#edNames[aria-pressed="false"] { box-shadow: none; color: var(--tx2); }
+#edit .hint { color: var(--tx2); }
+#galCap { color: #fff; }   /* resta sopra la foto */
+
+/* avvisi a tutta pagina */
+#devNote { background: var(--sf); color: var(--tx); }
+#devNote p { color: var(--tx2); }
+#devNote button { background: var(--pri); color: var(--pri-tx); }
+#pauseNote { background: color-mix(in srgb, var(--bg) 94%, transparent); color: var(--tx); }
+#pauseNote span { color: var(--tx2); }
 </style>
+<script>
+/* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
+(function () {
+  var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function pref() { try { return localStorage.getItem('pano.theme') || 'auto'; } catch (e) { return 'auto'; } }
+  function apply() {
+    var p = pref();
+    var t = p === 'light' || p === 'dark' ? p : (mq && mq.matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', t);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', t === 'dark' ? '#111814' : '#f2f4f3');
+  }
+  window.panoTheme = {
+    get: pref,
+    set: function (p) { try { localStorage.setItem('pano.theme', p); } catch (e) {} apply(); },
+    apply: apply
+  };
+  apply();
+  if (mq) { if (mq.addEventListener) mq.addEventListener('change', apply); else if (mq.addListener) mq.addListener(apply); }
+})();
+</script>
 </head>
 <body>
 
@@ -804,12 +945,12 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         <p class="hint">Questi dati vengono salvati con ogni foto. La quota del GPS è indicativa (di solito ±10–20 m); la quota del terreno viene dal rilievo (celle di circa 30 m).</p>
       </div>
       <h3>Cosa mostrare</h3>
-      <label class="sw" style="--ic: #ffffff"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
-      <label class="sw" style="--ic: #8be28b"><i class="swi" data-t="peak"></i><span>Vette</span><em id="nPeak"></em><input type="checkbox" data-f="peak"></label>
-      <label class="sw" style="--ic: #8fd3ff"><i class="swi" data-t="relief"></i><span>Rilievo del terreno<small>nasconde le vette coperte da monti più vicini</small></span><em id="demState"></em><input type="checkbox" data-f="dem"></label>
-      <label class="sw" style="--ic: #8fd3ff"><i class="swi" data-t="ridge"></i><span>Linea delle creste<small>tratteggio leggero sul profilo dei monti</small></span><input type="checkbox" data-f="ridge"></label>
-      <label class="sw" style="--ic: #c8a2ff"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
-      <label class="sw" style="--ic: #ffd166"><i class="swi" data-t="sun"></i><span>Percorso del sole</span><input type="checkbox" data-f="sun"></label>
+      <label class="sw t-town"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
+      <label class="sw t-peak"><i class="swi" data-t="peak"></i><span>Vette</span><em id="nPeak"></em><input type="checkbox" data-f="peak"></label>
+      <label class="sw t-relief"><i class="swi" data-t="relief"></i><span>Rilievo del terreno<small>nasconde le vette coperte da monti più vicini</small></span><em id="demState"></em><input type="checkbox" data-f="dem"></label>
+      <label class="sw t-relief"><i class="swi" data-t="ridge"></i><span>Linea delle creste<small>tratteggio leggero sul profilo dei monti</small></span><input type="checkbox" data-f="ridge"></label>
+      <label class="sw t-land"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
+      <label class="sw t-sun"><i class="swi" data-t="sun"></i><span>Percorso del sole</span><input type="checkbox" data-f="sun"></label>
       <div id="sunRow" hidden>
         <div class="dateRow">
           <button type="button" id="sdPrev" aria-label="Giorno precedente">◀</button>
@@ -830,6 +971,9 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         <div><h3>Nomi</h3><div class="seg" id="segD"><button type="button" data-dn="1">Pochi</button><button type="button" data-dn="2">Normali</button><button type="button" data-dn="3">Molti</button></div></div>
         <div><h3>Distanza</h3><div class="seg" id="segR"><button type="button" data-r="10000">10</button><button type="button" data-r="25000">25</button><button type="button" data-r="50000">50 km</button></div></div>
       </div>
+      <h3>Aspetto</h3>
+      <div class="seg" id="segT"><button type="button" data-th="auto">Automatico</button><button type="button" data-th="light">Chiaro</button><button type="button" data-th="dark">Scuro</button></div>
+      <p class="hint">Automatico segue l'impostazione dell'iPhone (Impostazioni → Schermo e luminosità).</p>
       <h3>Livelli sulla mappa</h3>
       <div class="soon">Frane e alluvioni (IdroGEO)<em>in arrivo</em></div>
       <div class="soon">Catasto<em>in arrivo</em></div>
@@ -2905,6 +3049,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     $('vOff').textContent = fmtDeg(Math.round(S.off * 10) / 10);
     $('autoSun').checked = S.autoSun !== false;
     $('declInfo').textContent = 'Declinazione magnetica: ' + fmtDeg(Math.round(S.declAuto * 10) / 10) + ' (calcolata dalla tua posizione). Inclinazione: misurata dai sensori del telefono (accelerometro e giroscopio).';
+    const th = window.panoTheme ? window.panoTheme.get() : 'auto';
+    document.querySelectorAll('#segT button').forEach((b) => { b.classList.toggle('on', b.dataset.th === th); });
     document.querySelectorAll('#segR button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.r) === S.radius);
     });
@@ -2972,6 +3118,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (b.dataset.k === 'cam') { startCamera().catch(() => {}); return; }
     if (b.dataset.k === 'walk') { startWalk(); return; }
     if (b.dataset.k === 'zero') { S.off = 0; S.pitchOff = 0; S.alOff = 0; S.alPos = null; S.alQ = null; saveAlign(); toast('Taratura azzerata.', 3000); }
+    if (b.dataset.th) { window.panoTheme.set(b.dataset.th); refreshSettingsUI(); return; }
     if (b.dataset.dn) F.dens = Number(b.dataset.dn);
     if (b.dataset.r) { S.radius = Number(b.dataset.r); retryAt = 0; retryLandAt = 0; refreshItems(); maybeFetch(); maybeFetchLand(); }
     if (b.dataset.k === 'fov') {
