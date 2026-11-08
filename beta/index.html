@@ -907,6 +907,33 @@ body.hasmap .peek { padding-right: 100px; }
 #shotBar .gal { width: 62px; height: 62px; }
 #shotBar .shut { width: 78px; height: 78px; box-shadow: none; }
 #shotBar .shut .ring { fill: rgba(0, 0, 0, 0.28); }
+/* ===== v23 – tappa 3: etichette traslucide, colore per tipo, meno affollamento ===== */
+.pill {
+  min-height: 26px; height: auto; max-width: 230px; padding: 5px 11px 5px 9px; gap: 5px; border-radius: 13px;
+  color: var(--pill-tx); background: var(--pill);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+}
+.pill b { font-size: 13px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.25; }
+.pill.k-town { --ic: var(--t-town); } .pill.k-peak { --ic: var(--t-peak); } .pill.k-land { --ic: var(--t-land); } .pill.k-river { --ic: var(--t-river); }
+.pill .ic .f { fill: var(--ic); } .pill .ic .s { stroke: var(--ic); }
+.pill.sel { padding: 6px 12px 6px 9px; border-radius: 13px; color: #1d1d1f; background: #ffffff; box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 4px 14px rgba(0, 0, 0, 0.18); }
+.pill.sel.k-town { --ic: #1d1d1f; } .pill.sel.k-peak { --ic: #2f8f48; } .pill.sel.k-land { --ic: #7b4fd0; } .pill.sel.k-river { --ic: #2b86c5; }
+.pill.sel b { font-size: 13px; font-weight: 600; }
+.pill.sel i { font-size: 11px; color: #6e6e73; }
+.pill.sel .ic .f { fill: var(--ic); } .pill.sel .ic .s { stroke: var(--ic); }
+.pill.dot { width: 20px; min-height: 20px; height: 20px; padding: 0; border-radius: 10px; background: var(--pill); }
+.pill.dot .ic { width: 10px; height: 10px; }
+.pin { width: 1px; background: rgba(255, 255, 255, 0.85); }
+.pin::after { width: 6px; height: 6px; left: -2.5px; bottom: -3px; background: var(--pc, #fff); box-shadow: 0 0 0 0.75px rgba(0, 0, 0, 0.45); }
+#labels .pin { z-index: 0; } #labels .pill { z-index: 1; } #labels .pill.sel { z-index: 2; }
+/* segnaposti sulla mappa (chiara nei due temi): pastiglia bianca, icona nel tono scuro del tipo */
+.mk i, .mk.land i, .mk.peak i { background: rgba(255, 255, 255, 0.94); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.18); --ic: #1d1d1f; }
+.mk.peak i { --ic: #2f8f48; } .mk.land i { --ic: #7b4fd0; }
+.mk i .ic .f { fill: var(--ic); } .mk i .ic .s { stroke: var(--ic); }
+.mk.aim i, .mk.sel i { background: #ffc928; --ic: #1d1d1f; }
+.mk span { color: #1d1d1f; font-weight: 500; }
+#miniWrap:not(.full) .mk:not(.aim):not(.sel) { display: none; }
 #miniWrap.full #miniExpand { width: 44px; height: 44px; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); font-weight: 500; }
 #miniWrap.full #miniCenter { background: var(--glass-card); color: var(--tx); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); border-radius: 14px; }
 .ov { background: rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
@@ -1217,9 +1244,10 @@ body.hasmap .peek { padding-right: 100px; }
     'https://overpass.openstreetmap.fr/api/interpreter'
   ];
   const DENS = { 1: 4, 2: 7, 3: 12 };   // quanti nomi mostrare (Pochi / Normali / Molti)
-  const MAX_DOTS = 24;                  // luoghi mostrati solo con l'icona
+  const MAX_DOTS = 24;                  // (prima della v23) luoghi mostrati solo con l'icona
+  const DOTS = { 1: 2, 2: 4, 3: 8 };     // v23: meno pallini senza nome (Pochi / Normali / Molti)
   const F = { town: true, peak: true, sun: false, dens: 2 };
-  const TYPE_COLOR = { peak: '#8be28b', church: '#c8a2ff', tower: '#c8a2ff', castle: '#c8a2ff' };
+  const TYPE_COLOR = { peak: '#8fd99a', church: '#c8a2ff', tower: '#c8a2ff', castle: '#c8a2ff', river: '#7fc8ff' };
   const typeColor = (t) => TYPE_COLOR[t] || '#ffffff';
   // Icone per tipo (stesse forme in camera, sulla mappa e nei filtri)
   function iconSvg(t, size) {
@@ -2919,12 +2947,13 @@ body.hasmap .peek { padding-right: 100px; }
     }
   }
 
+  const DOT_W = 20;   // v23: pallino senza nome
+  const kindOf = (t) => (t === 'peak' ? 'peak' : LAND_TYPES[t] ? 'land' : t === 'river' ? 'river' : 'town');
   function makeLabel(it) {
     const pill = document.createElement('div');
-    pill.className = 'pill';
+    pill.className = 'pill k-' + kindOf(it.t);
     pill.dataset.id = String(it.id);
-    pill.style.setProperty('--ic', typeColor(it.t));
-    pill.innerHTML = iconSvg(it.t);
+    pill.innerHTML = iconSvg(it.t, 11);
     const tx = document.createElement('span');
     tx.className = 'tx';
     const b = document.createElement('b');
@@ -3030,33 +3059,39 @@ body.hasmap .peek { padding-right: 100px; }
       const order = aim ? [aim].concat(cand.filter((c) => c !== aim)) : cand;
       const placed = [];
       const topLimit = document.querySelector('.degpill').getBoundingClientRect().bottom + 8;
+      const cols = [];
       for (const el of [$('filters'), $('zoom')]) {   // v23: le etichette non coprono le due colonne di tasti
         const r = el.getBoundingClientRect();
-        if (r.height > 0 && getComputedStyle(el).display !== 'none') placed.push({ l: r.left - 4, r: r.right + 4, t: r.top - 4, b: r.bottom + 4 });
+        if (r.height > 0 && getComputedStyle(el).display !== 'none') { const o = { l: r.left - 4, r: r.right + 4, t: r.top - 4, b: r.bottom + 4 }; placed.push(o); cols.push(o); }
       }
       const bottomLimit = (shooting ? $('shotBar') : $('sheet')).getBoundingClientRect().top - 10;
       let names = 0, dots = 0;
-      const nNames = DENS[F.dens];
+      const nNames = DENS[F.dens], maxDots = DOTS[F.dens];
+      const nameRects = [], pinXs = [];
 
       for (const c of order) {
-        if (names >= nNames && dots >= MAX_DOTS) break;
+        if (names >= nNames && dots >= maxDots) break;
         const it = c.it;
         const elev = elevOf(it);
         const x = W / 2 + Math.tan(c.rel * RAD) / tanH * W / 2;
         const ay = H / 2 + Math.tan((pitch - elev) * RAD) / tanV * H / 2;
         if (ay > bottomLimit || ay < topLimit + 30) continue;
 
+        // un luogo che cade dietro una colonna di tasti si mostra solo se è quello nel mirino
+        if (c !== aim && cols.some((r) => x > r.l && x < r.r && ay > r.t - 40)) continue;
         let lab = pool[it.id];
         if (!lab) lab = pool[it.id] = makeLabel(it);
         const isSel = c === aim || (align.step === 'fine' && align.target === it);
-        const modes = isSel ? ['sel', 'dot'] : names < nNames ? ['name', 'dot'] : ['dot'];
+        // v23: un nome che non trova posto non diventa un pallino accanto agli altri nomi
+        const modes = isSel ? ['sel', 'dot'] : names < nNames ? ['name'] : ['dot'];
         let got = null;
         for (const m of modes) {
-          if (m === 'dot' && dots >= MAX_DOTS) continue;
-          const lw = m === 'sel' ? lab.wSel : m === 'dot' ? 24 : lab.w;
-          const lh = m === 'sel' ? lab.hSel : m === 'dot' ? 24 : lab.h;
+          if (m === 'dot' && dots >= maxDots && !isSel) continue;
+          if (m === 'dot' && !isSel && pinXs.some((px) => Math.abs(px - x) < 18)) continue;   // linee troppo vicine
+          const lw = m === 'sel' ? lab.wSel : m === 'dot' ? DOT_W : lab.w;
+          const lh = m === 'sel' ? lab.hSel : m === 'dot' ? DOT_W : lab.h;
           const left = Math.min(Math.max(x - lw / 2, 6), W - lw - 6);
-          const lanes = m === 'dot' ? 3 : 12;
+          const lanes = m === 'dot' ? 1 : 12;
           for (let lane = 0; lane < lanes; lane++) {
             const t = ay - 10 - lh - lane * (lh + 4);
             if (t < topLimit) break;
@@ -3064,12 +3099,17 @@ body.hasmap .peek { padding-right: 100px; }
             for (const r of placed) {
               if (left < r.r && left + lw > r.l && t < r.b && t + lh > r.t) { clash = true; break; }
             }
+            // un pallino non sta a ridosso di un nome: almeno 14 px di aria
+            if (!clash && m === 'dot') for (const r of nameRects) {
+              if (left < r.r + 14 && left + lw > r.l - 14 && t < r.b + 14 && t + lh > r.t - 14) { clash = true; break; }
+            }
             if (!clash) { got = { m: m, left: left, top: t, w: lw, h: lh }; break; }
           }
           if (got) break;
         }
         if (!got) continue;
-        if (got.m === 'dot') dots++; else names++;
+        if (got.m === 'dot') dots++; else { names++; nameRects.push({ l: got.left, r: got.left + got.w, t: got.top, b: got.top + got.h }); }
+        pinXs.push(x);
 
         placed.push({ l: got.left - 2, r: got.left + got.w + 2, t: got.top - 2, b: got.top + got.h + 2 });
         used[it.id] = true;
@@ -3524,14 +3564,14 @@ body.hasmap .peek { padding-right: 100px; }
   /* ---------- Disegno della foto con nomi, raddrizzatura e ritaglio ---------- */
   function circ(cx, cy, r) { return 'M' + (cx - r) + ' ' + cy + ' a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0 a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0 Z'; }
   const ICON_OPS = {
-    peak: [['f', 'M1.5 12.5 L7 2.5 L12.5 12.5 Z']],
-    city: [['s', circ(7, 7, 5.6), 1.4], ['f', circ(7, 7, 3.2)]],
-    hamlet: [['s', circ(7, 7, 3.4), 1.8]],
-    church: [['s', 'M7 1.5 V12.5 M3 5 H11', 2]],
-    tower: [['s', 'M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2', 1.6]],
-    castle: [['s', 'M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z', 1.4]],
-    river: [['s', 'M0.5 7.5 C2.8 4 4.6 4 7 7.5 S11.2 11 13.5 7.5', 2]],
-    def: [['f', circ(7, 7, 4.5)]]
+    peak: [['s', 'M1.5 12.5 L7 2.5 L12.5 12.5 Z', 1.4]],
+    city: [['s', circ(7, 7, 5.4), 1.4], ['f', circ(7, 7, 2.2)]],
+    hamlet: [['s', circ(7, 7, 3.4), 1.4]],
+    church: [['s', 'M7 1 V3.5 M5.8 2.2 H8.2 M4 13 V6.5 L7 4.5 L10 6.5 V13 Z', 1.3]],
+    tower: [['s', 'M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2', 1.3]],
+    castle: [['s', 'M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z', 1.3]],
+    river: [['s', 'M1 5 C3 3.8 4.5 6.2 7 5 S11 3.8 13 5 M1 9.5 C3 8.3 4.5 10.7 7 9.5 S11 8.3 13 9.5', 1.3]],
+    def: [['s', circ(7, 7, 4.6), 1.5]]
   };
   function drawIcon(ctx, t, cx, cy, size, color) {
     const ops = ICON_OPS[t] || ICON_OPS.def;
@@ -3580,37 +3620,39 @@ body.hasmap .peek { padding-right: 100px; }
       const bottom = q.by + q.bh;
       if (q.ay > bottom) { ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(q.ax - 0.5 * k, bottom, k, q.ay - bottom); }
       ctx.fillStyle = typeColor(q.L.t);
-      ctx.beginPath(); ctx.arc(q.ax, q.ay, 3.5 * k, 0, 2 * Math.PI); ctx.fill();
+      ctx.beginPath(); ctx.arc(q.ax, q.ay, 3 * k, 0, 2 * Math.PI); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.45)'; ctx.lineWidth = 0.75 * k; ctx.stroke();
     }
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     // il carattere del disegno può essere un po' più largo di quello dello schermo: l'etichetta si allarga
     for (const q of L2) {
       const L = q.L;
       let need = 0;
-      if (L.m === 'name') { ctx.font = '600 ' + (14.4 * k) + 'px ' + FONT; need = ctx.measureText(L.n).width + 38 * k; }
+      if (L.m === 'name') { ctx.font = '500 ' + (13 * k) + 'px ' + FONT; need = ctx.measureText(L.n).width + 38 * k; }
       if (L.m === 'sel') {
-        ctx.font = '700 ' + (15.2 * k) + 'px ' + FONT; need = ctx.measureText(L.n).width;
-        ctx.font = '400 ' + (12.2 * k) + 'px ' + FONT; need = Math.max(need, ctx.measureText(L.sub).width) + 44 * k;
+        ctx.font = '600 ' + (13 * k) + 'px ' + FONT; need = ctx.measureText(L.n).width;
+        ctx.font = '400 ' + (11 * k) + 'px ' + FONT; need = Math.max(need, ctx.measureText(L.sub).width) + 44 * k;
       }
       if (need > q.bw) { q.bx -= (need - q.bw) / 2; q.bw = need; }
     }
     for (const q of L2) {
       const L = q.L, col = typeColor(L.t);
+      const DARK = { peak: '#2f8f48', land: '#7b4fd0', river: '#2b86c5', town: '#1d1d1f' }[kindOf(L.t)];
       if (L.m === 'dot') {
-        ctx.fillStyle = 'rgba(10,14,20,0.55)'; roundRect(ctx, q.bx, q.by, q.bw, q.bh, q.bh / 2); ctx.fill();
-        drawIcon(ctx, L.t, q.bx + q.bw / 2, q.by + q.bh / 2, 11 * k, col);
+        ctx.fillStyle = 'rgba(28,28,30,0.55)'; roundRect(ctx, q.bx, q.by, q.bw, q.bh, q.bh / 2); ctx.fill();
+        drawIcon(ctx, L.t, q.bx + q.bw / 2, q.by + q.bh / 2, 10 * k, col);
       } else if (L.m === 'name') {
-        ctx.fillStyle = 'rgba(10,14,20,0.62)'; roundRect(ctx, q.bx, q.by, q.bw, q.bh, 15 * k); ctx.fill();
-        drawIcon(ctx, L.t, q.bx + 15 * k, q.by + q.bh / 2, 14 * k, col);
-        ctx.fillStyle = '#ffffff'; ctx.font = '600 ' + (14.4 * k) + 'px ' + FONT;
-        fitText(ctx, L.n, q.bx + 28 * k, q.by + q.bh / 2, q.bw - 36 * k);
+        ctx.fillStyle = 'rgba(28,28,30,0.58)'; roundRect(ctx, q.bx, q.by, q.bw, q.bh, Math.min(13 * k, q.bh / 2)); ctx.fill();
+        drawIcon(ctx, L.t, q.bx + 16 * k, q.by + q.bh / 2, 11 * k, col);
+        ctx.fillStyle = '#f5f5f7'; ctx.font = '500 ' + (13 * k) + 'px ' + FONT;
+        fitText(ctx, L.n, q.bx + 27 * k, q.by + q.bh / 2, q.bw - 36 * k);
       } else {
-        ctx.fillStyle = '#8fd3ff'; roundRect(ctx, q.bx, q.by, q.bw, q.bh, 14 * k); ctx.fill();
-        drawIcon(ctx, L.t, q.bx + 17 * k, q.by + q.bh / 2, 14 * k, '#06121c');
-        ctx.fillStyle = '#06121c'; ctx.font = '700 ' + (15.2 * k) + 'px ' + FONT;
-        fitText(ctx, L.n, q.bx + 30 * k, q.by + 6 * k + 9.5 * k, q.bw - 42 * k);
-        ctx.fillStyle = 'rgba(6,18,28,0.78)'; ctx.font = '400 ' + (12.2 * k) + 'px ' + FONT;
-        fitText(ctx, L.sub, q.bx + 30 * k, q.by + q.bh - 7 * k - 7.5 * k, q.bw - 42 * k);
+        ctx.fillStyle = '#ffffff'; roundRect(ctx, q.bx, q.by, q.bw, q.bh, 13 * k); ctx.fill();
+        drawIcon(ctx, L.t, q.bx + 16 * k, q.by + 6 * k + 8 * k, 11 * k, DARK);
+        ctx.fillStyle = '#1d1d1f'; ctx.font = '600 ' + (13 * k) + 'px ' + FONT;
+        fitText(ctx, L.n, q.bx + 27 * k, q.by + 6 * k + 8 * k, q.bw - 36 * k);
+        ctx.fillStyle = '#6e6e73'; ctx.font = '400 ' + (11 * k) + 'px ' + FONT;
+        fitText(ctx, L.sub, q.bx + 27 * k, q.by + q.bh - 6 * k - 6.5 * k, q.bw - 36 * k);
       }
     }
   }
