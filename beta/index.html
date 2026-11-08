@@ -367,6 +367,11 @@ body.aligning .panel { display: none; }
 
 /* Percorso del sole */
 #sunPath { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+/* v17: il percorso del sole si attenua sotto ghiera, gradi e filtri (resta leggibile, non disturba i comandi) */
+#sunPath {
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.22) 0, rgba(0,0,0,0.22) calc(122px + env(safe-area-inset-top, 0px)), #000 calc(160px + env(safe-area-inset-top, 0px)));
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.22) 0, rgba(0,0,0,0.22) calc(122px + env(safe-area-inset-top, 0px)), #000 calc(160px + env(safe-area-inset-top, 0px)));
+}
 #ridge { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 #alInfo { display: block; margin-top: 8px; font-size: 0.9rem; font-weight: 600; }
 #alAlt { display: block; margin: 10px auto 0; padding: 6px 4px; border: 0; background: transparent; color: var(--accent); font: inherit; font-size: 0.88rem; text-decoration: underline; }
@@ -456,8 +461,12 @@ body.hasmap .peek { padding-right: 104px; }
 #miniWrap:not(.full) { top: 0; left: auto; right: 16px; width: 88px; height: 88px; }
 #miniWrap:not(.full) #mini { border-radius: 16px; }
 #miniWrap:not(.full) #miniExpand, #miniWrap:not(.full) #miniCenter { display: none; }
-body.sheetopen #miniWrap:not(.full) { display: none; }
-body.aligning #filters, body.aligning #miniWrap:not(.full) { display: none; }
+/* v17: nascosta con visibility (non display:none): la mappa non si ridimensiona a zero e Safari non riorganizza i livelli della fotocamera */
+body.sheetopen #miniWrap:not(.full), body.compmode #miniWrap:not(.full) { visibility: hidden; pointer-events: none; }
+/* v17: nel tondo piccolo le scritte Alba/Tramonto coprivano tutto: solo nella mappa grande */
+#miniWrap:not(.full) .sunlbl { display: none; }
+body.aligning #filters { display: none; }
+body.aligning #miniWrap:not(.full) { visibility: hidden; pointer-events: none; }
 .mk { width: 18px; height: 18px; }
 .mk i { display: flex; align-items: center; justify-content: center; border: 0; background: rgba(12, 17, 23, 0.85); }
 .mk i .ic { width: 10px; height: 10px; }
@@ -491,6 +500,15 @@ body.aligning #horizon.on { display: block; }
 .bar .shut span { width: 42px; height: 42px; }
 #bmenu { display: flex; flex-direction: column; gap: 8px; padding: 2px 0 0; }
 #bmenu[hidden] { display: none; }
+#fig8 { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; background: rgba(143, 211, 255, 0.08); font-size: 0.82rem; line-height: 1.3; color: rgba(255, 255, 255, 0.8); }
+#fig8[hidden] { display: none; }
+#fig8 svg { flex: none; width: 104px; height: 42px; }
+/* avviso per dispositivi senza bussola o fotocamera posteriore */
+#devNote { position: fixed; left: 16px; right: 16px; top: 30%; z-index: 80; padding: 18px; border-radius: 18px; background: rgba(14, 18, 24, 0.96); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); text-align: center; }
+#devNote[hidden] { display: none; }
+#devNote b { display: block; font-size: 1.05rem; margin-bottom: 6px; }
+#devNote p { margin: 0 0 14px; font-size: 0.92rem; line-height: 1.4; color: rgba(255, 255, 255, 0.8); }
+#devNote button { border: 0; border-radius: 12px; padding: 10px 22px; font: inherit; font-weight: 700; background: var(--accent); color: #06121c; }
 #sheet.compmode .peek, #sheet.compmode #miniWrap:not(.full) { display: none; }
 body.hasmap #sheet.compmode .peek { padding-right: 0; }
 .bmRow { display: flex; gap: 8px; }
@@ -649,7 +667,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
 <section id="start">
   <div class="box">
     <h1>Panorama</h1>
-    <p class="sub">Beta v16 · linea delle creste sempre visibile</p>
+    <p class="sub">Beta v17 · correzioni dopo la prova all'aperto</p>
     <p>Quando premi Avvia, il telefono ti chiede tre permessi: movimento e orientamento, fotocamera e posizione. Concedili tutti e tre.</p>
     <p>La fotocamera parte dall'obiettivo più grandangolare del telefono. Per ingrandire usa la ghiera sul bordo destro.</p>
     <p>Tieni il telefono in verticale e dritto, senza inclinarlo di lato. La bussola va corretta puntando un luogo che conosci: vedi il pulsante nella schermata successiva.</p>
@@ -658,6 +676,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
   </div>
 </section>
 
+<div id="devNote" hidden role="alertdialog"><b>Serve un telefono</b><p></p><button type="button" id="devOk">Ho capito</button></div>
 <main id="hud" hidden>
   <div id="labels"></div>
   <div id="sunMark"><span>Sole</span></div>
@@ -724,6 +743,17 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     </div>
     <div id="bmenu" hidden>
       <div class="bmState"><i id="bmDot"></i><span id="bmState">Bussola non ancora allineata in questo punto</span><button type="button" id="bmClose" aria-label="Chiudi il menù della bussola">✕</button></div>
+      <div id="fig8" hidden>
+        <svg viewBox="0 0 140 56" width="140" height="56" aria-hidden="true">
+          <path id="fig8p" d="M70 28 C88 6 122 6 122 28 C122 50 88 50 70 28 C52 6 18 6 18 28 C18 50 52 50 70 28 Z" fill="none" stroke="rgba(143,211,255,0.45)" stroke-width="2" stroke-dasharray="4 4"/>
+          <g>
+            <rect x="-7" y="-12" width="14" height="24" rx="3" fill="#0e1218" stroke="#8fd3ff" stroke-width="2"/>
+            <circle cx="0" cy="8" r="1.4" fill="#8fd3ff"/>
+            <animateMotion dur="3.2s" repeatCount="indefinite" rotate="auto"><mpath href="#fig8p"/></animateMotion>
+          </g>
+        </svg>
+        <span>Muovi il telefono disegnando un 8 nell'aria, 2–3 volte, lontano da metalli e auto.</span>
+      </div>
       <button type="button" class="bmi main" id="calib" hidden><b id="calibQ"></b><span>Tocca se sì: correggo la bussola su questo luogo</span></button>
       <div class="bmi off" id="calibNone"><b>Nessun luogo al centro</b><span>Metti al centro un paese o una vetta che riconosci</span></div>
       <button type="button" class="bmi sun" id="sunBtn" hidden><b>Sole visibile</b><span id="sunSub"></span></button>
@@ -808,11 +838,12 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
           <span class="grp"><button type="button" data-k="walk">Avvia</button></span>
         </div>
         <div class="row">
-          <span>Schermo nero?</span>
+          <span>Immagine nera, piccola o sfocata?</span>
           <span class="grp"><button type="button" data-k="cam">Riavvia fotocamera</button></span>
         </div>
         <p class="hint" id="declInfo"></p>
         <p class="hint" id="camInfo"></p>
+        <p class="hint" id="camDiag"></p>
         <p class="hint"><b>Come correggere la bussola.</b> Tocca «Bussola» in basso a sinistra. Se al centro del mirino c'è il luogo proposto, toccalo e la bussola si corregge su quello. Con il sole ben visibile compare anche «Sole visibile». «Allinea col profilo» (quando il rilievo è attivo) mostra la linea tratteggiata delle creste: trascinala col dito finché combacia con i monti, e con due dita correggi anche il campo visivo; senza rilievo, o in pianura, «Allinea guidato» ti fa scegliere un luogo o il sole e rifinire col dito; «Calibra camminando» usa il GPS mentre cammini dritto.</p>
         <p class="hint">Se le etichette scorrono più in fretta del paesaggio, aumenta il campo visivo; se scorrono più lentamente, diminuiscilo.</p>
       </div>
@@ -925,8 +956,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     else if (t === 'tower') body = '<path class="s" d="M4.5 13 V4 H9.5 V13 M4.5 4 V2 M7 4 V2 M9.5 4 V2" stroke-width="1.6"/>';
     else if (t === 'castle') body = '<path class="s" d="M1.5 13 V5 H3.5 V3 H5.5 V5 H8.5 V3 H10.5 V5 H12.5 V13 Z" stroke-width="1.4"/>';
     else if (t === 'sun') body = '<circle class="f" cx="7" cy="7" r="3"/><path class="s" d="M7 0.5 V2.5 M7 11.5 V13.5 M0.5 7 H2.5 M11.5 7 H13.5 M2.4 2.4 L3.8 3.8 M10.2 10.2 L11.6 11.6 M2.4 11.6 L3.8 10.2 M10.2 3.8 L11.6 2.4" stroke-width="1.3"/>';
-    else if (t === 'ridge') body = '<path class="s" d="M0.5 10 L3.5 6.5 L6 8.5 L9 4 L13.5 8" stroke-width="1.6" stroke-dasharray="2.2 1.6" stroke-linejoin="round"/>';
-    else if (t === 'relief') body = '<path class="s" d="M0.5 12 L4.6 5.5 L7.2 9 L9.8 3.5 L13.5 12" stroke-width="1.6" stroke-linejoin="round"/>';
+    else if (t === 'ridge') body = '<path class="s" d="M0.5 9.5 L3.5 6 L6 8 L9 3.5 L13.5 7.5" stroke-width="1.5" stroke-dasharray="1.8 1.8" stroke-linecap="round" stroke-linejoin="round"/>';
+    else if (t === 'relief') body = '<path class="f" d="M0.5 13 L4.4 6.2 L6.6 9.2 L9.6 3.4 L13.5 13 Z" opacity="0.45"/><path class="f" d="M0.5 13 L3.6 9 L5.6 11 L8.8 7 L13.5 13 Z"/>';
     else if (t === 'river') body = '<path class="s" d="M0.5 7.5 C2.8 4 4.6 4 7 7.5 S11.2 11 13.5 7.5" stroke-width="2"/>';
     else body = '<circle class="f" cx="7" cy="7" r="4.5"/>';
     return '<svg class="ic" aria-hidden="true" width="' + z + '" height="' + z + '" viewBox="0 0 14 14">' + body + '</svg>';
@@ -1839,7 +1870,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
         style: {
           version: 8,
           sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19 } },
-          layers: [{ id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-saturation': -0.35 } }]
+          layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#d9ded8' } },
+            { id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-saturation': -0.35 } }]
         },
         center: [S.lon, S.lat], zoom: 10,
         attributionControl: false, dragRotate: false, pitchWithRotate: false
@@ -2802,6 +2834,8 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     $('grab').setAttribute('aria-expanded', String(open));
     if (!open) $('sheet').scrollTop = 0;
     refreshSettingsUI();
+    reattachVideo(450);   // v17: dopo il pannello l'immagine poteva restare piccola al centro
+    if (!open) setTimeout(() => { if (map) { map.resize(); updateMap(); } }, 300);
   }
   $('grab').addEventListener('click', () => setSheet(!$('sheet').classList.contains('open')));
   let sheetY = null;
@@ -2852,6 +2886,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (open) setSheet(false);
     $('bmenu').hidden = !open;
     $('sheet').classList.toggle('compmode', open);
+    document.body.classList.toggle('compmode', open);
     $('compBtn').setAttribute('aria-expanded', String(open));
   }
   $('compBtn').addEventListener('click', () => setMenu($('bmenu').hidden));
@@ -2874,6 +2909,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     const k = txt + '|' + col;
     if (k === lastCompState) return;
     lastCompState = k;
+    $('fig8').hidden = !bad;
     $('bmState').textContent = txt;
     $('bmDot').style.background = col;
     $('compDot').style.background = col;
@@ -3547,6 +3583,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (CAM.kind !== 'tele' && CAM.zoom === 'T') CAM.zoom = 1;   // il tele non si è aperto
       if (!CAM.scanned) await scanCams();
       await applyZoom(CAM.kind === 'tele' ? 1 : dzFor(CAM.zoom, CAM.kind), true);
+      focusContinuous();
       refreshSettingsUI();
     } finally {
       camBusy = false;
@@ -3587,6 +3624,64 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     v.style.transform = CAM.css === 1 ? '' : 'scale(' + CAM.css + ')';
   }
   $('video').addEventListener('resize', () => { if (!camBusy) refitVideo(); });
+
+  // v17: Safari a volte lascia l'immagine piccola al centro (o sfocata) dopo che il pannello si apre/chiude
+  // o si torna nella pagina. Il rimedio sicuro: si ricollega lo stesso flusso al video (nessun nuovo permesso).
+  let reattachT = 0, reattaching = false;
+  function reattachVideo(delay) {
+    clearTimeout(reattachT);
+    reattachT = setTimeout(async () => {
+      const v = $('video');
+      const s = v.srcObject;
+      if (!s || camBusy || reattaching || document.visibilityState !== 'visible') return;
+      reattaching = true;
+      try {
+        v.classList.add('switching');
+        v.srcObject = null;
+        void v.offsetWidth;
+        v.srcObject = s;
+        try { await v.play(); } catch (e) {}
+        await videoFrames(v, 2);
+        refitVideo();
+        focusContinuous();
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      } finally {
+        v.classList.remove('switching');
+        reattaching = false;
+        camDiag.fixes++;
+      }
+    }, delay || 0);
+  }
+  // Messa a fuoco automatica continua, se la fotocamera lo permette (dopo i movimenti restava sfocata)
+  function focusContinuous() {
+    const t = CAM.track;
+    try {
+      const caps = t && t.getCapabilities ? t.getCapabilities() : {};
+      if (caps.focusMode && caps.focusMode.indexOf('continuous') >= 0) t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+    } catch (e) {}
+  }
+  // Diagnosi (riga nel pannello): misure del flusso, del video sullo schermo e della finestra
+  const camDiag = { fixes: 0 };
+  function camDiagText() {
+    const v = $('video');
+    const r = v.getBoundingClientRect();
+    const vv = window.visualViewport;
+    let st = {};
+    try { st = CAM.track && CAM.track.getSettings ? CAM.track.getSettings() : {}; } catch (e) {}
+    return 'Diagnosi immagine: flusso ' + v.videoWidth + '×' + v.videoHeight +
+      ' · video ' + Math.round(r.width) + '×' + Math.round(r.height) + ' in ' + Math.round(r.left) + ',' + Math.round(r.top) +
+      ' · finestra ' + window.innerWidth + '×' + window.innerHeight +
+      (vv ? ' · vista ' + Math.round(vv.width) + '×' + Math.round(vv.height) + ' ×' + (Math.round(vv.scale * 100) / 100) : '') +
+      ' · ingrand. ' + (Math.round(CAM.css * 100) / 100) +
+      (st.focusMode ? ' · fuoco ' + st.focusMode : '') +
+      ' · ripristini ' + camDiag.fixes + '.';
+  }
+  setInterval(() => {
+    if ($('sheet').classList.contains('open') && $('camDiag')) $('camDiag').textContent = camDiagText();
+  }, 1000);
+  // Quando la finestra cambia misura (barra di Safari, ritorno nella pagina) si ricollega il video
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => reattachVideo(350));
+  window.addEventListener('pageshow', () => reattachVideo(300));
 
   // Elenca le fotocamere posteriori (dopo il permesso Safari e Chrome mostrano i nomi)
   async function scanCams() {
@@ -3742,6 +3837,16 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
     if (t.muted || v.videoWidth === 0) { startCamera().catch(() => {}); }
   }
 
+  function devNote(noComp, noBack) {
+    const box = $('devNote');
+    const what = noComp && noBack ? 'non ha la bussola né una fotocamera posteriore'
+      : noComp ? 'non ha la bussola (o non la rende disponibile al browser)'
+      : 'non ha una fotocamera posteriore';
+    box.querySelector('p').textContent = 'Questo dispositivo ' + what + '. Orientis funziona su telefono: le etichette qui non possono coincidere con quello che vedi. Puoi comunque guardare la mappa.';
+    box.hidden = false;
+  }
+  $('devOk').addEventListener('click', () => { $('devNote').hidden = true; });
+
   /* ---------- Avvio ---------- */
   $('go').addEventListener('click', async () => {
     const btn = $('go');
@@ -3768,7 +3873,7 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       await startCamera();
       setInterval(checkCamera, 3000);
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') setTimeout(checkCamera, 300);
+        if (document.visibilityState === 'visible') { setTimeout(checkCamera, 300); reattachVideo(700); }
       });
 
       // 3. Posizione
@@ -3790,9 +3895,18 @@ body.sheetopen #zoom, body.aligning.sheetopen #zoom, body.mapfull #zoom { displa
       if (F.sun) sunToggle(true);
       if (pitchWasReset !== null) toast('Inclinazione azzerata (era ' + fmtDeg(Math.round(pitchWasReset * 10) / 10) + '): ora viene solo dai sensori del telefono.', 7000);
       requestAnimationFrame(frame);
+      // v17: dispositivi senza bussola o senza fotocamera posteriore (es. PC): messaggio chiaro invece di una schermata ferma
+      setTimeout(() => {
+        const noComp = S.heading === null;
+        const backCam = CAM.names.some((n) => n && n !== 'senza nome' && !/front|anterior|frontal|facetime|desk|scrivania|selfie|webcam|integrat|built-in/i.test(n));
+        const noBack = CAM.names.length > 0 && CAM.names.every((n) => n && n !== 'senza nome') && !backCam;
+        if (noComp || noBack) devNote(noComp, noBack);
+      }, 3500);
     } catch (err) {
       msg.textContent = (err && err.name === 'NotAllowedError')
         ? 'Permesso negato. Concedi fotocamera e sensori, poi riprova.'
+        : (err && (err.name === 'NotFoundError' || err.name === 'OverconstrainedError'))
+        ? 'Questo dispositivo non ha una fotocamera utilizzabile: Orientis funziona su telefono (o tablet) con fotocamera posteriore e bussola.'
         : (err && err.message) || 'Qualcosa è andato storto.';
       btn.disabled = false;
     }
