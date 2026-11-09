@@ -1077,7 +1077,7 @@ body.hasmap .peek { padding-right: 100px; }
         <circle class="o-sun" transform="translate(0 70)" opacity="0" cx="336" cy="128" r="16" fill="#ffc928"></circle>
         <g class="o-l1" transform="translate(0 40)"><path d="M0 330 L45 290 L90 312 L140 250 L180 276 L222 228 L262 268 L308 246 L352 288 L402 262 L402 520 L0 520 Z" fill="#8199ad"></path></g>
         <g class="o-l2" transform="translate(0 40)"><path d="M0 360 L62 330 L124 350 L186 316 L248 344 L310 322 L402 350 L402 520 L0 520 Z" fill="#62806b"></path></g>
-        <g class="o-riv" transform="translate(0 40)"><path class="o-river" d="M-12 398 C 40 386, 84 394, 132 382 S 196 378, 218 364 S 242 352, 248 347" fill="none" stroke="#9fcbe6" stroke-width="5" stroke-linecap="round" stroke-dasharray="460 460" stroke-dashoffset="460"></path></g>
+        <g class="o-riv" transform="translate(0 40)"><path class="o-rivGuide" d="M248 347 C 212 364, 128 358, 126 380 C 124 400, 168 404, 182 428" fill="none" stroke="none"></path><path class="o-river" d="" fill="#9fcbe6"></path></g>
         <g class="o-l3" transform="translate(0 40)"><path d="M0 410 L92 388 L176 418 L268 384 L402 414 L402 520 L0 520 Z" fill="#45634c"></path></g>
         <g class="o-l4" transform="translate(0 40)"><path d="M0 452 L402 440 L402 520 L0 520 Z" fill="#334a39"></path></g>
         <path class="o-draw" stroke-dashoffset="640" d="M0 330 L45 290 L90 312 L140 250 L180 276 L222 228 L262 268 L308 246 L352 288 L402 262" fill="none" stroke="#ffffff" stroke-width="1" stroke-dasharray="640 640" stroke-linejoin="round" opacity="0.95"></path>
@@ -4936,17 +4936,36 @@ body.hasmap .peek { padding-right: 100px; }
   // v25: animazione della pagina iniziale (circa 5 s) con requestAnimationFrame e attributi SVG; sempre visibile, anche con «Riduci movimento» (scelta dell'utente)
   (function introAnim() {
     const q = (sel) => document.querySelector('#start ' + sel);
-    const hills = [q('.o-l1'), q('.o-l2'), q('.o-l3'), q('.o-l4')], rivG = q('.o-riv'), riv = q('.o-river'), sun = q('.o-sun'), line = q('.o-draw'), dot = q('.lg-sun');
+    const hills = [q('.o-l1'), q('.o-l2'), q('.o-l3'), q('.o-l4')], rivG = q('.o-riv'), rivP = q('.o-river'), rivGd = q('.o-rivGuide'), sun = q('.o-sun'), line = q('.o-draw'), dot = q('.lg-sun');
     if (!line || !sun) return;
     const L = line.getTotalLength ? Math.ceil(line.getTotalLength()) + 2 : 640;
     const ease = (t) => 1 - Math.pow(1 - t, 3);
-    const RL = riv && riv.getTotalLength ? Math.ceil(riv.getTotalLength()) + 2 : 460;
+    // v28: il fiume è una forma piena che si allarga dalla valle (1 px) verso chi guarda (5 px): punti lungo la linea guida e le due sponde
+    const RV = [];
+    if (rivGd && rivGd.getTotalLength) {
+      const L = rivGd.getTotalLength(), N = 90;
+      for (let k = 0; k <= N; k++) {
+        const a = rivGd.getPointAtLength(L * k / N), b = rivGd.getPointAtLength(Math.min(L, L * k / N + 0.5)), c = rivGd.getPointAtLength(Math.max(0, L * k / N - 0.5));
+        let dx = b.x - c.x, dy = b.y - c.y; const m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
+        const w = (1 + 4.2 * Math.pow(k / N, 1.3)) / 2;
+        RV.push([a.x - dy * w, a.y + dx * w, a.x + dy * w, a.y - dx * w]);
+      }
+    }
+    function rivShape(f) {
+      const n = Math.round((RV.length - 1) * f);
+      if (n < 1) return '';
+      let d = 'M' + RV[0][0].toFixed(1) + ' ' + RV[0][1].toFixed(1);
+      for (let k = 1; k <= n; k++) d += 'L' + RV[k][0].toFixed(1) + ' ' + RV[k][1].toFixed(1);
+      for (let k = n; k >= 0; k--) d += 'L' + RV[k][2].toFixed(1) + ' ' + RV[k][3].toFixed(1);
+      return d + 'Z';
+    }
     const seg = (t, d, dur) => Math.max(0, Math.min(1, (t - d) / dur));
     function frame(t) {
       hills.forEach((g, i) => { if (g) g.setAttribute('transform', 'translate(0 ' + (40 * (1 - ease(seg(t, i * 200, 1600)))).toFixed(2) + ')'); });
       // v28: il fiume «entra» da sinistra dentro la valle mentre sale la terza collina
       if (rivG) rivG.setAttribute('transform', 'translate(0 ' + (40 * (1 - ease(seg(t, 200, 1600)))).toFixed(2) + ')');
-      if (riv) { const kr = seg(t, 1500, 2600); riv.setAttribute('stroke-dasharray', RL + ' ' + RL); riv.setAttribute('stroke-dashoffset', (RL * (1 - ease(kr))).toFixed(1)); riv.setAttribute('stroke-width', (4.5 - 2 * ease(kr)).toFixed(2)); }
+      // v28: il fiume scende a S dalla valle tra le due cime verso chi guarda; tre tratti sovrapposti sempre più larghi lo fanno sembrare più vicino
+      if (rivP && RV.length) rivP.setAttribute('d', rivShape(ease(seg(t, 1500, 2600))));
       const ks = seg(t, 400, 3000);
       sun.setAttribute('transform', 'translate(0 ' + (70 * (1 - ease(ks))).toFixed(2) + ')');
       sun.setAttribute('opacity', Math.min(1, ks / 0.3).toFixed(3));
