@@ -1207,6 +1207,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
 .vinRows b { text-align: right; font-weight: 600; }
 .vinRows b.warn { color: #d9480f; }
 .vinRows b.na { color: var(--tx3); font-weight: 500; }
+.vinRows b.sub { font-weight: 500; font-size: 13px; color: var(--tx); }
 #vinBox h4 { margin: 14px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx2); }
 .vinWhat { margin: 0; font-size: 14px; line-height: 1.45; }
 .vinLinks { display: flex; gap: 16px; margin-top: 10px; }
@@ -1271,7 +1272,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v35 · frane e alluvioni</span>
+          <span class="ver">Beta v36 · frane in dettaglio</span>
         </div>
       </div>
     </section>
@@ -5561,7 +5562,9 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   const IDRO = {
     fr: { svc: 'PAI_Frane/Aree_pericolosita_frana_PAI', name: 'Frane (PAI)' },
     al: { svc: 'Alluvioni/Aree_pericolosita_idraulica_', name: 'Alluvioni (PAI)' },
-    iffi: { svc: 'iffi/Progetto_IFFI_WMS_public', name: 'Frane censite (IFFI)' }
+    iffi: { svc: 'iffi/Progetto_IFFI_WMS_public', name: 'Frane censite (IFFI)' },
+    ifr: { svc: 'PAI_Frane/PAI_Indicatori_rischio_2025', name: 'Indicatori frane' },
+    ial: { svc: 'Alluvioni/Popolazione_rischio_alluvioni', name: 'Indicatori alluvioni' }
   };
   function idroTiles(k) {
     return ISPRA + IDRO[k].svc + '/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&dpi=96&f=image';
@@ -5608,11 +5611,11 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     }
     return null;
   }
-  async function idroIdentify(k, lat, lon, tolPx) {
+  async function idroIdentify(k, lat, lon, tolPx, layers, geom) {
     const d = 0.01;
     const q = 'geometry=' + encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } })) +
-      '&geometryType=esriGeometryPoint&sr=4326&layers=all&tolerance=' + (tolPx || 1) +
-      '&mapExtent=' + [lon - d, lat - d, lon + d, lat + d].join(',') + '&imageDisplay=400,400,96&returnGeometry=false&f=json';
+      '&geometryType=esriGeometryPoint&sr=4326&layers=' + encodeURIComponent(layers || 'all') + '&tolerance=' + (tolPx || 1) +
+      '&mapExtent=' + [lon - d, lat - d, lon + d, lat + d].join(',') + '&imageDisplay=400,400,96&returnGeometry=' + (geom ? 'true' : 'false') + '&f=json';
     const j = await wjson(ISPRA + IDRO[k].svc + '/MapServer/identify?' + q, 12000);
     if (j && j.error) throw new Error(j.error.message || 'errore');
     return (j && j.results) || [];
@@ -5633,14 +5636,42 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   async function vinFetch(v, lat, lon) {
     if (!navigator.onLine) { v.state = 'err'; v.err = 'serve la rete'; vinRefresh(); return; }
     // tolleranza IFFI: circa 300 m (estensione di 0,02° su 400 pixel → ~5 m per pixel)
-    const [fr, al, iffi] = await Promise.all([
+    // v36: frane IFFI dal punto identificativo di ciascuna frana (livello 1), con posizione, tipo di movimento e stato di attività;
+    // indicatori del Comune (popolazione nelle aree a pericolosità) dai servizi ISPRA per Comune
+    const [fr, al, iffi, ifr, ial] = await Promise.all([
       idroIdentify('fr', lat, lon, 1).catch(() => null),
       idroIdentify('al', lat, lon, 1).catch(() => null),
-      idroIdentify('iffi', lat, lon, 60).catch(() => null)]);
+      idroIdentify('iffi', lat, lon, 60, 'all:1', true).catch(() => null),
+      idroIdentify('ifr', lat, lon, 1, 'all:0').catch(() => null),
+      idroIdentify('ial', lat, lon, 1, 'all:0').catch(() => null)]);
     if (fr === null && al === null) { v.state = 'err'; v.err = 'il servizio ISPRA non risponde ora'; vinRefresh(); return; }
     v.fr = fr === null ? undefined : findCls(fr);
     v.al = al === null ? undefined : findCls(al);
-    v.iffi = iffi === null ? undefined : { n: iffi.length, first: iffi[0] ? String(iffi[0].value || iffi[0].layerName || '') : '' };
+    if (iffi === null) v.iffi = undefined;
+    else {
+      const seen = new Set(), list = [];
+      for (const r of iffi) {
+        const a = r.attributes || {};
+        const id = a.idfrana || a.IDFRANA || r.value;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const g = r.geometry && isFinite(r.geometry.x) ? geo(lat, lon, r.geometry.y, r.geometry.x).d : null;
+        list.push({ id: id, mov: a.movimento || a.MOVIMENTO || '', att: a.attivita || a.ATTIVITA || '', danno: a.danno || '', d: g });
+      }
+      list.sort((x, y) => (x.d === null ? 1e9 : x.d) - (y.d === null ? 1e9 : y.d));
+      v.iffi = { n: list.length, list: list.slice(0, 3) };
+    }
+    const at = (res) => (res && res[0] && res[0].attributes) || null;
+    const num = (x) => { const n = Number(x); return isFinite(n) ? n : null; };
+    const a1 = at(ifr), a2 = at(ial);
+    v.ind = (a1 || a2) ? {
+      com: (a1 && a1.comune) || (a2 && a2.comune) || '',
+      pop: num(a1 && (a1.pop_res021 || a1.pop_res011)) || num(a2 && a2.pop_res011),
+      fr34: a1 ? (num(a1.pop_fr_p4) || 0) + (num(a1.pop_fr_p3) || 0) : null,
+      fr12: a1 ? (num(a1.pop_fr_p2) || 0) + (num(a1.pop_fr_p1) || 0) : null,
+      faa: a1 ? num(a1.pop_fr_aa) : null,
+      al3: a2 ? num(a2.pop_idr_p3) : null, al2: a2 ? num(a2.pop_idr_p2) : null, al1: a2 ? num(a2.pop_idr_p1) : null
+    } : null;
     v.state = 'ok';
     vinRefresh();
   }
@@ -5662,6 +5693,10 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     rows.push(['Frana (PAI)', v.fr === undefined ? 'non disponibile' : v.fr ? v.fr.cls + ' · ' + (PCLS[v.fr.cls] || v.fr.raw) : 'fuori dalle aree a pericolosità', v.fr ? 'warn' : '']);
     rows.push(['Alluvione (PAI)', v.al === undefined ? 'non disponibile' : v.al ? v.al.cls + ' · ' + (ACLS[v.al.cls] || v.al.raw) : 'fuori dalle aree a pericolosità', v.al ? 'warn' : '']);
     rows.push(['Frane censite (IFFI)', v.iffi === undefined ? 'non disponibile' : v.iffi.n ? v.iffi.n + ' entro circa 300 m' : 'nessuna entro circa 300 m', v.iffi && v.iffi.n ? 'warn' : '']);
+    for (const f of (v.iffi && v.iffi.list) || []) {
+      const t = [f.mov ? f.mov.charAt(0).toUpperCase() + f.mov.slice(1).toLowerCase() : 'Frana', f.att ? f.att.toLowerCase() : ''].filter(Boolean).join(' · ');
+      rows.push(['· ' + (f.d !== null ? fmtDist(f.d) : 'vicina'), t, 'sub']);
+    }
     rows.push(['Paesaggio e altri vincoli', 'in arrivo', 'na']);
     let h = '<div class="vinRows">' + rows.map((r) => '<span>' + r[0] + '</span><b class="' + r[2] + '">' + escHtml(r[1]) + '</b>').join('') + '</div>';
     const what = [];
@@ -5670,6 +5705,17 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     else if (v.fr && v.fr.cls === 'AA') what.push('Area di attenzione: serve un approfondimento geologico prima di intervenire.');
     if (v.al && v.al.cls === 'P3') what.push('Alluvione P3: di norma vietate nuove costruzioni; ammessi interventi che non aumentano il rischio.');
     else if (v.al) what.push('Alluvione ' + v.al.cls + ': di norma interventi ammessi con studio di compatibilità idraulica.');
+    if (v.ind) {
+      const n = (x) => (x === null || x === undefined ? '–' : Math.round(x).toLocaleString('it-IT'));
+      const pc = (x) => (v.ind.pop && x !== null ? ' (' + (Math.round(x / v.ind.pop * 1000) / 10).toString().replace('.', ',') + '%)' : '');
+      const ir = [];
+      if (v.ind.fr34 !== null) ir.push(['In aree a frana P3–P4', n(v.ind.fr34) + ' abitanti' + pc(v.ind.fr34)]);
+      if (v.ind.fr12 !== null) ir.push(['In aree a frana P1–P2', n(v.ind.fr12) + ' abitanti' + pc(v.ind.fr12)]);
+      if (v.ind.al3 !== null) ir.push(['In aree alluvionabili P3', n(v.ind.al3) + ' abitanti' + pc(v.ind.al3)]);
+      if (v.ind.al2 !== null) ir.push(['In aree alluvionabili P2', n(v.ind.al2) + ' abitanti' + pc(v.ind.al2)]);
+      h += '<h4>Il Comune' + (v.ind.com ? ' di ' + escHtml(v.ind.com) : '') + (v.ind.pop ? ' · ' + n(v.ind.pop) + ' abitanti' : '') + '</h4><div class="vinRows">' +
+        ir.map((r) => '<span>' + r[0] + '</span><b>' + escHtml(r[1]) + '</b>').join('') + '</div>';
+    }
     if (what.length) h += '<h4>Cosa comporta (in sintesi)</h4><p class="vinWhat">' + what.map(escHtml).join('<br>') + '</p>';
     h += '<div class="vinLinks"><button type="button" id="vinMap">Apri sulla mappa ›</button><a href="https://idrogeo.isprambiente.it/app/" target="_blank" rel="noopener">IdroGEO (ISPRA) ›</a></div>';
     h += '<p class="hint">Mosaicatura nazionale ISPRA dei Piani di Assetto Idrogeologico (dati delle Autorità di bacino distrettuali, CC BY-SA 4.0). Indicativa: fanno fede il PAI vigente, le sue norme di attuazione e il CDU. Le classi e le regole cambiano da distretto a distretto.</p>';
