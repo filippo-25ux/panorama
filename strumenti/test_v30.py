@@ -164,7 +164,7 @@ def main():
         page.click('#mcGo'); page.wait_for_timeout(500)
         check(page.evaluate('window.__panoTab()') == 'punto' and page.locator('#punto').is_visible(), 'la freccia porta al Punto')
         amb = page.evaluate("[...document.querySelectorAll('#puGrid .puTile b')].map(b => b.textContent)")
-        check(amb == ['Catasto', 'Vincoli', 'Urbanistica', 'Pioggia', 'Energia', 'Sito', 'Storia e cultura'], 'cruscotto con i sette ambiti')
+        check(amb == ['Catasto', 'Vincoli', 'Urbanistica', 'Pioggia', 'Sito ed Energia', 'Storia e cultura'], 'cruscotto con i sei ambiti (v37: Sito ed Energia insieme)')
         check('foglio 42' in page.inner_text('#puGrid'), 'Catasto nel cruscotto del punto scelto')
         page.screenshot(path=f'{OUT}/v30-punto.png')
         ov = page.evaluate("[...document.querySelectorAll('#puGrid .puTile')].every(t => { const b = t.querySelector('b').getBoundingClientRect(), s = t.querySelector('span').getBoundingClientRect(); return s.top >= b.bottom - 1 && b.top >= t.getBoundingClientRect().top + 30; })")

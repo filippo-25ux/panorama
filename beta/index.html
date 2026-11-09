@@ -1169,6 +1169,20 @@ body.tabs .gacts { padding-bottom: 10px; }
 #miniCard .mcBtns { display: flex; gap: 8px; margin-top: 6px; }
 #miniCard .mcBtns .btn { margin: 0; }
 #miniCard .btn.alt { background: var(--fill2); color: var(--tx); }
+/* v37: Sito ed Energia */
+.puGrid .puTile[data-amb="sit"] { grid-column: 1 / -1; min-height: 80px; }
+#sitBox { padding: 14px; border-radius: 16px; background: var(--sf); }
+#sitBox h4 { margin: 16px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx2); }
+#sitBox h4:first-child { margin-top: 0; }
+#sitBox .vinRows { grid-template-columns: 42% 1fr; }
+#sitBox .sitTxt { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--tx); }
+#sitBox .sitSrc { margin: 4px 0 0; font-size: 12px; line-height: 1.4; color: var(--tx2); }
+#sitBox .sitSrc a { color: var(--acc); text-decoration: none; font-weight: 600; }
+.sitU { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sitU th { font-weight: 500; font-size: 11.5px; color: var(--tx2); text-align: right; padding: 0 0 4px 6px; }
+.sitU th:first-child, .sitU td:first-child { text-align: left; padding-left: 0; }
+.sitU td { text-align: right; padding: 5px 0 5px 6px; border-top: 0.5px solid var(--line); font-weight: 600; }
+.sitU td:first-child { font-weight: 500; color: var(--tx2); }
 /* v33: Storia e cultura */
 .puGrid .puTile[data-amb="sto"] { grid-column: 1 / -1; min-height: 80px; }
 #stoBox { padding: 14px; border-radius: 16px; background: var(--sf); }
@@ -1198,6 +1212,19 @@ body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(66px + env(safe-area
 body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
 body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(150px + env(safe-area-inset-top, 0px)); }
 #lyNote { display: none; }
+/* v37: Ricentra = tastino tondo con solo il simbolo; legenda dei livelli accesi nella scheda sotto la mappa */
+#miniWrap.full #miniCenter { width: 44px; height: 44px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--acc); }
+#miniWrap.full #miniCenter[hidden] { display: none; }
+#miniCenter svg { display: block; }
+body[data-tab="mappa"] #miniWrap.full #lyNote { display: none !important; }
+#mcLeg { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+#mcLeg[hidden] { display: none; }
+#mcLeg .lgRow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+#mcLeg .lgRow b { font-weight: 600; margin-right: 2px; }
+#mcLeg .lgRow span { display: inline-flex; align-items: center; gap: 5px; color: var(--tx2); white-space: nowrap; }
+#mcLeg .lgRow img, #mcLeg .lgRow i { width: 14px; height: 14px; border-radius: 3px; flex: none; object-fit: cover; }
+#mcLeg .lgRow i { border: 1px dashed var(--tx3); }
+#mcLeg p { margin: 0; font-size: 11px; line-height: 1.35; color: var(--tx2); }
 body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; position: absolute; left: 12px; right: 12px; bottom: 200px; z-index: 3; padding: 6px 10px; border-radius: 10px; font-size: 11.5px; line-height: 1.35; color: var(--tx); background: var(--glass-card); box-shadow: var(--card-shadow); }
 .puTile.warn span { color: #d9480f; font-weight: 600; }
 #mcRows b.warn, #ptRows b.warn { color: #d9480f; }
@@ -1272,7 +1299,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v36 · frane in dettaglio</span>
+          <span class="ver">Beta v37 · Sito ed Energia</span>
         </div>
       </div>
     </section>
@@ -1340,7 +1367,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     <div id="mini"><div id="miniMap"></div><div id="miniAttr"><span class="s">© OSM</span><span class="l">© OpenStreetMap contributors</span></div></div>
     <div id="sunLegend"><div><i class="r"></i>Alba</div><div><i class="s"></i>Tramonto</div><div><i class="w"></i>Percorso del sole nel giorno</div></div>
     <button id="miniExpand" type="button" aria-label="Ingrandisci o riduci la mappa">⤢</button>
-    <button id="miniCenter" type="button" hidden>Ricentra</button>
+    <button id="miniCenter" type="button" aria-label="Ricentra sulla tua posizione" title="Ricentra" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20.5 3.5 3.6 10.6c-.7.3-.6 1.3.1 1.5l6.6 1.6 1.6 6.6c.2.7 1.2.8 1.5.1l7.1-16.9z" fill="currentColor"/></svg></button>
     <div id="lyBar"><button id="catBtn" type="button" aria-pressed="false">Catasto</button><button class="lyB" id="lyFr" type="button" aria-pressed="false">Frane</button><button class="lyB" id="lyAl" type="button" aria-pressed="false">Alluvioni</button></div>
     <div id="lyNote" hidden></div>
     <div id="catHint" hidden></div>
@@ -1348,6 +1375,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     <div id="mapCard" hidden>
       <button type="button" id="mcGo" aria-label="Apri il luogo"><div class="mcHead"><b id="mcTitle">Qui</b><span id="mcSub"></span></div><i aria-hidden="true">›</i></button>
       <div class="mcRows" id="mcRows"></div>
+      <div id="mcLeg" hidden></div>
       <div class="mcFoot"><button type="button" id="mcQui" class="ghost">‹ Qui</button><span class="mcLogo"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></span><span class="mcSp"></span></div>
     </div>
     <div id="inSheetLbl" hidden>segue lo sguardo</div>
@@ -1527,6 +1555,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     <div class="seg" id="puSeg" hidden><button type="button" data-pu="qui">Qui</button><button type="button" data-pu="pt">Punto scelto</button></div>
     <div class="puGrid" id="puGrid"></div>
     <div id="puVin" hidden><h3>Vincoli</h3><div id="vinBox"></div></div>
+    <div id="puSit" hidden><h3>Sito ed Energia</h3><div id="sitBox"></div></div>
     <div id="puSto" hidden><h3>Storia e cultura</h3><div id="stoBox"></div></div>
     <button type="button" id="puSheet" disabled>Crea la scheda del luogo<em>in arrivo</em></button>
     <h3>Dettagli</h3>
@@ -5119,7 +5148,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       const b = COM.regs[code];
       if (lon < b[0] - 0.01 || lon > b[2] + 0.01 || lat < b[1] - 0.01 || lat > b[3] + 0.01) continue;
       if (!COM.data[code]) COM.data[code] = (await cachedJson('comuni/R' + code + '.json')).c;
-      for (const c of COM.data[code]) if (inComune(c, x, y)) return { n: c[0], p: c[1], i: c[2], k: c[3] };
+      for (const c of COM.data[code]) if (inComune(c, x, y)) return { n: c[0], p: c[1], i: c[2], k: c[3], r: code };
     }
     return null;
   }
@@ -5296,7 +5325,18 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     if (PT.pin) { PT.pin.remove(); PT.pin = null; }
     ptRefresh();
   }
+  // v37: quota del punto scelto anche lontano dai tasselli già caricati (serve a neve e vento)
+  async function ptGround(p) {
+    if (p.ground !== null && p.ground !== undefined) return;
+    try {
+      const z = 12, q = demXY(z, p.lat, p.lon), k = z + '/' + Math.floor(q.fx) + '/' + Math.floor(q.fy);
+      if (!(DEM.tiles.get(k) instanceof Float32Array)) { DEM.tiles.set(k, await demFetch(k)); demLast = { k: '', t: null }; }
+      const g = demGet(p.lat, p.lon, z);
+      if (g !== null && PT.cur === p) { p.ground = g; ptRefresh(); }
+    } catch (e) { /* senza quota: neve e vento chiedono la quota */ }
+  }
   async function ptFetch(p) {
+    ptGround(p);
     try { p.com = await comuneAt(p.lat, p.lon); p.comState = p.com ? 'ok' : 'fuori'; } catch (e) { p.comState = 'err'; }
     ptRefresh();
     if (!p.com) { p.catState = p.comState === 'err' ? 'err' : 'none'; ptRefresh(); return; }
@@ -5456,7 +5496,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   // Punto: cruscotto con gli ambiti
   const AMB = [
     ['cat', 'Catasto', '#c92a2a'], ['vin', 'Vincoli', '#d9480f'], ['urb', 'Urbanistica', '#d6336c'],
-    ['pio', 'Pioggia', '#1c7ed6'], ['ene', 'Energia', '#e0a800'], ['sit', 'Sito', '#2f9e44'], ['sto', 'Storia e cultura', '#8d6e63']
+    ['pio', 'Pioggia', '#1c7ed6'], ['sit', 'Sito ed Energia', '#2f9e44'], ['sto', 'Storia e cultura', '#8d6e63']
   ];
   /* v33: Storia e cultura – riassunto di Wikipedia (it), sito ufficiale del Comune (Wikidata), voci di Wikipedia nei dintorni.
      Testi di Wikipedia: CC BY-SA 4.0, con collegamento alla voce. */
@@ -5586,6 +5626,45 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     $('lyNote').hidden = !any;
     if (any) setText('lyNote', (map.getZoom() < 9 ? 'Avvicina la mappa per vedere frane e alluvioni. ' : '') +
       (lyErr > 3 ? 'Il servizio ISPRA non risponde ora. ' : '') + 'PAI (ISPRA): indicativo, fanno fede il piano e le sue norme.');
+    legRender();
+  }
+
+  // v37: legenda dei livelli accesi, con i colori presi dal servizio ISPRA (legend); se non risponde, solo le classi
+  const LEG = { fr: null, al: null, t: {} };
+  const LEG_LBL = { fr: { P4: 'molto elevata', P3: 'elevata', P2: 'media', P1: 'moderata', AA: 'attenzione' }, al: { P3: 'elevata', P2: 'media', P1: 'bassa' } };
+  const LEG_ORD = { fr: ['P4', 'P3', 'P2', 'P1', 'AA'], al: ['P3', 'P2', 'P1'] };
+  async function legLoad(k) {
+    if (LEG.t[k] && Date.now() - LEG.t[k] < 60000) return;
+    LEG.t[k] = Date.now();
+    try {
+      const j = await wjson(ISPRA + IDRO[k].svc + '/MapServer/legend?f=json', 12000);
+      const seen = new Map();
+      for (const lay of (j && j.layers) || []) for (const it of lay.legend || []) {
+        const c = findCls([{ value: String(it.label || '') + ' ' + String(lay.layerName || '') }]);
+        if (!c || !LEG_LBL[k][c.cls] || seen.has(c.cls)) continue;
+        seen.set(c.cls, it.imageData ? 'data:' + (it.contentType || 'image/png') + ';base64,' + it.imageData : '');
+      }
+      if (seen.size) LEG[k] = LEG_ORD[k].filter((c) => seen.has(c)).map((c) => ({ c: c, img: seen.get(c) }));
+    } catch (e) { /* resta la legenda senza colori */ }
+    legRender();
+  }
+  function legRender() {
+    const el = $('mcLeg');
+    const ks = [];
+    if (S.lyFr) ks.push('fr');
+    if (S.lyAl) ks.push('al');
+    if (!ks.length) { if (!el.hidden) { el.hidden = true; el.innerHTML = ''; } return; }
+    let h = '';
+    for (const k of ks) {
+      if (!LEG[k]) legLoad(k);
+      const items = LEG[k] || LEG_ORD[k].map((c) => ({ c: c, img: '' }));
+      h += '<div class="lgRow"><b>' + (k === 'fr' ? 'Frane PAI' : 'Alluvioni PAI') + '</b>' +
+        items.map((it) => '<span>' + (it.img ? '<img alt="" src="' + it.img + '">' : '<i></i>') + it.c + ' ' + LEG_LBL[k][it.c] + '</span>').join('') + '</div>';
+    }
+    h += '<p>' + (mapReady && map.getZoom() < 9 ? 'Avvicina la mappa per vedere le aree. ' : '') + (lyErr > 3 ? 'Il servizio ISPRA non risponde ora. ' : '') +
+      'ISPRA, indicativo: fanno fede il piano e le sue norme.</p>';
+    if (el.innerHTML !== h) el.innerHTML = h;
+    el.hidden = false;
   }
   $('lyFr').addEventListener('click', (e) => { e.stopPropagation(); S.lyFr = !S.lyFr; saveSettings(); lyUpdate(); });
   $('lyAl').addEventListener('click', (e) => { e.stopPropagation(); S.lyAl = !S.lyAl; saveSettings(); lyUpdate(); });
@@ -5723,6 +5802,144 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   }
   window.__panoVin = (lat, lon) => vinFor(lat, lon);
 
+  /* ---------- v37: Sito ed Energia ----------
+     Dati per Comune in sito-it.json (fatto con strumenti/make_sito.py): zona sismica (Dipartimento della Protezione Civile),
+     zona climatica e gradi giorno (DPR 412/93, Tabella A), Comuni in area prioritaria per il radon (elenco nazionale ARPA Lombardia).
+     Neve e vento: NTC 2018 (§3.4.2 e Tab. 3.3.I) con la quota del punto; trasmittanze: DM 28/10/2025. Sempre indicativi. */
+  const SITO = { d: null, state: 'idle', t: 0 };
+  async function sitoLoad() {
+    if (SITO.d || SITO.state === 'loading' || (SITO.state === 'err' && Date.now() - SITO.t < 60000)) return;
+    SITO.state = 'loading'; SITO.t = Date.now();
+    try { SITO.d = await cachedJson('sito-it.json?v=37'); SITO.state = 'ok'; } catch (e) { SITO.state = 'err'; }
+    if (tabNow() === 'punto') renderPunto();
+  }
+  const SIS_TXT = { 1: 'la più pericolosa: possono verificarsi fortissimi terremoti', 2: 'possono verificarsi forti terremoti',
+    3: 'possono verificarsi forti terremoti, ma rari', 4: 'la meno pericolosa: i terremoti sono rari' };
+  const CLI_PER = { A: ['1 dicembre', '15 marzo', 6], B: ['1 dicembre', '31 marzo', 8], C: ['15 novembre', '31 marzo', 10],
+    D: ['1 novembre', '15 aprile', 12], E: ['15 ottobre', '15 aprile', 14], F: null };
+  // NTC 2018 §3.4.2: zone di carico della neve per provincia (sigle delle province nei confini ISTAT usati dall'app)
+  const NEVE_Z = { IA: ['I – Alpina', 1.50, 1.39, 728], IM: ['I – Mediterranea', 1.50, 1.35, 602], II: ['II', 1.00, 0.85, 481], III: ['III', 0.60, 0.51, 481] };
+  const NEVE_P = {};
+  for (const [z, l] of Object.entries({
+    IA: 'AO BL BG BI BZ BS CO CN LC PN SO TO TN UD VB VC VI', IM: 'AL AN AT BO CR FC LO MI MO MB NO PR PV PU PC RA RE RN TV VA',
+    II: 'AR AP AV BA BT BN CB CH FM FE FI FG FR GE GO IM IS AQ SP LU MC MN MS PD PG PE PT PO RI RO SV TE TS VE VR',
+    III: 'AG BR CA CL CI CE CT CZ CS KR EN GR LT LE LI MT VS ME NA NU OG OT OR PA PI PZ RG RC RM SA SS SI SR TA TR TP VV VT' })) for (const sg of l.split(' ')) NEVE_P[sg] = z;
+  // NTC 2018 Tab. 3.3.I: zone del vento [vb,0 m/s, a0 m, ks]
+  const VENTO_Z = { 1: [25, 1000, 0.40], 2: [25, 750, 0.45], 3: [27, 500, 0.37], 4: [28, 500, 0.36], 5: [28, 750, 0.40], 6: [28, 500, 0.36], 7: [28, 1000, 0.54], 8: [30, 1500, 0.50], 9: [31, 500, 0.32] };
+  const ISOLE = new Set(["Capri|NA", "Anacapri|NA", "Ischia|NA", "Barano d'Ischia|NA", "Casamicciola Terme|NA", "Forio|NA", "Lacco Ameno|NA", "Serrara Fontana|NA", "Procida|NA",
+    'Ponza|LT', 'Ventotene|LT', 'Portoferraio|LI', "Campo nell'Elba|LI", 'Capoliveri|LI', 'Marciana|LI', 'Marciana Marina|LI', 'Porto Azzurro|LI', 'Rio|LI', 'Capraia Isola|LI',
+    'Isola del Giglio|GR', 'Lipari|ME', 'Leni|ME', 'Malfa|ME', 'Santa Marina Salina|ME', 'Favignana|TP', 'Pantelleria|TP', 'Lampedusa e Linosa|AG', 'Ustica|PA',
+    'Isole Tremiti|FG', 'La Maddalena|OT', 'Carloforte|CI', 'Calasetta|CI', "Sant'Antioco|CI"]);
+  function ventoZona(com, reg, lat, lon) {
+    if (ISOLE.has(com.n + '|' + com.p)) return 9;
+    if (com.p === 'TS') return 8;
+    if (com.p === 'RC') return 4;
+    const z = { '01': 1, '02': 1, '03': 1, '04': 1, '05': 1, '06': 1, '07': 7, '08': 2, '19': 4 }[reg];
+    if (z) return z;
+    if (reg === '20') {   // Sardegna: a oriente (5) o a occidente (6) della retta Capo Teulada – Isola della Maddalena
+      const ax = 8.645, ay = 38.866, bx = 9.400, by = 41.220;
+      return (bx - ax) * (lat - ay) - (by - ay) * (lon - ax) < 0 ? 5 : 6;
+    }
+    return 3;
+  }
+  // DM 28/10/2025: trasmittanze U (W/m²K) [pareti, coperture, pavimenti, finestre] – App. A edificio di riferimento, App. B riqualificazione
+  const DM_U = {
+    ref: { A: [0.43, 0.35, 0.44, 3.00], B: [0.43, 0.35, 0.44, 3.00], C: [0.34, 0.33, 0.38, 2.20], D: [0.29, 0.26, 0.29, 1.80], E: [0.26, 0.22, 0.26, 1.40], F: [0.24, 0.20, 0.24, 1.10] },
+    riq: { A: [0.40, 0.32, 0.42, 3.00], B: [0.40, 0.32, 0.42, 3.00], C: [0.36, 0.32, 0.38, 2.00], D: [0.32, 0.26, 0.32, 1.80], E: [0.28, 0.24, 0.29, 1.40], F: [0.26, 0.22, 0.28, 1.10] }
+  };
+  const SITO_LINK = {
+    sis: 'https://rischi.protezionecivile.gov.it/en/approfondimento/seismic-classification/',
+    cli: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1993-08-26;412',
+    acc: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:2013-04-16;74',
+    dm: 'https://www.gazzettaufficiale.it/eli/gu/2025/12/05/283/sg',
+    ntc: 'https://www.gazzettaufficiale.it/eli/id/2018/02/20/18A00716/sg',
+    rad: 'https://www.arpalombardia.it/temi-ambientali/radioattivita/il-radon/aree-prioritarie-in-italia/',
+    radL: 'https://www.normattiva.it/uri-res/N2Ls?urn%3Anir%3Astato%3Adecreto.legislativo%3A2020-07-31%3B101'
+  };
+  function nf(x, d) { return x.toFixed(d).replace('.', ','); }
+  // Calcolo per un Comune e una quota: tutto quello che serve alla pastiglia e alla pagina
+  function sitoFor(com, lat, lon, quota) {
+    if (!com) return null;
+    const D = SITO.d;
+    const reg = com.r || (D && D.pr ? D.pr[String(com.i).slice(0, 3)] : null);
+    const row = D && D.c ? D.c[com.i] : null;
+    const o = { com: com, reg: reg, row: row, quota: quota };
+    const nz = NEVE_P[com.p];
+    if (nz) {
+      const Z = NEVE_Z[nz];
+      o.neve = { z: Z[0], q: quota === null ? null : quota <= 200 ? Z[1] : quota <= 1500 ? Z[2] * (1 + Math.pow(quota / Z[3], 2)) : NaN };
+    }
+    if (reg) {
+      const vz = ventoZona(com, reg, lat, lon), V = VENTO_Z[vz];
+      o.vento = { z: vz, vb0: V[0], v: quota === null ? null : quota <= V[1] ? V[0] : quota <= 1500 ? V[0] * (1 + V[2] * (quota / V[1] - 1)) : NaN };
+    }
+    return o;
+  }
+  function sitoTile(o) {
+    if (!o) return S.lat === null ? 'in attesa del GPS' : 'in attesa del Comune';
+    if (!o.row) return SITO.state === 'err' ? 'non disponibile ora (serve la rete la prima volta)' : SITO.state === 'ok' ? 'Comune non trovato nelle tabelle' : 'in caricamento…';
+    return 'zona sismica ' + o.row[0] + ' · clima ' + o.row[1] + (o.row[2] ? ', ' + fmtInt(o.row[2]) + ' GG' : '') + (o.neve && o.neve.q ? ' · neve ' + nf(o.neve.q, 2) + ' kN/m²' : '');
+  }
+  function fmtInt(x) { return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function aLink(k, t) { return '<a href="' + SITO_LINK[k] + '" target="_blank" rel="noopener">' + t + ' ›</a>'; }
+  function sitoHtml(o) {
+    if (!o) return '<p class="stoNote">' + (S.lat === null ? 'In attesa del GPS.' : 'In attesa del Comune del punto.') + '</p>';
+    if (!o.row && SITO.state !== 'ok') return '<p class="stoNote">' + (SITO.state === 'err' ? 'Tabelle non disponibili ora: serve la rete la prima volta, poi restano sul telefono.' : 'Carico le tabelle…') + '</p>';
+    const r = o.row, D = SITO.d || {};
+    const rows = (a) => '<div class="vinRows">' + a.map((x) => '<span>' + x[0] + '</span><b class="' + (x[2] || '') + '">' + escHtml(x[1]) + '</b>').join('') + '</div>';
+    let h = '';
+    // Sismica
+    h += '<h4>Sismica</h4>';
+    if (r && r[0]) {
+      const n = parseInt(r[0], 10);
+      h += rows([['Zona sismica', String(r[0]), n <= 2 ? 'warn' : '']]);
+      h += '<p class="sitTxt">Zona ' + n + ': ' + (SIS_TXT[n] || '') + '.' + (String(r[0]).length > 1 ? ' La lettera indica una sottozona decisa dalla Regione.' : '') +
+        ' Di norma in tutta Italia si progetta secondo le NTC 2018; deposito o autorizzazione al Genio civile dipendono dalla Regione e dalla zona.</p>';
+    } else h += rows([['Zona sismica', 'non trovata', 'na']]);
+    h += '<p class="sitSrc">Dipartimento della Protezione Civile, classificazione per Comune' + (D.sisV ? ' (' + D.sisV + ')' : '') + '. ' + aLink('sis', 'Fonte') + '</p>';
+    // Clima
+    h += '<h4>Clima e riscaldamento</h4>';
+    if (r && r[1]) {
+      const P = CLI_PER[r[1]];
+      h += rows([['Zona climatica', r[1]], ['Gradi giorno', r[2] ? fmtInt(r[2]) : '–'],
+        ['Riscaldamento', P ? 'dal ' + P[0] + ' al ' + P[1] + ', max ' + P[2] + ' ore al giorno' : 'nessun limite (zona F)', 'sub']]);
+    } else h += rows([['Zona climatica', 'non trovata', 'na']]);
+    h += '<p class="sitSrc">DPR 412/93, Tabella A' + (D.cliV ? ' (' + D.cliV + ')' : '') + '; periodi dal DPR 74/2013. ' + aLink('cli', 'DPR 412/93') + ' ' + aLink('acc', 'DPR 74/2013') + '</p>';
+    // Requisiti minimi
+    if (r && DM_U.ref[r[1]]) {
+      const z = r[1], f = (a) => a.map((x) => '<td>' + nf(x, 2) + '</td>').join('');
+      h += '<h4>Requisiti minimi · zona ' + z + '</h4>';
+      h += '<table class="sitU"><tr><th>U (W/m²K)</th><th>Pareti</th><th>Coperture</th><th>Pavimenti</th><th>Finestre</th></tr>' +
+        '<tr><td>Edificio di riferimento</td>' + f(DM_U.ref[z]) + '</tr><tr><td>Riqualificazione</td>' + f(DM_U.riq[z]) + '</tr></table>';
+      h += '<p class="sitTxt">Riferimento: nuove costruzioni e ristrutturazioni importanti di 1° livello (App. A). Riqualificazione: limiti per ristrutturazioni di 2° livello e riqualificazioni (App. B), da aumentare del 30% con isolamento interno o in intercapedine. Schermature: g<sub>gl+sh</sub> ≤ 0,35.</p>';
+      h += '<p class="sitSrc">DM 28 ottobre 2025 (GU n. 283 del 5/12/2025, in vigore dal 3/6/2026). ' + aLink('dm', 'Gazzetta Ufficiale') + '</p>';
+    }
+    // Neve e vento
+    h += '<h4>Neve e vento' + (o.quota !== null ? ' · quota ≈ ' + o.quota + ' m' : '') + '</h4>';
+    const nv = [];
+    if (o.neve) nv.push(['Neve: zona', o.neve.z], ['Carico al suolo q<sub>sk</sub>', o.neve.q === null ? 'serve la quota' : isNaN(o.neve.q) ? 'oltre 1500 m: dati locali' : '≈ ' + nf(o.neve.q, 2) + ' kN/m²']);
+    if (o.vento) nv.push(['Vento: zona', String(o.vento.z) + (o.vento.z === 9 ? ' (isole minori)' : '')], ['Velocità base v<sub>b</sub>', o.vento.v === null ? 'serve la quota' : isNaN(o.vento.v) ? 'oltre 1500 m: dati locali' : '≈ ' + nf(o.vento.v, 1) + ' m/s']);
+    if (nv.length) h += '<div class="vinRows">' + nv.map((x) => '<span>' + x[0] + '</span><b>' + escHtml(x[1]) + '</b>').join('') + '</div>';
+    else h += rows([['Neve e vento', 'non disponibili', 'na']]);
+    h += '<p class="sitTxt">Valori di riferimento al suolo e a 10 m, calcolati con la quota del rilievo (celle di circa 30 m): il carico sul tetto e la pressione del vento dipendono da forma, esposizione e rugosità.</p>';
+    h += '<p class="sitSrc">NTC 2018, §3.4.2 e Tab. 3.3.I. ' + aLink('ntc', 'Gazzetta Ufficiale') + '</p>';
+    // Radon
+    h += '<h4>Radon</h4>';
+    const st = D.rad && o.reg ? D.rad[o.reg] : null;
+    let rv, rc = '';
+    if (r && r[3] === 1) { rv = 'sì, Comune in area prioritaria'; rc = 'warn'; }
+    else if (st === 'pub') rv = 'no (la Regione ha pubblicato l’elenco)';
+    else if (st === 'zero') rv = 'no: la Regione non ha individuato aree prioritarie';
+    else rv = 'la Regione non ha ancora pubblicato le aree prioritarie';
+    h += rows([['Area prioritaria', rv, rc]]);
+    if (r && r[3] === 1) h += '<p class="sitTxt">Nelle aree prioritarie la legge chiede di misurare il radon nei luoghi di lavoro al piano terra e interrati (D.Lgs 101/2020); per le case è consigliato.</p>';
+    h += '<p class="sitSrc">Elenco nazionale dei Comuni in area prioritaria (ARPA Lombardia' + (D.radV ? ', ' + D.radV : '') + ', dagli atti delle Regioni in Gazzetta Ufficiale). ' + aLink('rad', 'Fonte') + ' ' + aLink('radL', 'D.Lgs 101/2020') + '</p>';
+    h += '<p class="hint">Informazioni indicative, per orientarsi: fanno fede le norme, gli uffici regionali e comunali e il progettista.</p>';
+    return h;
+  }
+  window.__panoSito = () => SITO;
+  window.__panoPtSet = (lat, lon) => ptSet(lat, lon, 'mappa');
+
   (function movePunto() { $('puDet').appendChild($('spot')); })();
   function renderPunto() {
     const p = PU.view === 'pt' ? PT.cur : null;
@@ -5740,7 +5957,13 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     $('puVin').hidden = tgt.lat === null;
     const vh = vinHtml(vin, tgt.lat, tgt.lon);
     if ($('vinBox').dataset.h !== vh) { $('vinBox').innerHTML = vh; $('vinBox').dataset.h = vh; }
-    const val = { vin: vinShort(vin), cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo', sto: stoTile() };
+    sitoLoad();
+    const gq = g !== null ? g : (!p && S.alt !== null && (S.altAcc === null || S.altAcc <= 25) ? Math.round(S.alt) : null);
+    const sit = sitoFor(p ? p.com : COM.cur, tgt.lat, tgt.lon, gq);
+    $('puSit').hidden = tgt.lat === null;
+    const sh = sitoHtml(sit);
+    if ($('sitBox').dataset.h !== sh) { $('sitBox').innerHTML = sh; $('sitBox').dataset.h = sh; }
+    const val = { vin: vinShort(vin), cat: p ? catOf(p) : catShort(), sit: sitoTile(sit), sto: stoTile() };
     const html = AMB.map((a) => {
       const v = val[a[0]] || 'in arrivo', soon = !val[a[0]];
       return '<button type="button" class="puTile' + (soon ? ' na' : '') + (a[0] === 'vin' && vinWarn(vin) ? ' warn' : '') + '" data-amb="' + a[0] + '" style="--c:' + a[2] + '"><b>' + a[1] + '</b><span>' + escHtml(v) + '</span></button>';
@@ -5805,6 +6028,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     if (b.dataset.amb === 'cat') { if (p) openCatMap(p.lat, p.lon); else if (S.lat !== null) openCatMap(S.lat, S.lon); return; }
     if (b.dataset.amb === 'sto') { $('puSto').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (b.dataset.amb === 'vin') { $('puVin').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (b.dataset.amb === 'sit') { $('puSit').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     toast(b.querySelector('b').textContent + ': in arrivo nelle prossime versioni.', 2500);
   });
 

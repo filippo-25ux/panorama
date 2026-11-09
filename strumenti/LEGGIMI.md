@@ -20,3 +20,6 @@
   `python3 test_v30.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
 - Dalla v30 gli altri test aprono la beta con `?tab=guarda` (si parte direttamente dalla fotocamera).
 - `worker-catasto.js` è il codice del server di passaggio su Cloudflare («orientis-catasto»), versione 2: `/catasto` (foglio e particella), `/tile/{z}/{x}/{y}.png` (tasselli della mappa catastale, tenuti in memoria 30 giorni), `/ping`. La beta usa i tasselli solo se `/ping` risponde «orientis 2», altrimenti l'immagine unica di prima.
+- `make_sito.py` crea `beta/sito-it.json` (v37, ambito «Sito ed Energia»): zona sismica (CSV del Dipartimento della Protezione Civile), zona climatica e gradi giorno (Tabella A del DPR 412/93), Comuni in area prioritaria per il radon (xlsx nazionale di ARPA Lombardia), tutti legati ai Comuni ISTAT di `beta/comuni` (istruzioni in testa al file).
+- `test_v37.py` prova il tasto Ricentra tondo, la legenda dei livelli Frane/Alluvioni nella scheda sotto la mappa (colori dal servizio ISPRA, o solo le classi) e l’ambito «Sito ed Energia» per un punto ad Ariano Irpino con una tabella finta:
+  `python3 test_v37.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
