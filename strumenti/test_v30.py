@@ -17,6 +17,8 @@ exec(src[:src.index('def serve():')], NS)
 REPO, OUT, NPM = NS['REPO'], NS['OUT'], NS['NPM']
 tile, INIT, TOWNS, PEAKS = NS['tile'], NS['INIT'], NS['TOWNS'], NS['PEAKS']
 PORT = 8792
+import base64
+PNG1 = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
 PARCEL = '<table><tr><th>InspireId localId</th><td>IT.AGE.PLA.A399_0042A0.123</td></tr></table>'
 
 
@@ -43,7 +45,7 @@ def main():
         ctx = b.new_context(viewport={'width': 402, 'height': 874}, device_scale_factor=2)
         ctx.add_init_script(INIT)
         page = ctx.new_page()
-        errs = []
+        errs, tiles = [], []
         page.on('pageerror', lambda e: errs.append(str(e)))
         ML = os.path.join(NPM, 'node_modules/maplibre-gl/dist/') if NPM else ''
 
@@ -55,7 +57,12 @@ def main():
             if m:
                 return r.fulfill(status=200, body=tile(*map(int, m.groups())),
                                  headers={'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*'})
-            if 'workers.dev' in u:
+            if 'workers.dev' in u:   # v31: server aggiornato (sa dare i tasselli)
+                if u.endswith('/ping'):
+                    return r.fulfill(status=200, content_type='text/plain', headers={'Access-Control-Allow-Origin': '*'}, body='orientis 2')
+                if '/tile/' in u:
+                    tiles.append(u)
+                    return r.fulfill(status=200, content_type='image/png', headers={'Access-Control-Allow-Origin': '*'}, body=PNG1)
                 return r.fulfill(status=200, content_type='text/html', headers={'Access-Control-Allow-Origin': '*'}, body=PARCEL)
             if 'interpreter' in u:
                 return r.fulfill(status=200, content_type='application/json', body='{"elements": []}', headers={'Access-Control-Allow-Origin': '*'})
@@ -98,10 +105,21 @@ def main():
         page.screenshot(path=f'{OUT}/v30-mappa-punto.png')
         page.click('#mcGo'); page.wait_for_timeout(500)
         check(page.evaluate('window.__panoTab()') == 'punto' and page.locator('#punto').is_visible(), 'la freccia porta al Punto')
-        tiles = page.evaluate("[...document.querySelectorAll('#puGrid .puTile b')].map(b => b.textContent)")
-        check(tiles == ['Catasto', 'Vincoli', 'Urbanistica', 'Pioggia', 'Energia', 'Sito'], 'cruscotto con i sei ambiti')
+        amb = page.evaluate("[...document.querySelectorAll('#puGrid .puTile b')].map(b => b.textContent)")
+        check(amb == ['Catasto', 'Vincoli', 'Urbanistica', 'Pioggia', 'Energia', 'Sito'], 'cruscotto con i sei ambiti')
         check('foglio 42' in page.inner_text('#puGrid'), 'Catasto nel cruscotto del punto scelto')
         page.screenshot(path=f'{OUT}/v30-punto.png')
+        ov = page.evaluate("[...document.querySelectorAll('#puGrid .puTile')].every(t => { const b = t.querySelector('b').getBoundingClientRect(), s = t.querySelector('span').getBoundingClientRect(); return s.top >= b.bottom - 1 && b.top >= t.getBoundingClientRect().top + 30; })")
+        check(ov, 'pastiglie: titolo e testo non si sovrappongono (anche al pallino)')
+        # v31: catasto a tasselli dal server aggiornato
+        page.click('#puGrid .puTile[data-amb="cat"]'); page.wait_for_timeout(3000)
+        print('     catasto:', page.evaluate('window.__panoCatMode()'), len(tiles), 'tasselli', page.evaluate("window.__panoMap.getLayoutProperty('catT', 'visibility')"), tiles[:1])
+        check(page.evaluate('window.__panoTab()') == 'mappa' and page.evaluate('window.__panoCatMode()') == 'tiles', 'server aggiornato: catasto a tasselli')
+        check(page.evaluate("window.__panoMap.getLayoutProperty('catT', 'visibility')") == 'visible' and len(tiles) > 0 and all('/tile/' in u for u in tiles), f'tasselli del catasto chiesti al server ({len(tiles)})')
+        page.screenshot(path=f'{OUT}/v31-catasto-tasselli.png')
+        page.click('#catBtn'); page.wait_for_timeout(400)
+        check(page.evaluate("window.__panoMap.getLayoutProperty('catT', 'visibility')") == 'none', 'tasto Catasto spegne i tasselli')
+        page.click('#tabs button[data-tab="punto"]'); page.wait_for_timeout(500)
         page.click('#puSeg button[data-pu="qui"]'); page.wait_for_timeout(400)
         check(page.inner_text('#puTitle') == 'Qui' and page.locator('#spot').is_visible(), '«Qui»: dati del punto di ripresa')
         page.screenshot(path=f'{OUT}/v30-punto-qui.png')
@@ -148,6 +166,15 @@ def main():
         page.screenshot(path=f'{OUT}/v30-guarda-mappa.png')
         page.click('#miniExpand'); page.wait_for_timeout(500)
         check(not page.evaluate("document.getElementById('miniWrap').classList.contains('insheet')"), '✕ richiude la mappa nella scheda')
+        # v31: cronologia dei punti
+        page.click('#tabs button[data-tab="punto"]'); page.wait_for_timeout(800)
+        nh = page.evaluate("document.querySelectorAll('#puHist .phRow').length")
+        print('     cronologia:', page.inner_text('#puHist').replace('\n', ' | ')[:200])
+        check(nh >= 2, f'cronologia dei punti nel Punto ({nh})')
+        page.evaluate("document.getElementById('puHist').scrollIntoView()")
+        page.screenshot(path=f'{OUT}/v31-cronologia.png')
+        page.locator('#puHist .phRow').nth(1).click(); page.wait_for_timeout(500)
+        check(page.inner_text('#puTitle') == 'Punto scelto' and 'mappa' in page.inner_text('#puSub'), 'toccando un punto della cronologia torna quel punto')
         # Archivio
         page.click('#tabs button[data-tab="archivio"]'); page.wait_for_timeout(800)
         check(page.locator('#gal').is_visible() and page.locator('#tabs').is_visible(), 'Archivio = galleria, con la barra delle sezioni')

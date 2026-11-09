@@ -1132,7 +1132,8 @@ body[data-tab="mappa"] #mapWait:not([hidden]) { display: flex; position: fixed; 
 #puSeg { align-self: flex-start; display: flex; }
 #puSeg button { white-space: nowrap; padding: 0 14px; }
 .puGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.puTile { position: relative; min-height: 96px; padding: 14px 14px 12px; border: 0; border-radius: 18px; background: var(--sf); color: var(--tx); font: inherit; text-align: left; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; }
+.puTile { position: relative; min-height: 96px; height: 100%; box-sizing: border-box; padding: 38px 14px 12px; border: 0; border-radius: 18px; background: var(--sf); color: var(--tx); font: inherit; text-align: left; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 3px; }
+.puTile b, .puTile span { display: block; }
 .puTile::before { content: ""; position: absolute; left: 14px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--c, #aeaeb2); }
 .puTile b { font-size: 15px; font-weight: 700; }
 .puTile span { font-size: 12.5px; line-height: 1.3; color: var(--tx2); }
@@ -1153,6 +1154,16 @@ body[data-tab="mappa"] #mapWait:not([hidden]) { display: flex; position: fixed; 
 body.tabs #gal { bottom: var(--tabh); }
 body.tabs #galBack { visibility: hidden; }
 body.tabs .gacts { padding-bottom: 10px; }
+
+/* v31: cronologia dei punti */
+#puHistWrap h3 { display: flex; align-items: center; justify-content: space-between; }
+#puHistClr { border: 0; background: none; padding: 0; font: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--acc); }
+#puHist { border-radius: 16px; background: var(--sf); overflow: hidden; }
+.phRow { position: relative; display: block; width: 100%; padding: 10px 34px 10px 14px; border: 0; border-bottom: 0.5px solid var(--line); background: none; font: inherit; text-align: left; color: var(--tx); }
+.phRow:last-child { border-bottom: 0; }
+.phRow b { display: block; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phRow span { display: block; font-size: 12px; color: var(--tx2); margin-top: 1px; }
+.phRow i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 20px; color: var(--tx3); }
 </style>
 <script>
 /* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
@@ -1213,7 +1224,7 @@ body.tabs .gacts { padding-bottom: 10px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v30 · nuova struttura</span>
+          <span class="ver">Beta v31 · catasto più veloce</span>
         </div>
       </div>
     </section>
@@ -1470,6 +1481,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     <h3>Dettagli</h3>
     <div id="puDet"></div>
     <div id="ptDet" hidden></div>
+    <div id="puHistWrap" hidden><h3>Punti recenti <button type="button" id="puHistClr">Cancella</button></h3><div id="puHist"></div></div>
     <div class="puBrand"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></div>
   </div>
 </section>
@@ -2797,7 +2809,7 @@ body.tabs .gacts { padding-bottom: 10px; }
       updateMap();
     });
     map.on('dragstart', () => setFollow(false));
-    map.on('move', () => { if (catOn()) catPlace(); });
+    map.on('move', () => { if (catOn() && CATT.mode === 'img') catPlace(); });
     map.on('moveend', () => { if (catOn()) catUpdate(); });
     window.__panoMap = map;
   }
@@ -2813,10 +2825,41 @@ body.tabs .gacts { padding-bottom: 10px; }
     st.left = a.x + 'px'; st.top = a.y + 'px'; st.width = (b.x - a.x) + 'px'; st.height = (b.y - a.y) + 'px';
   }
   function catHint(t) { $('catHint').hidden = !t; $('catHint').textContent = t || ''; }
+  // v31: col server aggiornato («/tile») il catasto arriva a tasselli, come la mappa: più veloce, e i tasselli già visti
+  // restano nella memoria del server e del telefono. Col server di prima resta l'immagine unica.
+  const CAT_BASE = 'https://orientis-catasto.filippotiso.workers.dev';
+  const CATT = { mode: null, checking: false };
+  async function catCheckTiles() {
+    if (CATT.mode || CATT.checking) return;
+    CATT.checking = true;
+    try {
+      const r = await fetch(CAT_BASE + '/ping', { cache: 'no-store' });
+      const t = r.ok ? await r.text() : '';
+      CATT.mode = /^orientis/.test(t) ? 'tiles' : 'img';
+    } catch (e) { CATT.mode = 'img'; }
+    CATT.checking = false;
+    catUpdate();
+  }
+  function catTiles(on) {
+    if (!mapReady) return;
+    if (on && !map.getSource('catT')) {
+      map.addSource('catT', { type: 'raster', tiles: [CAT_BASE + '/tile/{z}/{x}/{y}.png'], tileSize: 256, minzoom: 15, maxzoom: 19 });
+      map.addLayer({ id: 'catT', type: 'raster', source: 'catT', minzoom: 15.5, paint: { 'raster-opacity': 0.9, 'raster-fade-duration': 150 } }, 'rivers');
+    }
+    if (map.getLayer('catT')) map.setLayoutProperty('catT', 'visibility', on ? 'visible' : 'none');
+  }
+  window.__panoCatMode = () => CATT.mode;
   function catUpdate() {
     $('catBtn').setAttribute('aria-pressed', String(!!S.catLayer));
     $('catNote').hidden = !catOn();
-    if (!catOn()) { if (CATL.img) CATL.img.style.display = 'none'; catHint(''); return; }
+    if (!catOn()) { if (CATL.img) CATL.img.style.display = 'none'; catTiles(false); catHint(''); return; }
+    if (!CATT.mode) { catCheckTiles(); return; }
+    if (CATT.mode === 'tiles') {
+      if (CATL.img) CATL.img.style.display = 'none';
+      catTiles(true);
+      catHint(map.getZoom() < 15.5 ? 'Avvicina la mappa per vedere le particelle catastali.' : '');
+      return;
+    }
     if (!CATL.img) {
       CATL.img = document.createElement('img');
       CATL.img.id = 'catImg'; CATL.img.alt = '';
@@ -5185,7 +5228,9 @@ body.tabs .gacts { padding-bottom: 10px; }
     const ground = g.d !== null ? demGet(lat, lon, demZoomFor(Math.max(g.d, 100))) : null;
     PT.cur = { lat: lat, lon: lon, src: src, d: g.d, b: g.b, ang: extra && extra.ang, ground: ground, com: null, comState: 'loading', cat: null, catState: 'loading', t: Date.now() };
     PT.showG = src === 'guarda';
-    ptFetch(PT.cur);
+    if (extra && extra.hist) Object.assign(PT.cur, { com: extra.hist.com, comState: extra.hist.com ? 'ok' : 'loading', cat: extra.hist.cat, catState: extra.hist.cat ? 'ok' : 'loading' });
+    histAdd(PT.cur);
+    if (!(extra && extra.hist && extra.hist.cat)) ptFetch(PT.cur);
     ptPin();
     ptRefresh();
   }
@@ -5203,7 +5248,28 @@ body.tabs .gacts { padding-bottom: 10px; }
       const pc = await catAsk(CAT_PROXY + '?lat=' + p.lat.toFixed(6) + '&lon=' + p.lon.toFixed(6), 9000);
       p.cat = pc; p.catState = pc ? 'ok' : 'none';
     } catch (e) { p.catState = 'err'; }
+    histAdd(p);
     ptRefresh();
+  }
+  // v31: cronologia dei punti scelti (ultimi 30, salvati sul telefono)
+  let HIST = [];
+  try { HIST = JSON.parse(localStorage.getItem('pano.ptHist') || '[]') || []; } catch (e) { HIST = []; }
+  function histSave() { try { localStorage.setItem('pano.ptHist', JSON.stringify(HIST)); } catch (e) {} }
+  function histAdd(p) {
+    const e = { lat: Math.round(p.lat * 1e6) / 1e6, lon: Math.round(p.lon * 1e6) / 1e6, src: p.src, t: p.t, g: groundOf(p), com: p.com || null, cat: p.cat || null };
+    const i = HIST.findIndex((h) => h.t === p.t || (Math.abs(h.lat - e.lat) < 2e-5 && Math.abs(h.lon - e.lon) < 2e-5));
+    if (i >= 0) HIST.splice(i, 1);
+    HIST.unshift(e);
+    if (HIST.length > 30) HIST.length = 30;
+    histSave();
+  }
+  function histHtml() {
+    return HIST.map((h, i) => {
+      const name = h.com ? h.com.n + (h.com.p ? ' (' + h.com.p + ')' : '') : fmtCoord(h.lat, h.lon);
+      const cat = h.cat ? 'foglio ' + h.cat.f + ' · part. ' + h.cat.p : '';
+      const sub = [(h.src === 'guarda' ? 'toccato nel paesaggio' : 'scelto sulla mappa'), fmtWhen(h.t)].join(' · ');
+      return '<button type="button" class="phRow" data-i="' + i + '"><b>' + escHtml(name) + (cat ? ' · ' + escHtml(cat) : '') + '</b><span>' + escHtml(sub) + '</span><i aria-hidden="true">›</i></button>';
+    }).join('');
   }
   function ptPin() {
     if (!mapReady || !PT.cur) return;
@@ -5225,8 +5291,12 @@ body.tabs .gacts { padding-bottom: 10px; }
     return 'non disponibile ora';
   }
   function catShort() {
-    if (CAT.state === 'ok' && CAT.cur && COM.cur) return 'foglio ' + CAT.cur.f + ' · part. ' + CAT.cur.p;
-    return catastoText();
+    if (!COM.cur) return '–';
+    if (CAT.state === 'ok' && CAT.cur) return 'foglio ' + CAT.cur.f + ' · part. ' + CAT.cur.p + (CAT.edge ? ' (vicino al confine)' : '');
+    if (CAT.state === 'loading' || CAT.state === 'idle') return 'in caricamento…';
+    if (CAT.state === 'none') return 'nessuna particella qui';
+    if (CAT.state === 'offline' || !navigator.onLine) return 'serve la rete';
+    return 'non disponibile ora · tocca per la mappa';
   }
   function groundOf(p) {
     const g = p ? p.ground : (S.dem ? DEM.ground : null);
@@ -5332,6 +5402,9 @@ body.tabs .gacts { padding-bottom: 10px; }
       return '<button type="button" class="puTile' + (soon ? ' na' : '') + '" data-amb="' + a[0] + '" style="--c:' + a[2] + '"><b>' + a[1] + '</b><span>' + escHtml(v) + '</span></button>';
     }).join('');
     if ($('puGrid').innerHTML !== html) $('puGrid').innerHTML = html;
+    $('puHistWrap').hidden = !HIST.length;
+    const hh = histHtml();
+    if ($('puHist').dataset.h !== hh) { $('puHist').innerHTML = hh; $('puHist').dataset.h = hh; }
     $('spot').hidden = !!p;
     $('ptDet').hidden = !p;
     if (p) {
@@ -5344,6 +5417,17 @@ body.tabs .gacts { padding-bottom: 10px; }
     } else updateSpot(S.heading === null ? null : trueHeading(), S.pitch === null ? null : S.pitch + S.pitchOff);
   }
   setInterval(() => { if (tabNow() === 'punto') renderPunto(); }, 1000);
+  $('puHist').addEventListener('click', (e) => {
+    const b = e.target.closest('.phRow');
+    if (!b) return;
+    const h = HIST[Number(b.dataset.i)];
+    if (!h) return;
+    ptSet(h.lat, h.lon, h.src, { hist: h });
+    PT.showG = false;
+    PU.view = 'pt'; renderPunto();
+    $('punto').scrollTop = 0;
+  });
+  $('puHistClr').addEventListener('click', () => { HIST = []; histSave(); renderPunto(); });
   $('puSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; PU.view = b.dataset.pu; renderPunto(); });
   $('puGrid').addEventListener('click', (e) => {
     const b = e.target.closest('.puTile');
