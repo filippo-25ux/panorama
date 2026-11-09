@@ -92,6 +92,13 @@ def main():
         mb = page.evaluate("document.getElementById('miniWrap').getBoundingClientRect().bottom")
         check(abs(tb - mb) < 2, f'la mappa finisce sopra la barra ({mb:.0f} / {tb:.0f})')
         page.screenshot(path=f'{OUT}/v30-mappa.png')
+        # v32: toccando un luogo sulla mappa la sua scheda resta tutta sopra la barra
+        page.locator('.maplibregl-marker.mk').first.click(); page.wait_for_timeout(600)
+        cb = page.evaluate("document.getElementById('miniCard').getBoundingClientRect().bottom")
+        check(page.locator('#miniCard').is_visible() and cb <= tb - 4, f'scheda del luogo toccato sopra la barra ({cb:.0f} / {tb:.0f})')
+        page.screenshot(path=f'{OUT}/v32-luogo.png')
+        page.click('#miniCardBack'); page.wait_for_timeout(400)
+        check(page.locator('#mapCard').is_visible(), '«Chiudi» torna alla scheda «Qui»')
         # tocco sulla mappa → punto scelto
         page.mouse.click(200, 300)
         for _ in range(30):

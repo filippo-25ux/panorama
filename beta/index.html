@@ -1098,7 +1098,7 @@ body[data-tab="mappa"] #miniWrap.full #miniExpand { display: none; }
 body[data-tab="mappa"] #miniWrap.full #miniAttr { bottom: auto; top: calc(14px + env(safe-area-inset-top, 0px)); right: 10px; }
 body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { bottom: auto; top: calc(56px + env(safe-area-inset-top, 0px)); }
 body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
-body[data-tab="mappa"] #miniCard { bottom: 10px; }
+body[data-tab="mappa"] #miniCard { bottom: calc(var(--tabh) + 10px); }   /* v32: la scheda del luogo è «fixed»: sopra la barra */
 #mapCard { display: none; }
 body[data-tab="mappa"] #miniWrap.full #mapCard:not([hidden]) {
   display: block; position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 4; padding: 16px 20px 0; border-radius: 26px;
