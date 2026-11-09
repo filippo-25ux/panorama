@@ -1169,6 +1169,22 @@ body.tabs .gacts { padding-bottom: 10px; }
 #miniCard .mcBtns { display: flex; gap: 8px; margin-top: 6px; }
 #miniCard .mcBtns .btn { margin: 0; }
 #miniCard .btn.alt { background: var(--fill2); color: var(--tx); }
+/* v33: Storia e cultura */
+.puGrid .puTile[data-amb="sto"] { grid-column: 1 / -1; min-height: 80px; }
+#stoBox { padding: 14px; border-radius: 16px; background: var(--sf); }
+.stoSum img { float: right; width: 84px; height: 84px; object-fit: cover; border-radius: 12px; margin: 0 0 8px 12px; }
+.stoSum b { display: block; font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.stoSum p { margin: 0 0 8px; font-size: 14px; line-height: 1.45; color: var(--tx); }
+.stoSum a, .stoNear a { color: var(--acc); text-decoration: none; }
+.stoSum a { display: inline-block; margin: 2px 16px 4px 0; font-size: 14px; font-weight: 600; }
+.stoSum::after { content: ""; display: block; clear: both; }
+#stoBox h4 { margin: 12px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx2); }
+.stoNear a { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--line); font-size: 14px; }
+.stoNear a:last-child { border-bottom: 0; }
+.stoNear b { font-weight: 500; color: var(--tx); }
+.stoNear span { flex: none; color: var(--tx2); font-variant-numeric: tabular-nums; }
+.stoNote { margin: 0; font-size: 14px; color: var(--tx2); }
+#puSto h3 { margin-top: 10px; }
 </style>
 <script>
 /* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
@@ -1229,7 +1245,7 @@ body.tabs .gacts { padding-bottom: 10px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v33 · esplora i luoghi</span>
+          <span class="ver">Beta v33 · Luogo, storia e cultura</span>
         </div>
       </div>
     </section>
@@ -1302,7 +1318,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     <div id="catHint" hidden></div>
     <div id="catNote" hidden>Catasto indicativo: può essere spostato di alcuni metri rispetto alla mappa. Il cerchio azzurro è l’errore del GPS.</div>
     <div id="mapCard" hidden>
-      <button type="button" id="mcGo" aria-label="Apri nel Punto"><div class="mcHead"><b id="mcTitle">Qui</b><span id="mcSub"></span></div><i aria-hidden="true">›</i></button>
+      <button type="button" id="mcGo" aria-label="Apri il luogo"><div class="mcHead"><b id="mcTitle">Qui</b><span id="mcSub"></span></div><i aria-hidden="true">›</i></button>
       <div class="mcRows" id="mcRows"></div>
       <div class="mcFoot"><button type="button" id="mcQui" class="ghost">‹ Qui</button><span class="mcLogo"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></span><span class="mcSp"></span></div>
     </div>
@@ -1476,13 +1492,14 @@ body.tabs .gacts { padding-bottom: 10px; }
   <div id="galToast" hidden></div>
 </section>
 
-<section id="punto" hidden aria-label="Punto">
+<section id="punto" hidden aria-label="Luogo">
   <div class="puIn">
-    <h1 id="puTitle">Punto</h1>
+    <h1 id="puTitle">Luogo</h1>
     <p id="puSub"></p>
     <div class="seg" id="puSeg" hidden><button type="button" data-pu="qui">Qui</button><button type="button" data-pu="pt">Punto scelto</button></div>
     <div class="puGrid" id="puGrid"></div>
-    <button type="button" id="puSheet" disabled>Crea la scheda del punto<em>in arrivo</em></button>
+    <div id="puSto" hidden><h3>Storia e cultura</h3><div id="stoBox"></div></div>
+    <button type="button" id="puSheet" disabled>Crea la scheda del luogo<em>in arrivo</em></button>
     <h3>Dettagli</h3>
     <div id="puDet"></div>
     <div id="ptDet" hidden></div>
@@ -1494,7 +1511,7 @@ body.tabs .gacts { padding-bottom: 10px; }
 <nav id="tabs" hidden aria-label="Sezioni">
   <button type="button" data-tab="mappa" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 7 L9.5 4.5 L16.5 7.5 L22.5 5 V19 L16.5 21.5 L9.5 18.5 L3.5 21 Z M9.5 4.5 V18.5 M16.5 7.5 V21.5"></path></svg><span>Mappa</span></button>
   <button type="button" data-tab="guarda" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 8.5 H7.5 L9.5 5.5 H16.5 L18.5 8.5 H23 V20.5 H3 Z"></path><circle cx="13" cy="14" r="4"></circle></svg><span>Guarda</span></button>
-  <button type="button" data-tab="punto" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 23 C13 23 5.5 16 5.5 10.5 A7.5 7.5 0 0 1 20.5 10.5 C20.5 16 13 23 13 23 Z"></path><circle cx="13" cy="10.5" r="2.6" fill="currentColor" stroke="none"></circle></svg><span>Punto</span></button>
+  <button type="button" data-tab="punto" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 23 C13 23 5.5 16 5.5 10.5 A7.5 7.5 0 0 1 20.5 10.5 C20.5 16 13 23 13 23 Z"></path><circle cx="13" cy="10.5" r="2.6" fill="currentColor" stroke="none"></circle></svg><span>Luogo</span></button>
   <button type="button" data-tab="archivio" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3.5" y="5.5" width="19" height="15" rx="3"></rect><path d="M4.5 18 L10 12.5 L14 16.5 L17 13.5 L22 18.5"></path></svg><span>Archivio</span></button>
 </nav>
 
@@ -5392,7 +5409,7 @@ body.tabs .gacts { padding-bottom: 10px; }
   }
   function ptRefresh() {
     const p = PT.cur;
-    const html = p ? rowsHtml(p) + '<button type="button" id="ptOpen">Tutto nel Punto ›</button>' : '';
+    const html = p ? rowsHtml(p) + '<button type="button" id="ptOpen">Apri il luogo ›</button>' : '';
     if ($('ptRows').dataset.h !== html) { $('ptRows').innerHTML = html; $('ptRows').dataset.h = html; }
     updateMapCard();
     if (tabNow() === 'punto') renderPunto();
@@ -5403,8 +5420,93 @@ body.tabs .gacts { padding-bottom: 10px; }
   // Punto: cruscotto con gli ambiti
   const AMB = [
     ['cat', 'Catasto', '#c92a2a'], ['vin', 'Vincoli', '#d9480f'], ['urb', 'Urbanistica', '#d6336c'],
-    ['pio', 'Pioggia', '#1c7ed6'], ['ene', 'Energia', '#e0a800'], ['sit', 'Sito', '#2f9e44']
+    ['pio', 'Pioggia', '#1c7ed6'], ['ene', 'Energia', '#e0a800'], ['sit', 'Sito', '#2f9e44'], ['sto', 'Storia e cultura', '#8d6e63']
   ];
+  /* v33: Storia e cultura – riassunto di Wikipedia (it), sito ufficiale del Comune (Wikidata), voci di Wikipedia nei dintorni.
+     Testi di Wikipedia: CC BY-SA 4.0, con collegamento alla voce. */
+  const STO = { key: null, state: 'idle', sum: null, near: [], site: null, err: '', t: 0 };
+  const WIKI = 'https://it.wikipedia.org';
+  async function wjson(url, ms) {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms || 9000);
+    try { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+    finally { clearTimeout(to); }
+  }
+  async function wikiSummary(title) {
+    const j = await wjson(WIKI + '/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_')));
+    if (!j || j.type === 'disambiguation' || !j.extract) return null;
+    return { title: j.title, text: j.extract, url: j.content_urls && j.content_urls.mobile ? j.content_urls.mobile.page : WIKI + '/wiki/' + encodeURIComponent(j.title), qid: j.wikibase_item || null, thumb: j.thumbnail ? j.thumbnail.source : null, lat: j.coordinates ? j.coordinates.lat : null, lon: j.coordinates ? j.coordinates.lon : null };
+  }
+  async function wikiNear(lat, lon, r) {
+    const j = await wjson(WIKI + '/w/api.php?action=query&list=geosearch&gscoord=' + lat.toFixed(5) + '|' + lon.toFixed(5) + '&gsradius=' + r + '&gslimit=25&format=json&origin=*');
+    return ((j && j.query && j.query.geosearch) || []).map((g) => ({ title: g.title, d: g.dist, lat: g.lat, lon: g.lon }));
+  }
+  async function wikiSite(qid) {
+    const j = await wjson('https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=' + qid + '&property=P856&format=json&origin=*');
+    const c = j && j.claims && j.claims.P856 && j.claims.P856[0];
+    return c && c.mainsnak && c.mainsnak.datavalue ? c.mainsnak.datavalue.value : null;
+  }
+  function stoTarget() {
+    const p = PU.view === 'pt' ? PT.cur : null;
+    if (p) return { lat: p.lat, lon: p.lon, name: p.nm || (p.com ? p.com.n : null), com: p.com ? p.com.n : null };
+    if (S.lat === null) return null;
+    return { lat: S.lat, lon: S.lon, name: COM.cur ? COM.cur.n : null, com: COM.cur ? COM.cur.n : null };
+  }
+  async function stoFetch() {
+    const t = stoTarget();
+    if (!t) return;
+    const key = (t.name || '') + '|' + t.lat.toFixed(3) + '|' + t.lon.toFixed(3);
+    if (key === STO.key && (STO.state !== 'err' || Date.now() - STO.t < 60000)) return;
+    if (STO.state === 'loading' && key === STO.key) return;
+    Object.assign(STO, { key: key, state: 'loading', sum: null, near: [], site: null, err: '', t: Date.now() });
+    renderSto();
+    if (!navigator.onLine) { STO.state = 'err'; STO.err = 'serve la rete'; renderSto(); return; }
+    try {
+      const near = await wikiNear(t.lat, t.lon, 10000);
+      let sum = null;
+      // la voce principale: il luogo col suo nome (paese, vetta…), altrimenti il Comune, altrimenti la voce più vicina
+      for (const title of [t.name, t.com, near[0] && near[0].title]) {
+        if (!title || sum) continue;
+        try { sum = await wikiSummary(title); } catch (e) {}
+        if (sum && sum.lat !== null && geo(t.lat, t.lon, sum.lat, sum.lon).d > 30000) sum = null;   // omonimo lontano
+      }
+      if (key !== STO.key) return;
+      STO.sum = sum;
+      STO.near = near.filter((n) => !sum || n.title !== sum.title).slice(0, 10);
+      STO.state = 'ok';
+      renderSto();
+      if (sum && sum.qid) { try { STO.site = await wikiSite(sum.qid); } catch (e) {} if (key === STO.key) renderSto(); }
+    } catch (e) {
+      if (key !== STO.key) return;
+      STO.state = 'err'; STO.err = navigator.onLine ? 'Wikipedia non risponde ora' : 'serve la rete';
+      renderSto();
+    }
+  }
+  function stoTile() {
+    if (STO.state === 'ok') return STO.sum ? STO.sum.title : (STO.near.length ? STO.near.length + ' voci nei dintorni' : 'nessuna voce qui vicino');
+    if (STO.state === 'err') return STO.err;
+    return 'in caricamento…';
+  }
+  function renderSto() {
+    $('puSto').hidden = STO.state === 'idle';
+    let h = '';
+    if (STO.state === 'loading') h = '<p class="stoNote">Cerco su Wikipedia…</p>';
+    else if (STO.state === 'err') h = '<p class="stoNote">' + escHtml(STO.err) + '.</p>';
+    else {
+      if (STO.sum) {
+        h += '<div class="stoSum">' + (STO.sum.thumb ? '<img src="' + escHtml(STO.sum.thumb) + '" alt="">' : '') + '<b>' + escHtml(STO.sum.title) + '</b><p>' + escHtml(STO.sum.text) + '</p>' +
+          '<a href="' + escHtml(STO.sum.url) + '" target="_blank" rel="noopener">Leggi su Wikipedia ›</a>' +
+          (STO.site ? '<a href="' + escHtml(STO.site) + '" target="_blank" rel="noopener">Sito ufficiale ›</a>' : '') + '</div>';
+      }
+      if (STO.near.length) {
+        h += '<h4>Nei dintorni</h4><div class="stoNear">' + STO.near.map((n) =>
+          '<a href="' + WIKI + '/wiki/' + encodeURIComponent(n.title.replace(/ /g, '_')) + '" target="_blank" rel="noopener"><b>' + escHtml(n.title) + '</b><span>' + fmtDist(n.d) + '</span></a>').join('') + '</div>';
+      }
+      if (!STO.sum && !STO.near.length) h += '<p class="stoNote">Nessuna voce di Wikipedia entro 10 km.</p>';
+      h += '<p class="hint">Testi da Wikipedia in italiano (CC BY-SA 4.0): introduttivi, da verificare sulle fonti (per i beni tutelati: Catalogo generale dei Beni Culturali e Vincoli in rete, in arrivo con l’ambito Vincoli).</p>';
+    }
+    if ($('stoBox').dataset.h !== h) { $('stoBox').innerHTML = h; $('stoBox').dataset.h = h; }
+  }
+  window.__panoSto = () => STO;
   (function movePunto() { $('puDet').appendChild($('spot')); })();
   function renderPunto() {
     const p = PU.view === 'pt' ? PT.cur : null;
@@ -5415,7 +5517,9 @@ body.tabs .gacts { padding-bottom: 10px; }
     setText('puSub', p ? com + ' · ' + ptWhere(p) + ' · ' + srcText(p.src)
       : (S.lat === null ? 'in attesa del GPS' : com + ' · ' + fmtCoord(S.lat, S.lon)));
     const g = groundOf(p);
-    const val = { cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo' };
+    stoFetch();
+    renderSto();
+    const val = { cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo', sto: stoTile() };
     const html = AMB.map((a) => {
       const v = val[a[0]] || 'in arrivo', soon = !val[a[0]];
       return '<button type="button" class="puTile' + (soon ? ' na' : '') + '" data-amb="' + a[0] + '" style="--c:' + a[2] + '"><b>' + a[1] + '</b><span>' + escHtml(v) + '</span></button>';
@@ -5468,6 +5572,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     if (!b) return;
     const p = PU.view === 'pt' ? PT.cur : null;
     if (b.dataset.amb === 'cat') { if (p) openCatMap(p.lat, p.lon); else if (S.lat !== null) openCatMap(S.lat, S.lon); return; }
+    if (b.dataset.amb === 'sto') { $('puSto').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     toast(b.querySelector('b').textContent + ': in arrivo nelle prossime versioni.', 2500);
   });
 

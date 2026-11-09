@@ -7,7 +7,7 @@ Usa il rilievo finto di test_rilievo.py (cresta a 4 km a nord). Controlla:
 - Archivio = galleria; fuori da Guarda la fotocamera si spegne dopo 15 s e si riaccende tornando in Guarda.
 Uso: python3 test_v30.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]
 """
-import json, os, re, sys, threading, http.server, functools
+import json, os, re, sys, threading, http.server, functools, urllib.parse
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,6 +64,17 @@ def main():
                     tiles.append(u)
                     return r.fulfill(status=200, content_type='image/png', headers={'Access-Control-Allow-Origin': '*'}, body=PNG1)
                 return r.fulfill(status=200, content_type='text/html', headers={'Access-Control-Allow-Origin': '*'}, body=PARCEL)
+            if 'wikipedia.org/api/rest_v1/page/summary/' in u:   # v33: Wikipedia finta
+                ttl = urllib.parse.unquote(u.rsplit('/', 1)[1]).replace('_', ' ')
+                la, lo = NS['offset'](0.5, -3)
+                return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({
+                    'type': 'standard', 'title': ttl, 'extract': ttl + ' è un luogo di prova con una lunga storia.', 'wikibase_item': 'Q42',
+                    'content_urls': {'mobile': {'page': 'https://it.m.wikipedia.org/wiki/' + ttl}}, 'coordinates': {'lat': la, 'lon': lo}}))
+            if 'wikipedia.org/w/api.php' in u:
+                return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'query': {'geosearch': [
+                    {'title': 'Castello di Prova', 'dist': 850.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Chiesa di San Prova', 'dist': 1900.0, 'lat': 40.0, 'lon': 15.3}]}}))
+            if 'wikidata.org' in u:
+                return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'claims': {'P856': [{'mainsnak': {'datavalue': {'value': 'https://www.comune.prova.it'}}}]}}))
             if 'interpreter' in u:
                 return r.fulfill(status=200, content_type='application/json', body='{"elements": []}', headers={'Access-Control-Allow-Origin': '*'})
             if 'maplibre-gl' in u and ML and os.path.isdir(ML):
@@ -103,7 +114,15 @@ def main():
         page.locator('.maplibregl-marker.mk').first.click(); page.wait_for_timeout(500)
         nm = page.inner_text('#miniCardName')
         page.click('#miniCardGo'); page.wait_for_timeout(700)
-        check(page.evaluate('window.__panoTab()') == 'punto' and page.inner_text('#puTitle') == nm, f'«Esplora ›» apre il luogo nel Punto ({nm})')
+        check(page.evaluate('window.__panoTab()') == 'punto' and page.inner_text('#puTitle') == nm, f'«Esplora ›» apre il luogo nel Luogo ({nm})')
+        check(page.inner_text('#tabs button[data-tab="punto"]') == 'Luogo', 'la sezione si chiama «Luogo»')
+        page.wait_for_timeout(1500)
+        sto = page.inner_text('#stoBox')
+        print('     storia:', sto.replace('\n', ' | ')[:220])
+        check(nm in sto and 'Leggi su Wikipedia' in sto and 'Sito ufficiale' in sto and 'Castello di Prova' in sto, 'Storia e cultura: riassunto, sito ufficiale, voci nei dintorni')
+        check(nm in page.inner_text('#puGrid .puTile[data-amb="sto"]'), 'pastiglia «Storia e cultura» col titolo della voce')
+        page.evaluate("document.getElementById('puSto').scrollIntoView()")
+        page.screenshot(path=f'{OUT}/v33-storia.png')
         page.click('#tabs button[data-tab="mappa"]'); page.wait_for_timeout(500)
         page.click('#mcQui'); page.wait_for_timeout(300)
         # tocco sulla mappa → punto scelto
@@ -120,7 +139,7 @@ def main():
         page.click('#mcGo'); page.wait_for_timeout(500)
         check(page.evaluate('window.__panoTab()') == 'punto' and page.locator('#punto').is_visible(), 'la freccia porta al Punto')
         amb = page.evaluate("[...document.querySelectorAll('#puGrid .puTile b')].map(b => b.textContent)")
-        check(amb == ['Catasto', 'Vincoli', 'Urbanistica', 'Pioggia', 'Energia', 'Sito'], 'cruscotto con i sei ambiti')
+        check(amb == ['Catasto', 'Vincoli', 'Urbanistica', 'Pioggia', 'Energia', 'Sito', 'Storia e cultura'], 'cruscotto con i sette ambiti')
         check('foglio 42' in page.inner_text('#puGrid'), 'Catasto nel cruscotto del punto scelto')
         page.screenshot(path=f'{OUT}/v30-punto.png')
         ov = page.evaluate("[...document.querySelectorAll('#puGrid .puTile')].every(t => { const b = t.querySelector('b').getBoundingClientRect(), s = t.querySelector('span').getBoundingClientRect(); return s.top >= b.bottom - 1 && b.top >= t.getBoundingClientRect().top + 30; })")
