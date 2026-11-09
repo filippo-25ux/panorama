@@ -827,6 +827,8 @@ button, input, select { font-family: inherit; }
 }
 /* v24 (decisione dell'utente, 8 nov.): chiese, torri e castelli solo nel pannello, spenti di serie; fuori dalla colonna dei filtri */
 #filters .flt.f-land { display: none; }
+.flt.f-river { --ic: #7fc8ff; }
+.sw.t-river { --ic: var(--t-river); }
 .flt.f-town { --ic: #ffffff; } .flt.f-peak { --ic: #8fd99a; } .flt.f-land { --ic: #c8a2ff; } .flt.f-sun { --ic: #ffc928; }
 .flt[aria-pressed="false"] { --ic: rgba(255, 255, 255, 0.45); opacity: 1; background: rgba(0, 0, 0, 0.12); box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18); }
 /* zoom a pastiglie sul bordo destro */
@@ -1094,7 +1096,7 @@ body.hasmap .peek { padding-right: 100px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v26 · catasto più chiaro</span>
+          <span class="ver">Beta v27 · fiumi</span>
         </div>
       </div>
     </section>
@@ -1135,6 +1137,7 @@ body.hasmap .peek { padding-right: 100px; }
     <button class="flt f-town" type="button" data-f="town" aria-label="Paesi e città" aria-pressed="true"></button>
     <button class="flt f-peak" type="button" data-f="peak" aria-label="Vette" aria-pressed="true"></button>
     <button class="flt f-land" type="button" data-f="land" aria-label="Chiese, torri, castelli" aria-pressed="false"></button>
+    <button class="flt f-river" type="button" data-f="river" aria-label="Fiumi" aria-pressed="true"></button>
     <button class="flt f-sun" type="button" data-f="sun" aria-label="Percorso del sole" aria-pressed="false"></button>
   </div>
   <div class="cross" aria-hidden="true"></div>
@@ -1230,6 +1233,7 @@ body.hasmap .peek { padding-right: 100px; }
       <h3>Cosa mostrare</h3>
       <label class="sw t-town"><i class="swi" data-t="town"></i><span>Paesi e città</span><em id="nTown"></em><input type="checkbox" data-f="town"></label>
       <label class="sw t-peak"><i class="swi" data-t="peak"></i><span>Vette</span><em id="nPeak"></em><input type="checkbox" data-f="peak"></label>
+      <label class="sw t-river"><i class="swi" data-t="river"></i><span>Fiumi<small id="riverNote">il nome dove lo sguardo incrocia il fiume, se si vede</small></span><em id="nRiver"></em><input type="checkbox" data-f="river"></label>
       <label class="sw t-relief"><i class="swi" data-t="relief"></i><span>Rilievo del terreno<small>nasconde le vette coperte da monti più vicini</small></span><em id="demState"></em><input type="checkbox" data-f="dem"></label>
       <label class="sw t-relief"><i class="swi" data-t="ridge"></i><span>Linea delle creste<small>tratteggio leggero sul profilo dei monti</small></span><input type="checkbox" data-f="ridge"></label>
       <label class="sw t-land"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
@@ -1358,8 +1362,8 @@ body.hasmap .peek { padding-right: 100px; }
   const RAD = Math.PI / 180;
   const EARTH = 6371000;
   const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta', church: 'chiesa', tower: 'torre', castle: 'castello' };
-  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1, church: 1.5, tower: 1.7, castle: 1.8 };
+  const TYPE_LABEL = { city: 'città', town: 'cittadina', village: 'paese', hamlet: 'frazione', peak: 'vetta', church: 'chiesa', tower: 'torre', castle: 'castello', river: 'fiume' };
+  const TYPE_WEIGHT = { city: 4, town: 3, peak: 2.5, village: 2, hamlet: 1, church: 1.5, tower: 1.7, castle: 1.8, river: 2.2 };
   const LAND_TYPES = { church: 1, tower: 1, castle: 1 };
   const PEAKS_URL = 'peaks-it.json'; // vette (GeoNames, CC BY 4.0): [nome, lat, lon, quota]
   const REFR = 0.13;                // coefficiente di rifrazione atmosferica
@@ -1394,7 +1398,7 @@ body.hasmap .peek { padding-right: 100px; }
   const DENS = { 1: 4, 2: 7, 3: 12 };   // quanti nomi mostrare (Pochi / Normali / Molti)
   const MAX_DOTS = 24;                  // (prima della v23) luoghi mostrati solo con l'icona
   const DOTS = { 1: 2, 2: 4, 3: 8 };     // v23: meno pallini senza nome (Pochi / Normali / Molti)
-  const F = { town: true, peak: true, sun: false, dens: 2 };
+  const F = { town: true, peak: true, river: true, sun: false, dens: 2 };
   const TYPE_COLOR = { peak: '#8fd99a', church: '#c8a2ff', tower: '#c8a2ff', castle: '#c8a2ff', river: '#7fc8ff' };
   const typeColor = (t) => TYPE_COLOR[t] || '#ffffff';
   // Icone per tipo (stesse forme in camera, sulla mappa e nei filtri)
@@ -1550,7 +1554,7 @@ body.hasmap .peek { padding-right: 100px; }
       if (s.autoSun === false) S.autoSun = false;
       if (s.catLayer === true) S.catLayer = true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
-      if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
+      if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; F.river = s.f.river !== false; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
@@ -1558,6 +1562,8 @@ body.hasmap .peek { padding-right: 100px; }
   }
   function loadCache() {
     try {
+      const rv = JSON.parse(localStorage.getItem('pano.cacheRiver') || 'null');   // v27: fiumi salvati (14 giorni)
+      if (rv && Array.isArray(rv.rivers) && Date.now() - rv.time < 14 * 86400000) { riverRaw = rv.rivers; lastFetchRiver = { lat: rv.lat, lon: rv.lon, radius: rv.radius }; }
       const c = JSON.parse(localStorage.getItem('pano.cache') || 'null');
       if (c && c.radius === S.radius && Array.isArray(c.items) && Date.now() - c.time < 14 * 86400000) {
         onlineItems = c.items;
@@ -2131,6 +2137,143 @@ body.hasmap .peek { padding-right: 100px; }
     }).then(() => { loadingLand = false; });
   }
 
+  /* ---------- v27: fiumi (OpenStreetMap: waterway=river con nome) ----------
+     I tracciati si scaricano entro la Distanza scelta (al massimo 25 km) e restano salvati sul telefono.
+     Sulla fotocamera ogni fiume ha un solo nome, dove la linea di sguardo lo incrocia (il tratto visibile più vicino
+     al centro dell'inquadratura), e solo se quel tratto si vede davvero: il rilievo del terreno decide se l'acqua
+     è coperta da colline più vicine. Senza rilievo i fiumi restano solo sulla mappa. */
+  let riverRaw = [];                 // [{ n, lines: [[lon, lat, lon, lat, …]] }]
+  let rivers = [];                   // fiumi entro la distanza, con i punti campione e l'etichetta
+  let lastFetchRiver = null, loadingRiver = false, retryRiverAt = 0, riverNote = '';
+  let riverAt = null, riverGen = null, riverData = 0, riverBuilt = -1;
+  function convertRivers(els) {
+    const by = {};
+    for (const el of els) {
+      if (el.type !== 'way' || !Array.isArray(el.geometry) || el.geometry.length < 2) continue;
+      const tg = el.tags || {};
+      const n = tg['name:it'] || tg.name;
+      if (!n) continue;
+      const flat = [];
+      let last = null;
+      el.geometry.forEach((p, i) => {   // un punto ogni 40 m circa basta (i campioni si infittiscono dopo)
+        if (last && i < el.geometry.length - 1 && geo(last.lat, last.lon, p.lat, p.lon).d < 40) return;
+        flat.push(Math.round(p.lon * 1e5) / 1e5, Math.round(p.lat * 1e5) / 1e5);
+        last = p;
+      });
+      (by[n] = by[n] || []).push(flat);
+    }
+    return Object.keys(by).map((n) => ({ n: n, lines: by[n] }));
+  }
+  function saveCacheRiver() {
+    try {
+      localStorage.setItem('pano.cacheRiver', JSON.stringify({
+        lat: lastFetchRiver.lat, lon: lastFetchRiver.lon, radius: lastFetchRiver.radius, time: Date.now(), rivers: riverRaw
+      }));
+    } catch (e) {}
+  }
+  function maybeFetchRiver() {
+    if (!F.river || S.lat === null || loadingRiver || Date.now() < retryRiverAt) return;
+    const R = Math.min(S.radius, 25000);
+    const moved = lastFetchRiver ? geo(lastFetchRiver.lat, lastFetchRiver.lon, S.lat, S.lon).d : Infinity;
+    if (lastFetchRiver && lastFetchRiver.radius === R && moved < R * 0.3) return;
+    loadingRiver = true;
+    const lat = S.lat, lon = S.lon;
+    const q = '[out:json][timeout:30];way(around:' + R + ',' + lat.toFixed(5) + ',' + lon.toFixed(5) + ')["waterway"="river"]["name"];out geom;';
+    overpass(q).then((els) => {
+      riverRaw = convertRivers(els);
+      lastFetchRiver = { lat: lat, lon: lon, radius: R };
+      saveCacheRiver();
+      riverNote = riverRaw.length ? '' : 'nessun fiume con nome entro ' + (R / 1000) + ' km';
+      riverData++;
+      buildRivers(); riverMapUpdate();
+    }).catch(() => {
+      retryRiverAt = Date.now() + 90000;
+      riverNote = riverRaw.length ? 'uso i dati salvati (server occupati)' : 'non disponibili ora (server occupati): riprovo tra poco';
+    }).then(() => { loadingRiver = false; refreshRiverUI(); });
+  }
+  // Punti campione lungo i fiumi (uno ogni 25–120 m), con distanza, direzione, quota dell'acqua e visibilità
+  function buildRivers() {
+    if (S.lat === null) return;
+    const P = (S.dem && DEM.prof) ? DEM.prof : null;
+    const gen = P ? DEM.gen : -1;
+    if (riverAt && riverGen === gen && riverBuilt === riverData && geo(riverAt.lat, riverAt.lon, S.lat, S.lon).d < 120) return;
+    riverAt = { lat: S.lat, lon: S.lon }; riverGen = gen; riverBuilt = riverData;
+    const R = Math.min(S.radius, 25000), old = {};
+    for (const r of rivers) old[r.n] = r.item;
+    const out = [];
+    for (const r of riverRaw) {
+      const smp = [];
+      let nVis = 0;
+      const add = (lon, lat) => {
+        const g0 = geo(S.lat, S.lon, lat, lon);
+        if (g0.d > R || g0.d < 150) return;
+        let g = null, vis = false;
+        if (P && g0.d <= P.R) {
+          g = demGet(lat, lon, demZoomFor(g0.d));
+          if (g !== null) {
+            const lim = g0.d - Math.max(80, g0.d * 0.02);   // le sponde subito davanti all'acqua non contano
+            vis = lim < DEM_NEAR || demOccl(P, g0.b, lim) <= angTo(g + 1, g0.d, P.obs) + 0.05;
+          }
+        }
+        if (vis) nVis++;
+        smp.push({ lat: lat, lon: lon, d: g0.d, b: g0.b, g: g, vis: vis });
+      };
+      for (const L of r.lines) {
+        for (let i = 0; i + 3 < L.length; i += 2) {
+          const lo0 = L[i], la0 = L[i + 1], lo1 = L[i + 2], la1 = L[i + 3];
+          // passo dei campioni: fitto vicino (25 m), più largo lontano (fino a 120 m): sempre meno di 1° di direzione
+          const dm = geo(S.lat, S.lon, (la0 + la1) / 2, (lo0 + lo1) / 2).d;
+          const n = Math.max(1, Math.ceil(geo(la0, lo0, la1, lo1).d / Math.max(25, Math.min(120, dm / 100))));
+          for (let k = 0; k < n; k++) add(lo0 + (lo1 - lo0) * k / n, la0 + (la1 - la0) * k / n);
+        }
+        if (L.length >= 2) add(L[L.length - 2], L[L.length - 1]);
+      }
+      if (!smp.length) continue;
+      const item = old[r.n] || { id: 'r:' + r.n, n: r.n, t: 'river', lat: 0, lon: 0, e: null, d: 0, b: 0 };
+      out.push({ n: r.n, lines: r.lines, smp: smp, nVis: nVis, item: item });
+    }
+    rivers = out;
+    refreshRiverUI();
+    riverMapUpdate();
+  }
+  // Fiumi da mettere sulla fotocamera: per ognuno il punto visibile più vicino al centro dell'inquadratura
+  function riverCands(heading, halfH) {
+    const out = [];
+    if (!F.river || !S.dem || !DEM.prof) return out;
+    buildRivers();
+    for (const r of rivers) {
+      if (!r.nVis) continue;
+      let best = null, bk = Infinity;
+      for (const s of r.smp) {
+        if (!s.vis) continue;
+        const a = Math.abs(norm180(s.b - heading));
+        if (a > halfH) continue;
+        const k = a + s.d / 20000;   // a parità di direzione, il tratto più vicino
+        if (k < bk) { bk = k; best = s; }
+      }
+      if (!best) continue;
+      const it = r.item;
+      it.lat = best.lat; it.lon = best.lon; it.d = best.d; it.b = best.b; it.e = best.g; it.ge = best.g;
+      it.skip = false; it.hid = false;
+      it.score = TYPE_WEIGHT.river / Math.sqrt(Math.max(best.d, 300) / 1000);
+      out.push({ it: it, rel: norm180(best.b - heading) });
+    }
+    return out;
+  }
+  function riverMapUpdate() {
+    if (!mapReady || !map.getSource('rivers')) return;
+    const feats = !F.river ? [] : rivers.map((r) => ({ type: 'Feature', properties: { n: r.n },
+      geometry: { type: 'MultiLineString', coordinates: r.lines.map((L) => { const c = []; for (let i = 0; i + 1 < L.length; i += 2) c.push([L[i], L[i + 1]]); return c; }) } }));
+    map.getSource('rivers').setData({ type: 'FeatureCollection', features: feats });
+  }
+  function refreshRiverUI() {
+    const n = rivers.length;
+    setText('nRiver', n ? String(n) : '');
+    const base = 'il nome dove lo sguardo incrocia il fiume, se si vede';
+    setText('riverNote', riverNote ? riverNote : (!S.dem ? 'sulla fotocamera serve il rilievo del terreno; ora solo sulla mappa' : base));
+  }
+  window.__panoRivers = () => rivers;
+
   /* ---------- Sensori ---------- */
   // Media "morbida" degli angoli, per evitare che i numeri saltino
   function smoothAngle(prev, next, k) {
@@ -2437,7 +2580,9 @@ body.hasmap .peek { padding-right: 100px; }
     map.touchZoomRotate.disableRotation();
     map.on('load', () => {
       const empty = { type: 'FeatureCollection', features: [] };
-      for (const id of ['sunsweep', 'sunrise', 'sunset', 'fan', 'cone', 'acc', 'me']) map.addSource(id, { type: 'geojson', data: empty });
+      for (const id of ['sunsweep', 'sunrise', 'sunset', 'fan', 'cone', 'acc', 'me', 'rivers']) map.addSource(id, { type: 'geojson', data: empty });
+      // v27: fiumi con nome, sotto il cono
+      map.addLayer({ id: 'rivers', type: 'line', source: 'rivers', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#2b86c5', 'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.2, 15, 3], 'line-opacity': 0.85 } });
       map.addLayer({ id: 'sunsweep', type: 'fill', source: 'sunsweep', paint: { 'fill-color': '#ffd166', 'fill-opacity': 0.18 } });
       map.addLayer({ id: 'sunrise', type: 'line', source: 'sunrise', paint: { 'line-color': '#ff9f1c', 'line-width': 3, 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'sunset', type: 'line', source: 'sunset', paint: { 'line-color': '#e4572e', 'line-width': 3, 'line-dasharray': [2, 1] } });
@@ -2454,6 +2599,7 @@ body.hasmap .peek { padding-right: 100px; }
       map.dragPan.disable(); map.scrollZoom.disable(); map.touchZoomRotate.disable(); map.doubleClickZoom.disable();
       map.on('click', () => { if (!full) setFull(true); });
       syncMarkers();
+      riverMapUpdate();
       updateMap();
     });
     map.on('dragstart', () => setFollow(false));
@@ -2602,7 +2748,7 @@ body.hasmap .peek { padding-right: 100px; }
   $('labels').addEventListener('click', (e) => {
     const p = e.target.closest('.pill');
     if (!p) return;
-    const it = items.find((x) => String(x.id) === p.dataset.id);
+    const it = items.find((x) => String(x.id) === p.dataset.id) || rivers.map((r) => r.item).find((x) => x.id === p.dataset.id);
     if (it) selectItem(it);
   });
 
@@ -3269,7 +3415,7 @@ body.hasmap .peek { padding-right: 100px; }
 
     const used = {};
     let aim = null;
-    const ready = heading !== null && pitch !== null && S.lat !== null && items.length > 0;
+    const ready = heading !== null && pitch !== null && S.lat !== null && (items.length > 0 || rivers.length > 0);
     const tanV = tanVis(), tanH = tanV * W / H;
 
     if (ready) {
@@ -3282,6 +3428,7 @@ body.hasmap .peek { padding-right: 100px; }
         const rel = norm180(it.b - heading);
         if (Math.abs(rel) <= halfH + 3) cand.push({ it: it, rel: rel });
       }
+      for (const c of riverCands(heading, halfH)) cand.push(c);   // v27: fiumi
 
       // Il luogo "nel mirino": il più importante entro 5° dal centro, altrimenti il più vicino al centro
       for (const c of cand) {
@@ -3468,8 +3615,9 @@ body.hasmap .peek { padding-right: 100px; }
     document.querySelectorAll('#segD button').forEach((b) => {
       b.classList.toggle('on', Number(b.dataset.dn) === F.dens);
     });
-    const st = { town: F.town, peak: F.peak, land: S.land, sun: F.sun, dem: S.dem, ridge: S.ridge };
+    const st = { town: F.town, peak: F.peak, river: F.river, land: S.land, sun: F.sun, dem: S.dem, ridge: S.ridge };
     demStateUI();
+    refreshRiverUI();
     document.querySelectorAll('[data-f]').forEach((el) => {
       if (el.type === 'checkbox') el.checked = st[el.dataset.f];
       else el.setAttribute('aria-pressed', String(st[el.dataset.f]));
@@ -3480,6 +3628,7 @@ body.hasmap .peek { padding-right: 100px; }
   function setFilter(k, v) {
     if (k === 'town') F.town = v;
     if (k === 'peak') F.peak = v;
+    if (k === 'river') { F.river = v; if (v) { retryRiverAt = 0; maybeFetchRiver(); } riverMapUpdate(); }
     if (k === 'sun') { F.sun = v; sunToggle(v); }
     if (k === 'dem') { S.dem = v; DEM.retryAt = 0; demApply(); demUpdate(); syncMarkers(); }
     if (k === 'ridge') S.ridge = v;
@@ -4823,6 +4972,7 @@ body.hasmap .peek { padding-right: 100px; }
       }
       setInterval(maybeFetch, 4000);
       setInterval(maybeFetchLand, 4000);
+      setInterval(maybeFetchRiver, 4000);   // v27: fiumi
       setInterval(sunAnalyze, 1000);   // v20: una volta al secondo, solo quando serve
       loadMapLib(tryInitMap);
       setInterval(() => { if (!camPaused) updateMap(); }, 400);   // v20: meno spesso
