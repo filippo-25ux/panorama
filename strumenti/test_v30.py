@@ -99,6 +99,13 @@ def main():
         page.screenshot(path=f'{OUT}/v32-luogo.png')
         page.click('#miniCardBack'); page.wait_for_timeout(400)
         check(page.locator('#mapCard').is_visible(), '«Chiudi» torna alla scheda «Qui»')
+        # v33: «Esplora ›» porta il luogo nel Punto, col suo nome
+        page.locator('.maplibregl-marker.mk').first.click(); page.wait_for_timeout(500)
+        nm = page.inner_text('#miniCardName')
+        page.click('#miniCardGo'); page.wait_for_timeout(700)
+        check(page.evaluate('window.__panoTab()') == 'punto' and page.inner_text('#puTitle') == nm, f'«Esplora ›» apre il luogo nel Punto ({nm})')
+        page.click('#tabs button[data-tab="mappa"]'); page.wait_for_timeout(500)
+        page.click('#mcQui'); page.wait_for_timeout(300)
         # tocco sulla mappa → punto scelto
         page.mouse.click(200, 300)
         for _ in range(30):

@@ -1166,6 +1166,9 @@ body.tabs .gacts { padding-bottom: 10px; }
 .phRow i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 20px; color: var(--tx3); }
 #puHistClr.warn { color: #ff3b30; }
 .phNone { margin: 0; padding: 12px 14px; font-size: 13px; color: var(--tx2); }
+#miniCard .mcBtns { display: flex; gap: 8px; margin-top: 6px; }
+#miniCard .mcBtns .btn { margin: 0; }
+#miniCard .btn.alt { background: var(--fill2); color: var(--tx); }
 </style>
 <script>
 /* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
@@ -1226,7 +1229,7 @@ body.tabs .gacts { padding-bottom: 10px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v32 · creste rifinite</span>
+          <span class="ver">Beta v33 · esplora i luoghi</span>
         </div>
       </div>
     </section>
@@ -1304,7 +1307,7 @@ body.tabs .gacts { padding-bottom: 10px; }
       <div class="mcFoot"><button type="button" id="mcQui" class="ghost">‹ Qui</button><span class="mcLogo"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></span><span class="mcSp"></span></div>
     </div>
     <div id="inSheetLbl" hidden>segue lo sguardo</div>
-    <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
+    <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><div class="mcBtns"><button class="btn" id="miniCardGo" type="button">Esplora ›</button><button class="btn alt" id="miniCardBack" type="button">Torna alla camera</button></div></div>
   </div>
   <div id="zoom" role="group" aria-label="Zoom della fotocamera"></div>
   <div id="shotTop" hidden>
@@ -3379,15 +3382,16 @@ body.tabs .gacts { padding-bottom: 10px; }
     // intensità secondo la distanza vera del tratto: vicino marcato, lontano più chiaro
     for (const sg of segD) { const dd = sg.d.slice().sort((a, b) => a - b); sg.dm = dd[dd.length >> 1] || 0; sg.c = sg.dm < 6000 ? 0 : sg.dm < 15000 ? 1 : 2; }
     // v32: vicina a tratti lunghi, media a tratti corti, lontana a puntini (bozza B); ombra scura sotto lo stesso tratteggio
-    const DASH = [[10, 5], [4, 4], [0.1, 5]], WID = [1.8, 1.4, 1.8], ALPHA = [0.95, 0.8, 0.7];
+    // v33: linee continue (scelta finale: bozza A), più sottili e più chiare man mano che si allontanano
+    const DASH = [[], [], []], WID = [1.6, 1.35, 1.15], ALPHA = [0.92, 0.72, 0.55];
     for (const c of [2, 1, 0]) {
       const k = aligning ? 1.6 : 1;
       ridgeCtx.globalAlpha = aligning ? Math.min(1, ALPHA[c] + 0.1) : ALPHA[c];
       ridgeCtx.setLineDash(DASH[c].map((v) => v * (aligning ? 1.3 : 1)));
-      ridgeCtx.lineCap = c === 2 ? 'round' : 'butt';
+      ridgeCtx.lineCap = 'round';
       for (const pass of [0, 1]) {
         ridgeCtx.strokeStyle = pass ? (aligning ? qcol('--accent', '#8fd3ff') : '#ffffff') : 'rgba(0,0,0,0.32)';
-        ridgeCtx.lineWidth = WID[c] * k + (pass ? 0 : 1.6);
+        ridgeCtx.lineWidth = WID[c] * k + (pass ? 0 : 1.4);
         for (const sg of segD) {
           if (sg.c !== c || sg.p.length < 4) continue;
           ridgeCtx.beginPath(); ridgeCtx.moveTo(sg.p[0], sg.p[1]);
@@ -5232,7 +5236,7 @@ body.tabs .gacts { padding-bottom: 10px; }
   function ptSet(lat, lon, src, extra) {
     const g = S.lat !== null ? geo(S.lat, S.lon, lat, lon) : { d: null, b: null };
     const ground = g.d !== null ? demGet(lat, lon, demZoomFor(Math.max(g.d, 100))) : null;
-    PT.cur = { lat: lat, lon: lon, src: src, d: g.d, b: g.b, ang: extra && extra.ang, ground: ground, com: null, comState: 'loading', cat: null, catState: 'loading', t: Date.now() };
+    PT.cur = { lat: lat, lon: lon, src: src, d: g.d, b: g.b, ang: extra && extra.ang, ground: ground, nm: (extra && (extra.name || (extra.hist && extra.hist.nm))) || null, ty: (extra && (extra.type || (extra.hist && extra.hist.ty))) || null, com: null, comState: 'loading', cat: null, catState: 'loading', t: Date.now() };
     PT.showG = src === 'guarda';
     if (extra && extra.hist) Object.assign(PT.cur, { com: extra.hist.com, comState: extra.hist.com ? 'ok' : 'loading', cat: extra.hist.cat, catState: extra.hist.cat ? 'ok' : 'loading' });
     histAdd(PT.cur);
@@ -5262,18 +5266,19 @@ body.tabs .gacts { padding-bottom: 10px; }
   try { HIST = JSON.parse(localStorage.getItem('pano.ptHist') || '[]') || []; } catch (e) { HIST = []; }
   function histSave() { try { localStorage.setItem('pano.ptHist', JSON.stringify(HIST)); } catch (e) {} }
   function histAdd(p) {
-    const e = { lat: Math.round(p.lat * 1e6) / 1e6, lon: Math.round(p.lon * 1e6) / 1e6, src: p.src, t: p.t, g: groundOf(p), com: p.com || null, cat: p.cat || null };
+    const e = { lat: Math.round(p.lat * 1e6) / 1e6, lon: Math.round(p.lon * 1e6) / 1e6, src: p.src, t: p.t, g: groundOf(p), com: p.com || null, cat: p.cat || null, nm: p.nm || null, ty: p.ty || null };
     const i = HIST.findIndex((h) => h.t === p.t || (Math.abs(h.lat - e.lat) < 2e-5 && Math.abs(h.lon - e.lon) < 2e-5));
     if (i >= 0) HIST.splice(i, 1);
     HIST.unshift(e);
     if (HIST.length > 30) HIST.length = 30;
     histSave();
   }
+  function srcText(src) { return src === 'guarda' ? 'toccato nel paesaggio' : src === 'luogo' ? 'luogo sulla mappa' : 'scelto sulla mappa'; }
   function histHtml() {
     return HIST.map((h, i) => {
-      const name = h.com ? h.com.n + (h.com.p ? ' (' + h.com.p + ')' : '') : fmtCoord(h.lat, h.lon);
+      const name = h.nm || (h.com ? h.com.n + (h.com.p ? ' (' + h.com.p + ')' : '') : fmtCoord(h.lat, h.lon));
       const cat = h.cat ? 'foglio ' + h.cat.f + ' · part. ' + h.cat.p : '';
-      const sub = [(h.src === 'guarda' ? 'toccato nel paesaggio' : 'scelto sulla mappa'), fmtWhen(h.t)].join(' · ');
+      const sub = [srcText(h.src), fmtWhen(h.t)].join(' · ');
       return '<button type="button" class="phRow" data-i="' + i + '"><b>' + escHtml(name) + (cat ? ' · ' + escHtml(cat) : '') + '</b><span>' + escHtml(sub) + '</span><i aria-hidden="true">›</i></button>';
     }).join('');
   }
@@ -5324,7 +5329,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     c.hidden = false;
     const p = PT.cur;
     const com = p ? (p.com ? p.com.n + (p.com.p ? ' (' + p.com.p + ')' : '') : '') : (COM.cur ? COM.cur.n + (COM.cur.p ? ' (' + COM.cur.p + ')' : '') : '');
-    setText('mcTitle', (p ? 'Punto scelto' : 'Qui') + (com ? ' · ' + com : ''));
+    setText('mcTitle', (p ? (p.nm || 'Punto scelto') : 'Qui') + (com && !(p && p.nm === (p.com && p.com.n)) ? ' · ' + com : ''));
     const g = groundOf(p);
     setText('mcSub', p ? ptWhere(p) + ' · tocca la mappa per cambiarlo'
       : (S.lat === null ? 'in attesa del GPS' : fmtCoord(S.lat, S.lon) + (g !== null ? ' · ' + g + ' m' : '') + ' · tocca la mappa per un altro punto'));
@@ -5333,6 +5338,14 @@ body.tabs .gacts { padding-bottom: 10px; }
     $('mcQui').classList.toggle('ghost', !p);
   }
   $('mcGo').addEventListener('click', () => setTab('punto'));
+  // v33: il luogo toccato sulla mappa diventa il punto scelto, col suo nome, e si apre nel Punto
+  $('miniCardGo').addEventListener('click', () => {
+    const it = items.find((x) => x.id === selId) || rivers.map((r) => r.item).find((x) => x.id === selId);
+    if (!it) return;
+    ptSet(it.lat, it.lon, 'luogo', { name: it.n, type: it.t });
+    $('miniCard').hidden = true; selId = null; refreshMarkerClasses();
+    setTab('punto');
+  });
   $('mcQui').addEventListener('click', () => { ptClear(); setFollow(true); updateMapCard(); });
 
   // Guarda: tocco sul paesaggio → punto sul terreno lungo la linea di sguardo (dal profilo del rilievo)
@@ -5398,8 +5411,8 @@ body.tabs .gacts { padding-bottom: 10px; }
     $('puSeg').hidden = !PT.cur;
     document.querySelectorAll('#puSeg button').forEach((b) => b.classList.toggle('on', b.dataset.pu === (p ? 'pt' : 'qui')));
     const com = p ? comOf(p) : comuneText();
-    setText('puTitle', p ? 'Punto scelto' : 'Qui');
-    setText('puSub', p ? com + ' · ' + ptWhere(p) + (p.src === 'guarda' ? ' · toccato nel paesaggio' : ' · scelto sulla mappa')
+    setText('puTitle', p ? (p.nm || 'Punto scelto') : 'Qui');
+    setText('puSub', p ? com + ' · ' + ptWhere(p) + ' · ' + srcText(p.src)
       : (S.lat === null ? 'in attesa del GPS' : com + ' · ' + fmtCoord(S.lat, S.lon)));
     const g = groundOf(p);
     const val = { cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo' };
@@ -5416,7 +5429,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     if (p) {
       const rows = [['Coordinate', fmtCoord(p.lat, p.lon)], ['Distanza', p.d === null ? '–' : fmtDist(p.d) + ', ' + dirText(p.b)],
         ['Quota terreno', g !== null ? '≈ ' + g + ' m s.l.m.' : 'non disponibile'], ['Comune', com], ['Catasto', catOf(p)],
-        ['Scelto', (p.src === 'guarda' ? 'toccando il paesaggio, ' : 'sulla mappa, ') + fmtWhen(p.t)]];
+        ['Scelto', srcText(p.src) + ', ' + fmtWhen(p.t)]];
       const dh = rows.map((r) => '<div class="kv"><span>' + r[0] + '</span><b>' + escHtml(r[1]) + '</b></div>').join('') +
         '<p class="hint">Il punto toccato nel paesaggio viene dal rilievo del terreno (celle di circa 30 m) e dalla bussola: è indicativo. Comune e particella non hanno valore di certificato (fanno fede CDU e visura).</p>';
       if ($('ptDet').innerHTML !== dh) $('ptDet').innerHTML = dh;
