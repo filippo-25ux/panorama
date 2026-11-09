@@ -912,6 +912,15 @@ body.hasmap .peek { padding-right: 100px; }
 #shotBar .gal { width: 62px; height: 62px; }
 #shotBar .shut { width: 78px; height: 78px; box-shadow: none; }
 #shotBar .shut .ring { fill: rgba(0, 0, 0, 0.28); }
+/* ===== v26: dati della foto in galleria ===== */
+#galInfo { padding: 6px 16px 0; font-size: 13px; line-height: 1.35; max-height: 46vh; overflow-y: auto; }
+.giSum { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 36px; padding: 0; border: 0; background: none; font: inherit; color: var(--tx); text-align: left; }
+.giSum span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.giSum i { flex: none; font-style: normal; color: var(--acc); }
+#galInfo h4 { margin: 10px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx2); }
+#galInfo dl { margin: 0; display: grid; grid-template-columns: 92px 1fr; column-gap: 12px; row-gap: 5px; padding: 8px 12px; border-radius: 12px; background: var(--sf); }
+#galInfo dt { color: var(--tx2); }
+#galInfo dd { margin: 0; color: var(--tx); font-variant-numeric: tabular-nums; }
 /* ===== v24: livello catasto sulla mappa grande (immagine WMS dell'Agenzia, senza server) ===== */
 #catImg { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0.9; mix-blend-mode: multiply; }
 #catBtn, #catHint { display: none; }
@@ -3898,7 +3907,8 @@ body.hasmap .peek { padding-right: 100px; }
   }
   function captionText(rec) {
     const m = rec.meta || {};
-    return [m.placeShort, fmtWhen(rec.time), m.heading !== null && m.heading !== undefined ? 'verso ' + dirText(m.heading) : ''].filter(Boolean).join(' · ');
+    const where = m.placeShort || (m.comune ? m.comune + (m.prov ? ' (' + m.prov + ')' : '') : '');
+    return [where, fmtWhen(rec.time), m.heading !== null && m.heading !== undefined ? 'verso ' + dirText(m.heading) : ''].filter(Boolean).join(' · ');
   }
   // Fascia in basso (solo nella foto condivisa con i nomi): luogo, data, direzione e fonti dei nomi
   function drawCaption(ctx, rec, W, H) {
@@ -3987,19 +3997,59 @@ body.hasmap .peek { padding-right: 100px; }
       box.appendChild(b);
     });
   }
-  function infoText(rec) {
+  // v26: dati della foto ordinati in due gruppi (Dove · Ripresa), una riga per voce
+  function infoRows(rec) {
     const m = rec.meta || {};
-    const parts = [];
-    if (m.place) parts.push(m.place);
-    if (m.comune) parts.push('Comune di ' + m.comune + (m.prov ? ' (' + m.prov + ')' : ''));
-    if (m.catasto) parts.push('catasto: foglio ' + m.catasto.f + ', particella ' + m.catasto.p + (m.catasto.edge ? ' (vicino al confine)' : ''));
-    if (m.alt !== null && m.alt !== undefined) parts.push('quota ' + Math.round(m.alt) + ' m');
-    if (m.lat !== null && m.lat !== undefined) parts.push(fmtCoord(m.lat, m.lon));
-    if (m.gpsAcc !== null && m.gpsAcc !== undefined) parts.push('GPS ±' + Math.round(m.gpsAcc) + ' m');
-    if (m.heading !== null && m.heading !== undefined) parts.push('direzione ' + dirText(m.heading) + (m.aligned ? ' (bussola allineata)' : ''));
-    if (m.lens) parts.push(LENS_NAME[m.lens] + (typeof m.zoom === 'string' && m.zoom !== 'T' ? ' ' + m.zoom : m.zoom && m.zoom !== 1 && m.zoom !== 'T' ? ' ' + zoomName(m.zoom) : ''));
-    return parts.join(' · ');
+    const has = (v) => v !== null && v !== undefined;
+    const dove = [], ripresa = [];
+    if (m.place) dove.push(['Luogo', m.place]);
+    if (m.comune) dove.push(['Comune', m.comune + (m.prov ? ' (' + m.prov + ')' : '')]);
+    if (m.catasto) dove.push(['Catasto', 'foglio ' + m.catasto.f + ', particella ' + m.catasto.p + (m.catasto.edge ? ' · vicino al confine' : '')]);
+    if (has(m.lat)) dove.push(['Coordinate', fmtCoord(m.lat, m.lon) + (has(m.gpsAcc) ? ' (±' + Math.round(m.gpsAcc) + ' m)' : '')]);
+    const q = [];
+    if (has(m.alt)) q.push(Math.round(m.alt) + ' m GPS');
+    if (has(m.ground)) q.push('terreno ≈ ' + m.ground + ' m');
+    if (q.length) dove.push(['Quota', q.join(' · ')]);
+    ripresa.push(['Data', fmtWhen(rec.time)]);
+    if (has(m.heading)) ripresa.push(['Direzione', dirText(m.heading) + (has(m.pitch) ? ', inclinazione ' + (Math.round(m.pitch) > 0 ? '+' : '') + Math.round(m.pitch) + '°' : '')]);
+    if (m.lens) ripresa.push(['Obiettivo', LENS_NAME[m.lens] + (typeof m.zoom === 'string' && m.zoom !== 'T' ? ' ' + m.zoom : m.zoom && m.zoom !== 1 && m.zoom !== 'T' ? ' ' + zoomName(m.zoom) : '')]);
+    if (has(m.heading)) ripresa.push(['Bussola', m.aligned ? 'allineata in questo punto' : 'non allineata']);
+    return { dove: dove, ripresa: ripresa };
   }
+  function infoText(rec) {   // testo semplice (copia e condivisione)
+    const r = infoRows(rec);
+    return r.dove.concat(r.ripresa).map((x) => x[0] + ': ' + x[1]).join('\n');
+  }
+  function showInfo(rec) {
+    const box = $('galInfo');
+    box.innerHTML = '';
+    if (!rec) return;
+    const r = infoRows(rec);
+    const sum = document.createElement('button');
+    sum.type = 'button'; sum.className = 'giSum';
+    sum.setAttribute('aria-expanded', String(galInfoOpen));
+    // riga breve: Comune e particella (la fascia sulla foto ha già luogo, data e direzione)
+    const m = rec.meta || {};
+    const short = m.comune ? [m.comune + (m.prov ? ' (' + m.prov + ')' : ''), m.catasto ? 'foglio ' + m.catasto.f + ', part. ' + m.catasto.p : ''].filter(Boolean).join(' · ')
+      : m.lat !== null && m.lat !== undefined ? fmtCoord(m.lat, m.lon) : '';
+    sum.innerHTML = '<span></span><i>' + (galInfoOpen ? 'Meno' : 'Dettagli') + ' ›</i>';
+    sum.firstChild.textContent = short || 'Dati della foto';
+    sum.addEventListener('click', () => { galInfoOpen = !galInfoOpen; galShow(); });   // ridisegna: la foto cambia misura
+    box.appendChild(sum);
+    if (!galInfoOpen) return;
+    for (const [title, rows] of [['Dove', r.dove], ['Ripresa', r.ripresa]]) {
+      if (!rows.length) continue;
+      const h = document.createElement('h4'); h.textContent = title; box.appendChild(h);
+      const dl = document.createElement('dl');
+      for (const [k, v] of rows) {
+        const dt = document.createElement('dt'); dt.textContent = k;
+        const dd = document.createElement('dd'); dd.textContent = v;
+        dl.appendChild(dt); dl.appendChild(dd);
+      }
+      box.appendChild(dl);
+    }
+  }
+  let galInfoOpen = false;
   function editKey(rec) { return rec.id + ':' + JSON.stringify(rec.edit || {}); }
   async function galShow() {
     const n = galList.length;
@@ -4018,7 +4068,7 @@ body.hasmap .peek { padding-right: 100px; }
       return;
     }
     const rec = galList[galIdx];
-    $('galInfo').textContent = infoText(rec);
+    showInfo(rec);
     $('galCap').textContent = '';
     const tok = ++galToken;
     try {

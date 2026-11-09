@@ -107,6 +107,10 @@ def main():
         R['gal_cap'] = page.inner_text('#galCap')
         R['gal_info'] = page.inner_text('#galInfo')
         page.screenshot(path=f'{OUT}/6-galleria.png')
+        page.click('#galInfo .giSum'); page.wait_for_timeout(400)   # v26: dettagli in due gruppi
+        R['gal_info_dettagli'] = page.inner_text('#galInfo')
+        page.screenshot(path=f'{OUT}/6b-galleria-dettagli.png')
+        page.click('#galInfo .giSum'); page.wait_for_timeout(300)
         page.locator('#galStrip button').nth(1).click(); page.wait_for_timeout(1000)
         R['gal_count_2'] = page.inner_text('#galCount')
         page.locator('#galStrip button').nth(0).click(); page.wait_for_timeout(1000)
