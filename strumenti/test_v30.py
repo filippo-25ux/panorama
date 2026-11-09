@@ -82,10 +82,18 @@ def main():
                     isp.append(u)
                     return r.fulfill(status=200, content_type='image/png', headers={'Access-Control-Allow-Origin': '*'}, body=PNG1)
                 res = []
-                if 'PAI_Frane' in u:
+                if 'PAI_Indicatori' in u:   # v36: indicatori del Comune
+                    res = [{'layerId': 0, 'value': 'Prova', 'attributes': {'comune': 'Prova', 'pop_res021': 21000, 'pop_fr_p4': 300, 'pop_fr_p3': 900, 'pop_fr_p2': 50, 'pop_fr_p1': 10}}]
+                elif 'Popolazione_rischio' in u:
+                    res = [{'layerId': 0, 'value': 'Prova', 'attributes': {'comune': 'Prova', 'pop_res011': 20500, 'pop_idr_p3': 40, 'pop_idr_p2': 120, 'pop_idr_p1': 400}}]
+                elif 'PAI_Frane' in u:
                     res = [{'layerId': 0, 'layerName': 'Aree_peric_frana_PAI_2025', 'value': 'P2', 'attributes': {'per_fr_ita': 'Pericolosità media P2'}}]
                 if 'iffi' in u:
-                    res = [{'layerId': 1, 'value': 'Scivolamento rotazionale', 'attributes': {}}, {'layerId': 1, 'value': 'Colamento lento', 'attributes': {}}]
+                    import urllib.parse as _up
+                    _g = json.loads(_up.parse_qs(_up.urlparse(u).query)['geometry'][0]); gx, gy = _g['x'], _g['y']
+                    res = [{'layerId': 1, 'value': '0640001', 'attributes': {'idfrana': '0640001', 'movimento': 'SCIVOLAMENTO ROTAZIONALE/TRASLATIVO', 'attivita': 'Attivo/riattivato/sospeso'}, 'geometry': {'x': gx + 0.0012, 'y': gy}},
+                           {'layerId': 1, 'value': '0640002', 'attributes': {'idfrana': '0640002', 'movimento': 'Colamento lento', 'attivita': 'Quiescente'}, 'geometry': {'x': gx, 'y': gy + 0.002}},
+                           {'layerId': 1, 'value': '0640002', 'attributes': {'idfrana': '0640002', 'movimento': 'Colamento lento', 'attivita': 'Quiescente'}, 'geometry': {'x': gx, 'y': gy + 0.002}}]
                 return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'results': res}))
             if 'interpreter' in u:
                 return r.fulfill(status=200, content_type='application/json', body='{"elements": []}', headers={'Access-Control-Allow-Origin': '*'})
@@ -173,6 +181,7 @@ def main():
         vt = page.inner_text('#puGrid .puTile[data-amb="vin"]')
         vb = page.inner_text('#vinBox')
         print('     tile:', repr(vt)); print('     vincoli:', vb.replace('\n', ' | ')[:240])
+        check('Scivolamento rotazionale' in vb and 'attivo' in vb and 'quiescente' in vb and '1.200 abitanti' in vb and ' m\n' in vb and '21.000 abitanti' in vb.lower(), 'v36: frane IFFI in dettaglio e indicatori del Comune')
         check('Frana P2' in vt and 'P2 · media' in vb and '2 entro circa 300 m' in vb and 'cosa comporta' in vb.lower(), 'Vincoli nel Luogo: frana P2, frane censite, sintesi')
         page.evaluate("document.getElementById('puVin').scrollIntoView()")
         page.screenshot(path=f'{OUT}/v35-vincoli.png')

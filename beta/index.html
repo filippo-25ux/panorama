@@ -5695,7 +5695,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     rows.push(['Frane censite (IFFI)', v.iffi === undefined ? 'non disponibile' : v.iffi.n ? v.iffi.n + ' entro circa 300 m' : 'nessuna entro circa 300 m', v.iffi && v.iffi.n ? 'warn' : '']);
     for (const f of (v.iffi && v.iffi.list) || []) {
       const t = [f.mov ? f.mov.charAt(0).toUpperCase() + f.mov.slice(1).toLowerCase() : 'Frana', f.att ? f.att.toLowerCase() : ''].filter(Boolean).join(' · ');
-      rows.push(['· ' + (f.d !== null ? fmtDist(f.d) : 'vicina'), t, 'sub']);
+      rows.push(['· ' + (f.d !== null ? 'a ' + fmtDist(f.d) : 'vicina'), t, 'sub']);
     }
     rows.push(['Paesaggio e altri vincoli', 'in arrivo', 'na']);
     let h = '<div class="vinRows">' + rows.map((r) => '<span>' + r[0] + '</span><b class="' + r[2] + '">' + escHtml(r[1]) + '</b>').join('') + '</div>';
@@ -5706,7 +5706,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     if (v.al && v.al.cls === 'P3') what.push('Alluvione P3: di norma vietate nuove costruzioni; ammessi interventi che non aumentano il rischio.');
     else if (v.al) what.push('Alluvione ' + v.al.cls + ': di norma interventi ammessi con studio di compatibilità idraulica.');
     if (v.ind) {
-      const n = (x) => (x === null || x === undefined ? '–' : Math.round(x).toLocaleString('it-IT'));
+      const n = (x) => (x === null || x === undefined ? '–' : String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'));
       const pc = (x) => (v.ind.pop && x !== null ? ' (' + (Math.round(x / v.ind.pop * 1000) / 10).toString().replace('.', ',') + '%)' : '');
       const ir = [];
       if (v.ind.fr34 !== null) ir.push(['In aree a frana P3–P4', n(v.ind.fr34) + ' abitanti' + pc(v.ind.fr34)]);
@@ -5718,7 +5718,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     }
     if (what.length) h += '<h4>Cosa comporta (in sintesi)</h4><p class="vinWhat">' + what.map(escHtml).join('<br>') + '</p>';
     h += '<div class="vinLinks"><button type="button" id="vinMap">Apri sulla mappa ›</button><a href="https://idrogeo.isprambiente.it/app/" target="_blank" rel="noopener">IdroGEO (ISPRA) ›</a></div>';
-    h += '<p class="hint">Mosaicatura nazionale ISPRA dei Piani di Assetto Idrogeologico (dati delle Autorità di bacino distrettuali, CC BY-SA 4.0). Indicativa: fanno fede il PAI vigente, le sue norme di attuazione e il CDU. Le classi e le regole cambiano da distretto a distretto.</p>';
+    h += '<p class="hint">Mosaicatura nazionale ISPRA dei Piani di Assetto Idrogeologico, inventario delle frane IFFI e indicatori di rischio ISPRA per Comune (dati delle Autorità di bacino distrettuali e delle Regioni, CC BY-SA 4.0). Indicativa: fanno fede il PAI vigente, le sue norme di attuazione e il CDU. Le classi e le regole cambiano da distretto a distretto.</p>';
     return h;
   }
   window.__panoVin = (lat, lon) => vinFor(lat, lon);
