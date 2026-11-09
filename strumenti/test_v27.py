@@ -29,6 +29,11 @@ RIVERS = {'elements': [
     {'type': 'way', 'id': 1, 'tags': {'waterway': 'river', 'name': 'Fiume Vicino'}, 'geometry': line(-2, -6, 6)},
     {'type': 'way', 'id': 2, 'tags': {'waterway': 'river', 'name': 'Fiume Nascosto'}, 'geometry': line(6, -2.5, 2.5)},
 ]}
+# v28: torrenti. «Torrente Lungo» 4 km da ovest a est, 1,5 km a sud (va mostrato); «Fosso Corto» 1 km, 1 km a sud (escluso: < 3 km)
+STREAMS = {'elements': [
+    {'type': 'way', 'id': 11, 'tags': {'waterway': 'stream', 'name': 'Torrente Lungo'}, 'geometry': line(-1.5, -2, 2)},
+    {'type': 'way', 'id': 12, 'tags': {'waterway': 'stream', 'name': 'Fosso Corto'}, 'geometry': line(-1, 0.3, 1.3, 10)},
+]}
 
 
 def serve():
@@ -58,6 +63,7 @@ def main():
         ctx.add_init_script(INIT)
         page = ctx.new_page()
         errs, asked = [], []
+        asked_s = []
         page.on('pageerror', lambda e: errs.append(str(e)))
         ML = os.path.join(NPM, 'node_modules/maplibre-gl/dist/') if NPM else ''
 
@@ -71,9 +77,11 @@ def main():
                                  headers={'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*'})
             if 'interpreter' in u:
                 q = urllib.parse.unquote(u)
-                body = RIVERS if 'waterway' in q else {'elements': []}
-                if 'waterway' in q:
+                body = RIVERS if '"waterway"="river"' in q else STREAMS if '"waterway"="stream"' in q else {'elements': []}
+                if '"waterway"="river"' in q:
                     asked.append(q)
+                if '"waterway"="stream"' in q:
+                    asked_s.append(q)
                 return r.fulfill(status=200, content_type='application/json', body=json.dumps(body),
                                  headers={'Access-Control-Allow-Origin': '*'})
             if 'maplibre-gl' in u and ML and os.path.isdir(ML):
@@ -140,6 +148,31 @@ def main():
         check(not any('Fiume' in t for t in sud3), 'senza rilievo: niente nomi dei fiumi sulla fotocamera')
         check('rilievo' in page.inner_text('#riverNote'), 'nel pannello: «sulla fotocamera serve il rilievo del terreno»')
         page.evaluate("document.querySelector('#more input[data-f=\"dem\"]').click()")
+        # v28: torrenti, spenti all'inizio
+        check(not asked_s, 'torrenti spenti all\'inizio: nessuna richiesta')
+        page.evaluate("document.querySelector('#more input[data-f=\"stream\"]').click()")
+        page.wait_for_timeout(1500)
+        check(len(asked_s) >= 1 and 'around:10000' in asked_s[0], 'acceso «Anche i torrenti»: richiesta entro 10 km')
+        rv = page.evaluate("window.__panoRivers().map(r => ({ n: r.n, s: !!r.s, vis: r.nVis }))")
+        print('     con torrenti:', rv)
+        names = {r['n']: r for r in rv}
+        check('Torrente Lungo' in names and names['Torrente Lungo']['s'], 'Torrente Lungo (4 km) presente')
+        check('Fosso Corto' not in names, 'Fosso Corto (1 km) escluso: troppo corto')
+        sud4 = look(180)
+        print('     sud con torrenti:', sud4)
+        check(any('Torrente Lungo' in t for t in sud4) and any('Fiume Vicino' in t for t in sud4), 'guardando a sud: fiume e torrente')
+        page.screenshot(path=f'{OUT}/v28-torrenti.png')
+        n_map3 = page.evaluate("window.__panoMap.getSource('rivers')._data.features.length")
+        check(n_map3 == 3, f'mappa: 2 fiumi + 1 torrente ({n_map3})')
+        page.click('#grab'); page.wait_for_timeout(700)
+        print('     pannello torrenti:', page.inner_text('#nStream'), '·', page.inner_text('#streamNote'))
+        page.evaluate("document.getElementById('streamNote').scrollIntoView()")
+        page.screenshot(path=f'{OUT}/v28-pannello.png')
+        page.click('#grab'); page.wait_for_timeout(500)
+        page.evaluate("document.querySelector('#more input[data-f=\"stream\"]').click()")
+        page.wait_for_timeout(300)
+        sud5 = look(180)
+        check(not any('Torrente' in t for t in sud5) and any('Fiume Vicino' in t for t in sud5), 'spento «Anche i torrenti»: resta solo il fiume')
         check(not errs, 'nessun errore JavaScript ' + ('' if not errs else str(errs[:2])))
         b.close()
     print('TUTTO OK' if ok else 'QUALCOSA NON VA')

@@ -12,5 +12,5 @@
 - `test_v17.py`, `test_v20.py`: correzioni della v17 (pannello, diagnosi, minimappa, animazione 8, avviso senza bussola) e risparmio di batteria della v20.
 - `test_v23.py` prova la veste grafica: tema chiaro/scuro automatico e manuale (resta salvato), pagina iniziale con «Beta v23», pagine «Come funziona» e Avvia dalla terza pagina; salva le schermate nei due temi:
   `python3 test_v23.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
-- `test_v27.py` prova i fiumi (v27) con lo stesso rilievo finto di `test_rilievo.py` e una risposta finta di OpenStreetMap: un fiume in pianura deve avere il nome dove lo sguardo lo incrocia, uno dietro la cresta no; tracciati sulla mappa, filtro «Fiumi», niente nomi senza rilievo:
+- `test_v27.py` prova i fiumi (v27) e i torrenti (v28: spenti all’inizio, solo con nome e lunghi almeno 3 km, entro 10 km) con lo stesso rilievo finto di `test_rilievo.py` e una risposta finta di OpenStreetMap: un fiume in pianura deve avere il nome dove lo sguardo lo incrocia, uno dietro la cresta no; tracciati sulla mappa, filtro «Fiumi», niente nomi senza rilievo:
   `python3 test_v27.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
