@@ -45,7 +45,7 @@ def main():
         ctx = b.new_context(viewport={'width': 402, 'height': 874}, device_scale_factor=2)
         ctx.add_init_script(INIT)
         page = ctx.new_page()
-        errs, tiles = [], []
+        errs, tiles, isp = [], [], []
         page.on('pageerror', lambda e: errs.append(str(e)))
         ML = os.path.join(NPM, 'node_modules/maplibre-gl/dist/') if NPM else ''
 
@@ -77,6 +77,16 @@ def main():
                     {'title': 'Castello di Prova', 'dist': 850.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Biblioteca civica di Prova', 'dist': 900.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Museo di Prova', 'dist': 950.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Chiesa di San Prova', 'dist': 1900.0, 'lat': 40.0, 'lon': 15.3}]}}))
             if 'wikidata.org' in u:
                 return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'claims': {'P856': [{'mainsnak': {'datavalue': {'value': 'https://www.comune.prova.it'}}}]}}))
+            if 'sinacloud.isprambiente.it' in u:   # v35: servizi ISPRA finti
+                if '/export' in u:
+                    isp.append(u)
+                    return r.fulfill(status=200, content_type='image/png', headers={'Access-Control-Allow-Origin': '*'}, body=PNG1)
+                res = []
+                if 'PAI_Frane' in u:
+                    res = [{'layerId': 0, 'layerName': 'Aree_peric_frana_PAI_2025', 'value': 'P2', 'attributes': {'per_fr_ita': 'Pericolosità media P2'}}]
+                if 'iffi' in u:
+                    res = [{'layerId': 1, 'value': 'Scivolamento rotazionale', 'attributes': {}}, {'layerId': 1, 'value': 'Colamento lento', 'attributes': {}}]
+                return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'results': res}))
             if 'interpreter' in u:
                 return r.fulfill(status=200, content_type='application/json', body='{"elements": []}', headers={'Access-Control-Allow-Origin': '*'})
             if 'maplibre-gl' in u and ML and os.path.isdir(ML):
@@ -139,7 +149,9 @@ def main():
         print('     scheda:', page.inner_text('#mcTitle'), '|', page.inner_text('#mcRows').replace('\n', ' '))
         check(page.inner_text('#mcTitle').startswith('Punto scelto'), 'toccando la mappa si sceglie un punto')
         check('foglio 42 · part. 123' in page.inner_text('#mcRows'), 'particella del punto scelto (risposta finta)')
-        check('in arrivo' in page.inner_text('#mcRows'), 'Vincoli e Urbanistica «in arrivo»')
+        page.wait_for_timeout(800)
+        check('Frana P2' in page.inner_text('#mcRows'), 'v35: Vincoli nella scheda della mappa: «Frana P2» (ISPRA finto)')
+        check('in arrivo' in page.inner_text('#mcRows'), 'Urbanistica «in arrivo»')
         page.screenshot(path=f'{OUT}/v30-mappa-punto.png')
         page.click('#mcGo'); page.wait_for_timeout(500)
         check(page.evaluate('window.__panoTab()') == 'punto' and page.locator('#punto').is_visible(), 'la freccia porta al Punto')
@@ -157,6 +169,18 @@ def main():
         page.screenshot(path=f'{OUT}/v31-catasto-tasselli.png')
         page.click('#catBtn'); page.wait_for_timeout(400)
         check(page.evaluate("window.__panoMap.getLayoutProperty('catT', 'visibility')") == 'none', 'tasto Catasto spegne i tasselli')
+        page.click('#tabs button[data-tab="punto"]'); page.wait_for_timeout(500)
+        vt = page.inner_text('#puGrid .puTile[data-amb="vin"]')
+        vb = page.inner_text('#vinBox')
+        print('     tile:', repr(vt)); print('     vincoli:', vb.replace('\n', ' | ')[:240])
+        check('Frana P2' in vt and 'P2 · media' in vb and '2 entro circa 300 m' in vb and 'cosa comporta' in vb.lower(), 'Vincoli nel Luogo: frana P2, frane censite, sintesi')
+        page.evaluate("document.getElementById('puVin').scrollIntoView()")
+        page.screenshot(path=f'{OUT}/v35-vincoli.png')
+        page.click('#vinMap'); page.wait_for_timeout(2500)
+        check(page.evaluate('window.__panoTab()') == 'mappa' and page.evaluate("window.__panoMap.getLayer('ly_fr') && window.__panoMap.getLayoutProperty('ly_fr', 'visibility')") == 'visible' and len(isp) > 0, f'«Apri sulla mappa»: frane e alluvioni accese ({len(isp)} tasselli ISPRA)')
+        page.screenshot(path=f'{OUT}/v35-mappa-frane.png')
+        page.click('#lyFr'); page.click('#lyAl'); page.wait_for_timeout(300)
+        check(page.evaluate("window.__panoMap.getLayoutProperty('ly_fr', 'visibility')") == 'none', 'tasto «Frane» spegne il livello')
         page.click('#tabs button[data-tab="punto"]'); page.wait_for_timeout(500)
         page.click('#puSeg button[data-pu="qui"]'); page.wait_for_timeout(400)
         check(page.inner_text('#puTitle') == 'Qui' and page.locator('#spot').is_visible(), '«Qui»: dati del punto di ripresa')

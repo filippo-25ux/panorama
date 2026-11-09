@@ -1185,6 +1185,32 @@ body.tabs .gacts { padding-bottom: 10px; }
 .stoNear span { flex: none; color: var(--tx2); font-variant-numeric: tabular-nums; }
 .stoNote { margin: 0; font-size: 14px; color: var(--tx2); }
 #puSto h3 { margin-top: 10px; }
+/* v35: livelli frane e alluvioni, vincoli nel Luogo */
+#lyBar { display: none; }
+#miniWrap.full #lyBar { display: flex; gap: 6px; position: absolute; left: 12px; right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 3; flex-wrap: wrap; pointer-events: none; }
+#miniWrap.full #lyBar button { pointer-events: auto; }
+#miniWrap.full #lyBar #catBtn { position: static; }
+#lyBar .lyB { height: 36px; padding: 0 14px; border: 0; border-radius: 18px; font: inherit; font-size: 14px; font-weight: 600; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); }
+#lyBar .lyB[aria-pressed="true"] { background: #d9480f; color: #fff; }
+#lyBar #lyAl[aria-pressed="true"] { background: #1c7ed6; }
+body[data-tab="mappa"] #miniWrap.full #miniCenter { top: calc(58px + env(safe-area-inset-top, 0px)); left: 12px; transform: none; }
+body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(66px + env(safe-area-inset-top, 0px)); font-size: 10.5px; }
+body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
+body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(150px + env(safe-area-inset-top, 0px)); }
+#lyNote { display: none; }
+body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; position: absolute; left: 12px; right: 12px; bottom: 200px; z-index: 3; padding: 6px 10px; border-radius: 10px; font-size: 11.5px; line-height: 1.35; color: var(--tx); background: var(--glass-card); box-shadow: var(--card-shadow); }
+.puTile.warn span { color: #d9480f; font-weight: 600; }
+#mcRows b.warn, #ptRows b.warn { color: #d9480f; }
+#vinBox { padding: 14px; border-radius: 16px; background: var(--sf); }
+.vinRows { display: grid; grid-template-columns: 46% 1fr; column-gap: 12px; row-gap: 8px; font-size: 14px; }
+.vinRows span { color: var(--tx2); }
+.vinRows b { text-align: right; font-weight: 600; }
+.vinRows b.warn { color: #d9480f; }
+.vinRows b.na { color: var(--tx3); font-weight: 500; }
+#vinBox h4 { margin: 14px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx2); }
+.vinWhat { margin: 0; font-size: 14px; line-height: 1.45; }
+.vinLinks { display: flex; gap: 16px; margin-top: 10px; }
+.vinLinks a, .vinLinks button { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--acc); text-decoration: none; }
 </style>
 <script>
 /* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
@@ -1245,7 +1271,7 @@ body.tabs .gacts { padding-bottom: 10px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v34 · storia più ricca</span>
+          <span class="ver">Beta v35 · frane e alluvioni</span>
         </div>
       </div>
     </section>
@@ -1314,7 +1340,8 @@ body.tabs .gacts { padding-bottom: 10px; }
     <div id="sunLegend"><div><i class="r"></i>Alba</div><div><i class="s"></i>Tramonto</div><div><i class="w"></i>Percorso del sole nel giorno</div></div>
     <button id="miniExpand" type="button" aria-label="Ingrandisci o riduci la mappa">⤢</button>
     <button id="miniCenter" type="button" hidden>Ricentra</button>
-    <button id="catBtn" type="button" aria-pressed="false">Catasto</button>
+    <div id="lyBar"><button id="catBtn" type="button" aria-pressed="false">Catasto</button><button class="lyB" id="lyFr" type="button" aria-pressed="false">Frane</button><button class="lyB" id="lyAl" type="button" aria-pressed="false">Alluvioni</button></div>
+    <div id="lyNote" hidden></div>
     <div id="catHint" hidden></div>
     <div id="catNote" hidden>Catasto indicativo: può essere spostato di alcuni metri rispetto alla mappa. Il cerchio azzurro è l’errore del GPS.</div>
     <div id="mapCard" hidden>
@@ -1498,6 +1525,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     <p id="puSub"></p>
     <div class="seg" id="puSeg" hidden><button type="button" data-pu="qui">Qui</button><button type="button" data-pu="pt">Punto scelto</button></div>
     <div class="puGrid" id="puGrid"></div>
+    <div id="puVin" hidden><h3>Vincoli</h3><div id="vinBox"></div></div>
     <div id="puSto" hidden><h3>Storia e cultura</h3><div id="stoBox"></div></div>
     <button type="button" id="puSheet" disabled>Crea la scheda del luogo<em>in arrivo</em></button>
     <h3>Dettagli</h3>
@@ -1735,12 +1763,13 @@ body.tabs .gacts { padding-bottom: 10px; }
       if (s.ridge === false) S.ridge = false;
       if (s.autoSun === false) S.autoSun = false;
       if (s.catLayer === true) S.catLayer = true;
+      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; F.river = s.f.river !== false; F.stream = s.f.stream === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, v22: true, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, v22: true, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -2990,7 +3019,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     }
     if (!v) { $('miniCard').hidden = true; selId = null; refreshMarkerClasses(); }
     setFollow(true);
-    requestAnimationFrame(() => { if (map) { map.resize(); updateMap(); catUpdate(); } });
+    requestAnimationFrame(() => { if (map) { map.resize(); updateMap(); catUpdate(); lyUpdate(); } });
   }
 
   function selectItem(it) {
@@ -5331,7 +5360,8 @@ body.tabs .gacts { padding-bottom: 10px; }
     return g === null || g === undefined ? null : Math.round(g);
   }
   function rowsHtml(p) {
-    const r = [['Catasto', p ? catOf(p) : catShort(), ''], ['Vincoli', 'in arrivo', 'na'], ['Urbanistica', 'in arrivo', 'na']];
+    const v = p ? vinFor(p.lat, p.lon) : (S.lat !== null ? vinFor(S.lat, S.lon) : null);
+    const r = [['Catasto', p ? catOf(p) : catShort(), ''], ['Vincoli', vinShort(v), vinWarn(v) ? 'warn' : ''], ['Urbanistica', 'in arrivo', 'na']];
     return r.map((x) => '<span>' + x[0] + '</span><b class="' + x[2] + '">' + escHtml(x[1]) + '</b>').join('');
   }
   function escHtml(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -5406,6 +5436,11 @@ body.tabs .gacts { padding-bottom: 10px; }
     } else m.hidden = true;
     $('ptRows').hidden = !on;
     $('here').hidden = on;
+  }
+  function ptRefreshRows() {
+    const p = PT.cur;
+    const html = p ? rowsHtml(p) + '<button type="button" id="ptOpen">Apri il luogo ›</button>' : '';
+    if ($('ptRows').dataset.h !== html) { $('ptRows').innerHTML = html; $('ptRows').dataset.h = html; }
   }
   function ptRefresh() {
     const p = PT.cur;
@@ -5518,6 +5553,130 @@ body.tabs .gacts { padding-bottom: 10px; }
     if ($('stoBox').dataset.h !== h) { $('stoBox').innerHTML = h; $('stoBox').dataset.h = h; }
   }
   window.__panoSto = () => STO;
+
+  /* ---------- v35: Vincoli · frane e alluvioni (ISPRA, mosaicatura nazionale dei PAI; inventario IFFI) ----------
+     Servizi ArcGIS di ISPRA in Web Mercator: la mappa li carica a tasselli; nel punto si chiede la classe con «identify».
+     Dati: ISPRA (CC BY-SA 4.0), dalle Autorità di bacino distrettuali. Indicativi: fanno fede il PAI vigente e le sue norme. */
+  const ISPRA = 'https://sinacloud.isprambiente.it/arcgisina/rest/services/';
+  const IDRO = {
+    fr: { svc: 'PAI_Frane/Aree_pericolosita_frana_PAI', name: 'Frane (PAI)' },
+    al: { svc: 'Alluvioni/Aree_pericolosita_idraulica_', name: 'Alluvioni (PAI)' },
+    iffi: { svc: 'iffi/Progetto_IFFI_WMS_public', name: 'Frane censite (IFFI)' }
+  };
+  function idroTiles(k) {
+    return ISPRA + IDRO[k].svc + '/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&dpi=96&f=image';
+  }
+  let lyErr = 0;
+  function lyUpdate() {
+    $('lyFr').setAttribute('aria-pressed', String(!!S.lyFr));
+    $('lyAl').setAttribute('aria-pressed', String(!!S.lyAl));
+    if (!mapReady) return;
+    for (const [k, on] of [['fr', S.lyFr && full], ['al', S.lyAl && full]]) {
+      const id = 'ly_' + k;
+      if (on && !map.getSource(id)) {
+        map.addSource(id, { type: 'raster', tiles: [idroTiles(k)], tileSize: 256, minzoom: 9, maxzoom: 18 });
+        map.addLayer({ id: id, type: 'raster', source: id, minzoom: 9, paint: { 'raster-opacity': 0.62, 'raster-fade-duration': 150 } }, map.getLayer('catT') ? 'catT' : 'rivers');
+      }
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none');
+    }
+    const any = (S.lyFr || S.lyAl) && full;
+    $('lyNote').hidden = !any;
+    if (any) setText('lyNote', (map.getZoom() < 9 ? 'Avvicina la mappa per vedere frane e alluvioni. ' : '') +
+      (lyErr > 3 ? 'Il servizio ISPRA non risponde ora. ' : '') + 'PAI (ISPRA): indicativo, fanno fede il piano e le sue norme.');
+  }
+  $('lyFr').addEventListener('click', (e) => { e.stopPropagation(); S.lyFr = !S.lyFr; saveSettings(); lyUpdate(); });
+  $('lyAl').addEventListener('click', (e) => { e.stopPropagation(); S.lyAl = !S.lyAl; saveSettings(); lyUpdate(); });
+  setInterval(() => { if (tabNow() === 'mappa') lyUpdate(); }, 1500);
+
+  // Classe di pericolosità nel punto: si cerca «P1…P4» o «AA» (aree di attenzione) nella risposta del servizio
+  const PCLS = { P4: 'molto elevata', P3: 'elevata', P2: 'media', P1: 'moderata', AA: 'area di attenzione' };
+  const ACLS = { P3: 'elevata (alluvioni frequenti)', P2: 'media (alluvioni poco frequenti)', P1: 'bassa (scenario raro)' };
+  function findCls(res) {
+    for (const r of res || []) {
+      const vals = [r.value].concat(Object.values(r.attributes || {})).map((v) => String(v == null ? '' : v));
+      for (const v of vals) {
+        const m = /\b(P\s?[1-4]|AA)\b/i.exec(v);
+        if (m) return { cls: m[1].replace(/\s/g, '').toUpperCase(), raw: v };
+      }
+      for (const v of vals) {
+        if (/molto elevata/i.test(v)) return { cls: 'P4', raw: v };
+        if (/elevata/i.test(v)) return { cls: 'P3', raw: v };
+        if (/media/i.test(v)) return { cls: 'P2', raw: v };
+        if (/moderata|bassa/i.test(v)) return { cls: 'P1', raw: v };
+        if (/attenzione/i.test(v)) return { cls: 'AA', raw: v };
+      }
+    }
+    return null;
+  }
+  async function idroIdentify(k, lat, lon, tolPx) {
+    const d = 0.01;
+    const q = 'geometry=' + encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } })) +
+      '&geometryType=esriGeometryPoint&sr=4326&layers=all&tolerance=' + (tolPx || 1) +
+      '&mapExtent=' + [lon - d, lat - d, lon + d, lat + d].join(',') + '&imageDisplay=400,400,96&returnGeometry=false&f=json';
+    const j = await wjson(ISPRA + IDRO[k].svc + '/MapServer/identify?' + q, 12000);
+    if (j && j.error) throw new Error(j.error.message || 'errore');
+    return (j && j.results) || [];
+  }
+  const VIN = { cache: new Map() };
+  function vinKey(lat, lon) { return lat.toFixed(4) + ',' + lon.toFixed(4); }
+  function vinFor(lat, lon) {
+    if (lat === null || lat === undefined) return null;
+    const key = vinKey(lat, lon);
+    let v = VIN.cache.get(key);
+    if (v && !(v.state === 'err' && Date.now() - v.t > 60000)) return v;
+    v = { state: 'loading', t: Date.now(), fr: null, al: null, iffi: null };
+    VIN.cache.set(key, v);
+    if (VIN.cache.size > 60) VIN.cache.delete(VIN.cache.keys().next().value);
+    vinFetch(v, lat, lon);
+    return v;
+  }
+  async function vinFetch(v, lat, lon) {
+    if (!navigator.onLine) { v.state = 'err'; v.err = 'serve la rete'; vinRefresh(); return; }
+    // tolleranza IFFI: circa 300 m (estensione di 0,02° su 400 pixel → ~5 m per pixel)
+    const [fr, al, iffi] = await Promise.all([
+      idroIdentify('fr', lat, lon, 1).catch(() => null),
+      idroIdentify('al', lat, lon, 1).catch(() => null),
+      idroIdentify('iffi', lat, lon, 60).catch(() => null)]);
+    if (fr === null && al === null) { v.state = 'err'; v.err = 'il servizio ISPRA non risponde ora'; vinRefresh(); return; }
+    v.fr = fr === null ? undefined : findCls(fr);
+    v.al = al === null ? undefined : findCls(al);
+    v.iffi = iffi === null ? undefined : { n: iffi.length, first: iffi[0] ? String(iffi[0].value || iffi[0].layerName || '') : '' };
+    v.state = 'ok';
+    vinRefresh();
+  }
+  function vinRefresh() { updateMapCard(); ptRefreshRows(); if (tabNow() === 'punto') renderPunto(); }
+  function vinShort(v) {
+    if (!v) return 'in attesa del punto';
+    if (v.state === 'loading') return 'in caricamento…';
+    if (v.state === 'err') return v.err;
+    const a = [];
+    if (v.fr) a.push('Frana ' + v.fr.cls);
+    if (v.al) a.push('Alluvione ' + v.al.cls);
+    return a.length ? a.join(' · ') : 'nessuna area PAI';
+  }
+  function vinWarn(v) { return !!(v && v.state === 'ok' && (v.fr || v.al)); }
+  function vinHtml(v, lat, lon) {
+    if (!v || v.state === 'loading') return '<p class="stoNote">Chiedo a ISPRA…</p>';
+    if (v.state === 'err') return '<p class="stoNote">' + escHtml(v.err) + '.</p>';
+    const rows = [];
+    rows.push(['Frana (PAI)', v.fr === undefined ? 'non disponibile' : v.fr ? v.fr.cls + ' · ' + (PCLS[v.fr.cls] || v.fr.raw) : 'fuori dalle aree a pericolosità', v.fr ? 'warn' : '']);
+    rows.push(['Alluvione (PAI)', v.al === undefined ? 'non disponibile' : v.al ? v.al.cls + ' · ' + (ACLS[v.al.cls] || v.al.raw) : 'fuori dalle aree a pericolosità', v.al ? 'warn' : '']);
+    rows.push(['Frane censite (IFFI)', v.iffi === undefined ? 'non disponibile' : v.iffi.n ? v.iffi.n + ' entro circa 300 m' : 'nessuna entro circa 300 m', v.iffi && v.iffi.n ? 'warn' : '']);
+    rows.push(['Paesaggio e altri vincoli', 'in arrivo', 'na']);
+    let h = '<div class="vinRows">' + rows.map((r) => '<span>' + r[0] + '</span><b class="' + r[2] + '">' + escHtml(r[1]) + '</b>').join('') + '</div>';
+    const what = [];
+    if (v.fr && (v.fr.cls === 'P4' || v.fr.cls === 'P3')) what.push('Frana ' + v.fr.cls + ': di norma nuove costruzioni e ampliamenti non sono ammessi o lo sono solo in casi limitati; manutenzioni e messa in sicurezza sì.');
+    else if (v.fr && (v.fr.cls === 'P2' || v.fr.cls === 'P1')) what.push('Frana ' + v.fr.cls + ': di norma gli interventi sono ammessi con uno studio di compatibilità geologica.');
+    else if (v.fr && v.fr.cls === 'AA') what.push('Area di attenzione: serve un approfondimento geologico prima di intervenire.');
+    if (v.al && v.al.cls === 'P3') what.push('Alluvione P3: di norma vietate nuove costruzioni; ammessi interventi che non aumentano il rischio.');
+    else if (v.al) what.push('Alluvione ' + v.al.cls + ': di norma interventi ammessi con studio di compatibilità idraulica.');
+    if (what.length) h += '<h4>Cosa comporta (in sintesi)</h4><p class="vinWhat">' + what.map(escHtml).join('<br>') + '</p>';
+    h += '<div class="vinLinks"><button type="button" id="vinMap">Apri sulla mappa ›</button><a href="https://idrogeo.isprambiente.it/app/" target="_blank" rel="noopener">IdroGEO (ISPRA) ›</a></div>';
+    h += '<p class="hint">Mosaicatura nazionale ISPRA dei Piani di Assetto Idrogeologico (dati delle Autorità di bacino distrettuali, CC BY-SA 4.0). Indicativa: fanno fede il PAI vigente, le sue norme di attuazione e il CDU. Le classi e le regole cambiano da distretto a distretto.</p>';
+    return h;
+  }
+  window.__panoVin = (lat, lon) => vinFor(lat, lon);
+
   (function movePunto() { $('puDet').appendChild($('spot')); })();
   function renderPunto() {
     const p = PU.view === 'pt' ? PT.cur : null;
@@ -5530,10 +5689,15 @@ body.tabs .gacts { padding-bottom: 10px; }
     const g = groundOf(p);
     stoFetch();
     renderSto();
-    const val = { cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo', sto: stoTile() };
+    const tgt = p ? { lat: p.lat, lon: p.lon } : { lat: S.lat, lon: S.lon };
+    const vin = tgt.lat !== null ? vinFor(tgt.lat, tgt.lon) : null;
+    $('puVin').hidden = tgt.lat === null;
+    const vh = vinHtml(vin, tgt.lat, tgt.lon);
+    if ($('vinBox').dataset.h !== vh) { $('vinBox').innerHTML = vh; $('vinBox').dataset.h = vh; }
+    const val = { vin: vinShort(vin), cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo', sto: stoTile() };
     const html = AMB.map((a) => {
       const v = val[a[0]] || 'in arrivo', soon = !val[a[0]];
-      return '<button type="button" class="puTile' + (soon ? ' na' : '') + '" data-amb="' + a[0] + '" style="--c:' + a[2] + '"><b>' + a[1] + '</b><span>' + escHtml(v) + '</span></button>';
+      return '<button type="button" class="puTile' + (soon ? ' na' : '') + (a[0] === 'vin' && vinWarn(vin) ? ' warn' : '') + '" data-amb="' + a[0] + '" style="--c:' + a[2] + '"><b>' + a[1] + '</b><span>' + escHtml(v) + '</span></button>';
     }).join('');
     if ($('puGrid').innerHTML !== html) $('puGrid').innerHTML = html;
     $('puHistWrap').hidden = !HIST.length && HU.st !== 2;
@@ -5551,6 +5715,16 @@ body.tabs .gacts { padding-bottom: 10px; }
     } else updateSpot(S.heading === null ? null : trueHeading(), S.pitch === null ? null : S.pitch + S.pitchOff);
   }
   setInterval(() => { if (tabNow() === 'punto') renderPunto(); }, 1000);
+  // «Apri sulla mappa» dai vincoli: Mappa vicina con frane e alluvioni accese
+  $('vinBox').addEventListener('click', (e) => {
+    if (!e.target.closest('#vinMap')) return;
+    const p = PU.view === 'pt' ? PT.cur : null;
+    const lat = p ? p.lat : S.lat, lon = p ? p.lon : S.lon;
+    if (lat === null || !mapReady) return;
+    S.lyFr = true; S.lyAl = true; saveSettings();
+    setTab('mappa'); if (!full) setFull(true); setFollow(false);
+    requestAnimationFrame(() => { if (map) { map.jumpTo({ center: [lon, lat], zoom: 15, bearing: 0 }); lyUpdate(); } });
+  });
   $('puHist').addEventListener('click', (e) => {
     const b = e.target.closest('.phRow');
     if (!b) return;
@@ -5584,6 +5758,7 @@ body.tabs .gacts { padding-bottom: 10px; }
     const p = PU.view === 'pt' ? PT.cur : null;
     if (b.dataset.amb === 'cat') { if (p) openCatMap(p.lat, p.lon); else if (S.lat !== null) openCatMap(S.lat, S.lon); return; }
     if (b.dataset.amb === 'sto') { $('puSto').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (b.dataset.amb === 'vin') { $('puVin').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     toast(b.querySelector('b').textContent + ': in arrivo nelle prossime versioni.', 2500);
   });
 
