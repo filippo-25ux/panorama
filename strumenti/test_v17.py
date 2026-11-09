@@ -58,7 +58,7 @@ def main():
                     return r.fulfill(path=ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js'))
                 return r.abort()
             page.route('**/*', route)
-            page.goto('http://127.0.0.1:8769/beta/index.html')
+            page.goto('http://127.0.0.1:8769/beta/index.html?tab=guarda')
             page.click('#go')
             page.wait_for_timeout(4500)
             if noComp:

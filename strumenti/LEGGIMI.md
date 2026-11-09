@@ -16,3 +16,6 @@
   `python3 test_v27.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
 - `test_v29.py` prova le creste a tre livelli (v29) con il rilievo finto di `test_rilievo.py`: la cresta a 4 km e la vetta a 10 km che sporge hanno ciascuna la sua distanza scritta; in pianura nessuna linea inventata; spegnendo la linea spariscono anche le distanze:
   `python3 test_v29.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
+- `test_v30.py` prova la nuova struttura (v30): si apre sulla Mappa, punto scelto toccando la mappa, Punto con i sei ambiti, Guarda con Bussola · logo · Scatta e suggerimento di 5 s, tocco sul paesaggio (punto sul terreno), mappa che si allarga nella scheda, Archivio, fotocamera spenta fuori da Guarda dopo 15 s:
+  `python3 test_v30.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
+- Dalla v30 gli altri test aprono la beta con `?tab=guarda` (si parte direttamente dalla fotocamera).

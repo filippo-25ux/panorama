@@ -68,7 +68,7 @@ def main():
                     return r.fulfill(path=ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js'))
                 return r.abort()
             page.route('**/*', route)
-            page.goto(f'http://127.0.0.1:{PORT}/beta/index.html')
+            page.goto(f'http://127.0.0.1:{PORT}/beta/index.html?tab=guarda')
             return ctx, page, errs
 
         theme = lambda page: page.evaluate("document.documentElement.dataset.theme")
@@ -83,7 +83,7 @@ def main():
             tr = page.evaluate("document.querySelector('#start .lg-sun').getAttribute('transform')")
             check(tr == 'translate(0 0.0)', 'il punto del logo è sorto alla fine')
             page.screenshot(path=f'{OUT}/v23-{scheme}-avvio.png')
-            check(page.locator('.ver').inner_text().startswith('Beta v2'), f'tema {scheme}: pagina iniziale con «Beta v2x»')
+            check(page.locator('.ver').inner_text().startswith('Beta v'), f'tema {scheme}: pagina iniziale con «Beta v…»')
             if scheme == 'light':
                 page.click('#obHow'); page.wait_for_timeout(900)
                 page.screenshot(path=f'{OUT}/v23-come-1.png')
@@ -103,6 +103,7 @@ def main():
             page.screenshot(path=f'{OUT}/v23-{scheme}-esplora.png')
             page.click('.peek'); page.wait_for_timeout(2500)
             check(page.locator('#sheet').get_attribute('class').find('open') >= 0, f'tema {scheme}: toccando la scheda si apre il pannello')
+            page.click('#tabs button[data-tab="punto"]'); page.wait_for_timeout(800)   # v30: i dati del punto di ripresa sono nel Punto
             com = page.inner_text('#spCom'); cat = page.inner_text('#spCat')
             print('     Comune: ' + com + ' · Catasto: ' + cat)
             check(com.startswith('Ariano Irpino'), f'tema {scheme}: Comune del punto di ripresa = Ariano Irpino (AV)')
@@ -121,8 +122,9 @@ def main():
                 check(page.evaluate("window.__panoMap.getSource('acc')._data.geometry.coordinates[0].length") > 60, 'cerchio di precisione del GPS sulla mappa')
                 page.click('#catBtn'); page.wait_for_timeout(300)
                 check(page.evaluate("getComputedStyle(document.getElementById('catImg')).display") == 'none', 'tasto «Catasto» spegne il livello')
-                page.click('#miniExpand'); page.wait_for_timeout(500)
-                page.click('.peek'); page.wait_for_timeout(500)
+                page.click('#tabs button[data-tab="punto"]'); page.wait_for_timeout(300)
+            page.click('#tabs button[data-tab="guarda"]'); page.wait_for_timeout(500)
+            page.click('.peek'); page.wait_for_timeout(800)
             page.evaluate("document.getElementById('segT').scrollIntoView()")
             page.wait_for_timeout(300)
             page.screenshot(path=f'{OUT}/v23-{scheme}-pannello-aspetto.png')

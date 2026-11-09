@@ -125,7 +125,7 @@ def main():
         page.route('**/*', route)
         page.route('**/beta/peaks-it.json', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(PEAKS)))
         page.route('**/places-it.json', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(TOWNS)))
-        page.goto('http://127.0.0.1:8766/beta/index.html')
+        page.goto('http://127.0.0.1:8766/beta/index.html?tab=guarda')
         page.evaluate('window.__setOrient(0, 90)')
         page.click('#go')
         page.wait_for_timeout(2500)

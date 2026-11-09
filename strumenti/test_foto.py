@@ -57,7 +57,7 @@ def main():
                 return r.fulfill(path=ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js'))
             return r.abort()
         page.route('**/*', route)
-        page.goto('http://127.0.0.1:8766/beta/index.html')
+        page.goto('http://127.0.0.1:8766/beta/index.html?tab=guarda')
         page.evaluate('window.__setOrient(300, 90)')
         page.click('#go')
         page.wait_for_timeout(3000)
@@ -151,7 +151,7 @@ def main():
         page.wait_for_timeout(400)
         page.screenshot(path=f'{OUT}/11-modifica-nomi.png')
         page.click('#edCancel'); page.wait_for_timeout(300)
-        page.click('#galBack'); page.wait_for_timeout(300)
+        page.click('#tabs button[data-tab="guarda"]'); page.wait_for_timeout(300)
         R['errori'] = errs
         b.close()
     print(json.dumps(R, indent=1, ensure_ascii=False))

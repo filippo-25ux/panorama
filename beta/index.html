@@ -1038,6 +1038,121 @@ body.hasmap .peek { padding-right: 100px; }
 #miniWrap.full #miniExpand { width: 44px; height: 44px; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); font-weight: 500; }
 #miniWrap.full #miniCenter { background: var(--glass-card); color: var(--tx); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); border-radius: 14px; }
 .ov { background: rgba(0, 0, 0, 0.28); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* ===== v30 – nuova struttura: Mappa · Guarda · Punto · Archivio ===== */
+:root { --tabh: calc(56px + env(safe-area-inset-bottom, 0px)); }
+#tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex;
+  padding: 4px 6px env(safe-area-inset-bottom, 0px); min-height: var(--tabh); box-sizing: border-box;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: inset 0 0.5px 0 var(--line);
+}
+#tabs[hidden] { display: none; }
+#tabs button {
+  flex: 1; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border: 0; background: none; font: inherit; font-size: 10.5px; font-weight: 600; letter-spacing: 0.01em; color: var(--tx2);
+}
+#tabs button[aria-selected="true"] { color: var(--acc); }
+body.shooting #tabs, body.aligning #tabs { display: none; }
+#edit { z-index: 40; }
+/* le sezioni che non sono Guarda coprono la fotocamera */
+body[data-tab]:not([data-tab="guarda"]) #sheet, body[data-tab]:not([data-tab="guarda"]) #filters,
+body[data-tab]:not([data-tab="guarda"]) #zoom, body[data-tab]:not([data-tab="guarda"]) #tapHint,
+body[data-tab]:not([data-tab="guarda"]) #ptMark, body[data-tab]:not([data-tab="guarda"]) #pauseNote { display: none !important; }
+body[data-tab]:not([data-tab="guarda"]) #miniWrap:not(.full) { visibility: hidden; pointer-events: none; }
+/* Guarda: la scheda sta sopra la barra delle sezioni */
+body.tabs .panel { bottom: calc(var(--tabh) + 10px); padding: 0 20px 20px; }
+body.tabs .panel.open { bottom: var(--tabh); height: auto; max-height: none; top: 0; padding-bottom: 14px; }
+body.tabs.shooting .panel { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+.panel .bar { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding: 0; border-top: 0; }
+.panel .bar .brand { margin: 0; flex: none; }
+.panel.open .bar .brand { display: flex; }
+.panel .bar .comp, .shotPill { width: 118px; height: 40px; padding: 0 12px; border: 0; border-radius: 20px; box-sizing: border-box; font: inherit; font-size: 14px; font-weight: 500; color: var(--tx); background: var(--fill); display: flex; align-items: center; gap: 6px; }
+.panel .bar .comp span, .shotPill span { flex: 1; text-align: center; }
+.panel .bar .comp svg, .shotPill svg { flex: none; width: 20px; height: 20px; color: var(--tx); }
+.shotPill:active { background: var(--fill2); }
+body.hasmap .peek { padding-right: 104px; }
+#miniWrap:not(.full):not(.insheet) { right: 30px; }
+/* il tondo della mappa si allarga dentro la scheda (segue lo sguardo) */
+#miniWrap.insheet { right: auto; z-index: 5; }
+#miniWrap.insheet #mini { border-radius: 26px; }
+#miniWrap.insheet #miniExpand { display: block; top: 10px; right: 10px; bottom: auto; width: 34px; height: 34px; font-size: 15px; color: var(--tx); background: var(--glass-card); box-shadow: var(--card-shadow); }
+#inSheetLbl { display: none; }
+#miniWrap.insheet #inSheetLbl:not([hidden]) { display: block; position: absolute; left: 12px; top: 12px; z-index: 3; padding: 5px 11px; border-radius: 14px; font-size: 12px; font-weight: 600; color: var(--tx); background: var(--glass-card); box-shadow: var(--card-shadow); }
+/* suggerimento sopra la scheda: discreto, sparisce dopo 5 secondi */
+#tapHint { position: absolute; left: 0; right: 0; text-align: center; font-size: 13.5px; font-weight: 500; color: #fff; text-shadow: 0 0 3px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.3); pointer-events: none; transition: opacity 0.6s; }
+#tapHint.off { opacity: 0; }
+#tapLayer { position: absolute; inset: 0; pointer-events: auto; }
+/* punto toccato nel paesaggio */
+#ptMark { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; box-shadow: inset 0 0 0 2px #fff, 0 0 0 0.5px rgba(0, 0, 0, 0.3); pointer-events: none; }
+#ptMark::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; }
+#ptRows { margin-top: 8px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 3px; font-size: 13px; }
+#ptRows span { color: var(--tx2); }
+#ptRows b { font-weight: 600; color: var(--tx); text-align: right; font-variant-numeric: tabular-nums; }
+#ptRows b.na { color: var(--tx3); font-weight: 500; }
+#ptRows b.warn { color: #d9480f; }
+#ptRows a, #ptRows button { grid-column: 1 / -1; justify-self: end; margin-top: 2px; padding: 0; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 600; color: var(--acc); }
+/* Mappa: a tutto schermo sopra la barra delle sezioni */
+body[data-tab="mappa"] #miniWrap.full { bottom: var(--tabh); }
+body[data-tab="mappa"] #miniWrap.full #miniExpand { display: none; }
+body[data-tab="mappa"] #miniWrap.full #miniAttr { bottom: auto; top: calc(14px + env(safe-area-inset-top, 0px)); right: 10px; }
+body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { bottom: auto; top: calc(56px + env(safe-area-inset-top, 0px)); }
+body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
+body[data-tab="mappa"] #miniCard { bottom: 10px; }
+#mapCard { display: none; }
+body[data-tab="mappa"] #miniWrap.full #mapCard:not([hidden]) {
+  display: block; position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 4; padding: 16px 20px 0; border-radius: 26px;
+  color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); box-shadow: var(--card-shadow);
+}
+#mcGo { display: flex; width: 100%; align-items: center; gap: 10px; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
+.mcHead { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#mcTitle { font-size: 18px; font-weight: 700; letter-spacing: -0.015em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mcSub { font-size: 12px; color: var(--tx2); }
+#mcGo i { flex: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 22px; font-weight: 400; background: var(--fill); color: var(--tx); }
+.mcRows { margin-top: 10px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; row-gap: 4px; font-size: 13px; }
+.mcRows span { color: var(--tx2); }
+.mcRows b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mcRows b.na { color: var(--tx3); font-weight: 500; }
+.mcFoot { display: flex; align-items: center; justify-content: space-between; height: 46px; }
+.mcFoot .mcLogo, .puBrand { color: var(--tx); opacity: 0.88; display: flex; justify-content: center; }
+.mcFoot .mcLogo .lgS, .puBrand .lgS { height: 18px; width: 58.4px; }
+#mcQui { min-width: 70px; height: 30px; padding: 0 12px; border: 0; border-radius: 15px; font: inherit; font-size: 13px; font-weight: 600; color: var(--tx); background: var(--fill); text-align: left; }
+.mcSp { min-width: 70px; }
+#mcQui.ghost { visibility: hidden; }
+.ptPin { width: 22px; height: 22px; border-radius: 50%; background: #d9480f; box-shadow: 0 0 0 3px #fff, 0 2px 6px rgba(0, 0, 0, 0.35); }
+#mapWait { display: none; }
+body[data-tab="mappa"] #mapWait:not([hidden]) { display: flex; position: fixed; left: 0; right: 0; top: 0; bottom: var(--tabh); z-index: 6; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 30px; text-align: center; background: var(--bg); color: var(--tx); pointer-events: auto; }
+#mapWait b { font-size: 22px; } #mapWait span { font-size: 14px; color: var(--tx2); max-width: 300px; line-height: 1.4; }
+/* Punto: cruscotto con gli ambiti */
+#punto { position: fixed; left: 0; right: 0; top: 0; bottom: var(--tabh); z-index: 20; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--bg); color: var(--tx); }
+#punto[hidden] { display: none; }
+.puIn { max-width: 560px; margin: 0 auto; padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+#puTitle { margin: 8px 4px 0; font-size: 32px; font-weight: 700; letter-spacing: -0.025em; }
+#puSub { margin: -6px 4px 0; font-size: 13px; color: var(--tx2); line-height: 1.4; }
+#puSeg { align-self: flex-start; display: flex; }
+#puSeg button { white-space: nowrap; padding: 0 14px; }
+.puGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.puTile { position: relative; min-height: 96px; padding: 14px 14px 12px; border: 0; border-radius: 18px; background: var(--sf); color: var(--tx); font: inherit; text-align: left; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; }
+.puTile::before { content: ""; position: absolute; left: 14px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--c, #aeaeb2); }
+.puTile b { font-size: 15px; font-weight: 700; }
+.puTile span { font-size: 12.5px; line-height: 1.3; color: var(--tx2); }
+.puTile.na b, .puTile.na span { color: var(--tx3); }
+.puTile.na::before { opacity: 0.4; }
+#puSheet { height: 50px; margin-top: 4px; border: 0; border-radius: 25px; font: inherit; font-size: 15px; font-weight: 600; background: var(--pri); color: var(--pri-tx); display: flex; align-items: center; justify-content: center; gap: 8px; }
+#puSheet:disabled { opacity: 0.45; }
+#puSheet em { font-style: normal; font-size: 12px; font-weight: 500; opacity: 0.8; }
+#punto h3 { margin: 10px 4px 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx2); }
+#puDet #spot, #ptDet { padding: 4px 14px; border-radius: 16px; background: var(--sf); }
+#ptDet .kv, #puDet .kv { display: flex; align-items: center; gap: 10px; min-height: 40px; border-bottom: 0.5px solid var(--line); font-size: 14px; }
+#ptDet .kv:last-of-type, #puDet .kv:last-of-type { border-bottom: 0; }
+#ptDet .kv span, #puDet .kv span { width: 118px; flex: none; color: var(--tx2); }
+#ptDet .kv b { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
+#punto .hint { font-size: 12px; line-height: 1.4; color: var(--tx2); margin: 8px 0; }
+.puBrand { margin: 14px 0 6px; }
+/* Archivio (la galleria) sopra la barra delle sezioni */
+body.tabs #gal { bottom: var(--tabh); }
+body.tabs #galBack { visibility: hidden; }
+body.tabs .gacts { padding-bottom: 10px; }
 </style>
 <script>
 /* v23: tema chiaro / scuro deciso prima di disegnare la pagina (niente lampo di colore sbagliato) */
@@ -1098,7 +1213,7 @@ body.hasmap .peek { padding-right: 100px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v29 · creste a tre livelli</span>
+          <span class="ver">Beta v30 · nuova struttura</span>
         </div>
       </div>
     </section>
@@ -1126,7 +1241,11 @@ body.hasmap .peek { padding-right: 100px; }
 <button type="button" id="pauseNote" hidden><b>In pausa per risparmiare batteria</b><span>Alza il telefono o tocca lo schermo per riprendere</span></button>
 <div id="devNote" hidden role="alertdialog"><b>Serve un telefono</b><p></p><button type="button" id="devOk">Ho capito</button></div>
 <main id="hud" hidden>
+  <div id="tapLayer"></div>
   <div id="labels"></div>
+  <div id="ptMark" hidden></div>
+  <div id="tapHint" hidden>Tocca il paesaggio per interrogarlo</div>
+  <div id="mapWait" hidden><b>Mappa</b><span id="mapWaitTx">La mappa si apre appena il GPS trova la posizione…</span></div>
   <div id="sunMark"><span>Sole</span></div>
   <canvas id="sunPath" aria-hidden="true"></canvas>
   <canvas id="ridge" aria-hidden="true"></canvas>
@@ -1166,6 +1285,12 @@ body.hasmap .peek { padding-right: 100px; }
     <button id="catBtn" type="button" aria-pressed="false">Catasto</button>
     <div id="catHint" hidden></div>
     <div id="catNote" hidden>Catasto indicativo: può essere spostato di alcuni metri rispetto alla mappa. Il cerchio azzurro è l’errore del GPS.</div>
+    <div id="mapCard" hidden>
+      <button type="button" id="mcGo" aria-label="Apri nel Punto"><div class="mcHead"><b id="mcTitle">Qui</b><span id="mcSub"></span></div><i aria-hidden="true">›</i></button>
+      <div class="mcRows" id="mcRows"></div>
+      <div class="mcFoot"><button type="button" id="mcQui" class="ghost">‹ Qui</button><span class="mcLogo"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></span><span class="mcSp"></span></div>
+    </div>
+    <div id="inSheetLbl" hidden>segue lo sguardo</div>
     <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
   </div>
   <div id="zoom" role="group" aria-label="Zoom della fotocamera"></div>
@@ -1188,6 +1313,7 @@ body.hasmap .peek { padding-right: 100px; }
       <span id="aimInfo">In attesa del GPS…</span>
       <span id="sunLine" hidden></span>
       <div id="here"></div>
+      <div id="ptRows" hidden></div>
     </div>
     <div id="bmenu" hidden>
       <div class="bmState"><i id="bmDot"></i><span id="bmState">Bussola non ancora allineata in questo punto</span><button type="button" id="bmClose" aria-label="Chiudi il menù della bussola">✕</button></div>
@@ -1212,14 +1338,11 @@ body.hasmap .peek { padding-right: 100px; }
     </div>
     <div class="bar">
       <button class="comp" id="compBtn" type="button" aria-expanded="false" aria-controls="bmenu"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="9.5"></circle><path d="M12 5.5 L14 12 L12 18.5 L10 12 Z" stroke-linejoin="round"></path></svg><span>Bussola</span><i id="compDot"></i></button>
-      <div class="cam">
-        <button class="gal" id="galBtn" type="button" aria-label="Galleria"><svg aria-hidden="true" width="58" height="58" viewBox="0 0 58 58"><defs><clipPath id="galc1"><circle cx="29" cy="29" r="23.5"></circle></clipPath></defs><g clip-path="url(#galc1)"><rect width="58" height="58" fill="#a9c9de"></rect><path d="M0 36 L14 26 L26 33 L38 22 L58 32 V58 H0 Z" fill="#62806b"></path><path d="M0 44 L58 40 V58 H0 Z" fill="#334a39"></path><circle cx="38" cy="15" r="4" fill="#ffc928"></circle></g></svg></button>
-        <button class="shut" id="shotBtn" type="button" aria-label="Fotografa"><svg aria-hidden="true" width="58" height="58" viewBox="0 0 58 58"><defs><clipPath id="shc1"><rect x="0" y="0" width="58" height="34"></rect></clipPath></defs><circle class="ring" cx="29" cy="29" r="29"></circle><circle cx="29" cy="29" r="23.5" fill="#e6e8eb"></circle><path d="M12 34 H46" stroke="#8e959c" stroke-width="1" opacity="0.55" stroke-linecap="round"></path><g clip-path="url(#shc1)"><circle class="sunc" cx="29" cy="34" r="8" fill="#ffc928"></circle></g></svg></button>
-      </div>
+      <div class="brand" id="brandMini"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></div>
+      <button class="shotPill" id="shotBtn" type="button" aria-label="Scatta"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M3.5 8 H7.5 L9.5 5.5 H14.5 L16.5 8 H20.5 V18.5 H3.5 Z"></path><circle cx="12" cy="13" r="3.4"></circle></svg><span>Scatta</span></button>
+      <button id="galBtn" type="button" hidden></button>
     </div>
-    <div class="brand" id="brandMini"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></div>
     <div id="more">
-      <h3>Punto di ripresa</h3>
       <div id="spot">
         <div class="kv"><span>Luogo</span><b id="spPlace">–</b></div>
         <div class="kv"><span>Comune</span><b id="spCom">–</b></div>
@@ -1321,7 +1444,7 @@ body.hasmap .peek { padding-right: 100px; }
   <div id="galStage">
     <canvas id="galCv"></canvas>
     <div id="galCap"></div>
-    <p id="galEmpty" hidden>Nessuna foto per ora.<br>Torna alla fotocamera e premi il pulsante bianco.</p>
+    <p id="galEmpty" hidden>Nessuna foto per ora.<br>Vai su Guarda e tocca «Scatta».</p>
   </div>
   <div id="galInfo"></div>
   <div id="galHint" hidden>
@@ -1336,6 +1459,27 @@ body.hasmap .peek { padding-right: 100px; }
   </div>
   <div id="galToast" hidden></div>
 </section>
+
+<section id="punto" hidden aria-label="Punto">
+  <div class="puIn">
+    <h1 id="puTitle">Punto</h1>
+    <p id="puSub"></p>
+    <div class="seg" id="puSeg" hidden><button type="button" data-pu="qui">Qui</button><button type="button" data-pu="pt">Punto scelto</button></div>
+    <div class="puGrid" id="puGrid"></div>
+    <button type="button" id="puSheet" disabled>Crea la scheda del punto<em>in arrivo</em></button>
+    <h3>Dettagli</h3>
+    <div id="puDet"></div>
+    <div id="ptDet" hidden></div>
+    <div class="puBrand"><svg class="lgS" viewBox="0 0 2797.4 862.7" role="img" aria-label="orientis"><use href="#lgSmall" width="100%" height="100%"></use></svg></div>
+  </div>
+</section>
+
+<nav id="tabs" hidden aria-label="Sezioni">
+  <button type="button" data-tab="mappa" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 7 L9.5 4.5 L16.5 7.5 L22.5 5 V19 L16.5 21.5 L9.5 18.5 L3.5 21 Z M9.5 4.5 V18.5 M16.5 7.5 V21.5"></path></svg><span>Mappa</span></button>
+  <button type="button" data-tab="guarda" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 8.5 H7.5 L9.5 5.5 H16.5 L18.5 8.5 H23 V20.5 H3 Z"></path><circle cx="13" cy="14" r="4"></circle></svg><span>Guarda</span></button>
+  <button type="button" data-tab="punto" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 23 C13 23 5.5 16 5.5 10.5 A7.5 7.5 0 0 1 20.5 10.5 C20.5 16 13 23 13 23 Z"></path><circle cx="13" cy="10.5" r="2.6" fill="currentColor" stroke="none"></circle></svg><span>Punto</span></button>
+  <button type="button" data-tab="archivio" aria-selected="false"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3.5" y="5.5" width="19" height="15" rx="3"></rect><path d="M4.5 18 L10 12.5 L14 16.5 L17 13.5 L22 18.5"></path></svg><span>Archivio</span></button>
+</nav>
 
 <section id="edit" hidden aria-label="Modifica la foto">
   <header class="gh">
@@ -2642,7 +2786,12 @@ body.hasmap .peek { padding-right: 100px; }
       $('miniWrap').hidden = false;
       document.body.classList.add('hasmap');
       map.dragPan.disable(); map.scrollZoom.disable(); map.touchZoomRotate.disable(); map.doubleClickZoom.disable();
-      map.on('click', () => { if (!full) setFull(true); });
+      // v30: nella Mappa il tocco sceglie un punto; in Guarda il tondo si allarga dentro la scheda
+      map.on('click', (e) => {
+        if (full && tabNow() === 'mappa') { ptSet(e.lngLat.lat, e.lngLat.lng, 'mappa'); return; }
+        if (!full && tabNow() === 'guarda' && !inSheet) setInSheet(true);
+      });
+      if (tabNow() === 'mappa') mapEnter();
       syncMarkers();
       riverMapUpdate();
       updateMap();
@@ -2695,13 +2844,17 @@ body.hasmap .peek { padding-right: 100px; }
   $('catBtn').addEventListener('click', (e) => { e.stopPropagation(); setCatLayer(!S.catLayer); });
   $('catLayer').addEventListener('change', () => setCatLayer($('catLayer').checked));
   // «Mappa» nel Punto di ripresa: mappa grande centrata su di te, vicina, col catasto acceso
-  $('spCatMap').addEventListener('click', () => {
+  $('spCatMap').addEventListener('click', () => openCatMap(S.lat, S.lon));
+  // v30: Mappa vicina col catasto acceso, centrata su un punto
+  function openCatMap(lat, lon) {
     if (!mapReady) { toast('La mappa non è ancora pronta.', 2500); return; }
     setSheet(false);
     S.catLayer = true; saveSettings();
-    setFull(true);
-    requestAnimationFrame(() => { if (map) { map.jumpTo({ center: [S.lon, S.lat], zoom: 17.5, bearing: 0 }); catUpdate(); } });
-  });
+    setTab('mappa');
+    if (!full) setFull(true);
+    setFollow(false);
+    requestAnimationFrame(() => { if (map) { map.jumpTo({ center: [lon, lat], zoom: 17.5, bearing: 0 }); catUpdate(); } });
+  }
 
   function setFollow(v) {
     follow = v;
@@ -2781,20 +2934,25 @@ body.hasmap .peek { padding-right: 100px; }
     if (!full) setFull(true);
     setFollow(false);
     $('miniCard').hidden = false;
+    $('mapCard').hidden = true;
+    $('miniCardBack').textContent = tabNow() === 'mappa' ? 'Chiudi' : 'Torna alla camera';
     $('miniCardName').textContent = it.n;
     $('miniCardInfo').textContent = TYPE_LABEL[it.t] + ', ' + fmtDist(it.d) + ', direzione ' + Math.round(it.b) + '°' +
       (it.e !== null && it.e !== undefined ? ', quota ' + Math.round(it.e) + ' m' : '');
     requestAnimationFrame(() => { if (map) { map.resize(); map.jumpTo({ center: [it.lon, it.lat], bearing: 0 }); } });
   }
 
-  $('miniExpand').addEventListener('click', () => setFull(!full));
+  $('miniExpand').addEventListener('click', () => { if (inSheet) setInSheet(false); else setFull(!full); });
   $('miniCenter').addEventListener('click', () => setFollow(true));
-  $('miniCardBack').addEventListener('click', () => setFull(false));
+  $('miniCardBack').addEventListener('click', () => {
+    if (tabNow() === 'mappa') { $('miniCard').hidden = true; selId = null; refreshMarkerClasses(); updateMapCard(); setFollow(true); }
+    else setFull(false);
+  });
   $('labels').addEventListener('click', (e) => {
     const p = e.target.closest('.pill');
     if (!p) return;
     const it = items.find((x) => String(x.id) === p.dataset.id) || rivers.map((r) => r.item).find((x) => x.id === p.dataset.id);
-    if (it) selectItem(it);
+    if (it) { if (mapReady) setTab('mappa'); selectItem(it); }
   });
 
   /* ---------- Ghiera della bussola ---------- */
@@ -3499,11 +3657,8 @@ body.hasmap .peek { padding-right: 100px; }
     drawTape(heading);
     updateQual();
     placeColumns(H);
-    if (!full) {
-      const pk = document.querySelector('.peek').getBoundingClientRect();
-      const mt = Math.round(pk.top + (pk.height - 88) / 2) + 'px';
-      if ($('miniWrap').style.top !== mt) $('miniWrap').style.top = mt;
-    } else if ($('miniWrap').style.top) $('miniWrap').style.top = '';
+    if (!full) placeMini();
+    else if ($('miniWrap').style.top) { const st = $('miniWrap').style; st.top = st.left = st.width = st.height = ''; }
     if (heading !== null) {
       setText('deg', Math.round(heading) + '°');
       setText('card', DIRS[Math.round(heading / 45) % 8]);
@@ -3657,6 +3812,7 @@ body.hasmap .peek { padding-right: 100px; }
     if (!sunShown) mark.style.display = 'none';
     drawSunPath(W, H, heading, pitch, tanH, tanV);
     drawRidge(W, H, heading, pitch, tanH, tanV);
+    VIEW = { W: W, H: H, heading: heading, pitch: pitch, tanH: tanH, tanV: tanV };
 
     // Orizzonte geometrico (0°) calcolato con accelerometro e giroscopio
     const hz = $('horizon');
@@ -3695,6 +3851,7 @@ body.hasmap .peek { padding-right: 100px; }
     const aid = aim ? aim.it.id : null;
     if (aid !== aimId) { aimId = aid; refreshMarkerClasses(); }
     frame.aim = aim;
+    ptFrame();
   }
   // v20: il disegno parte da qui. Massimo 30 volte al secondo; se il telefono è fermo, 4 volte al secondo.
   let lastDraw = 0, lastKey = '', lastHP = '', lastMoveAt = Date.now();
@@ -3775,7 +3932,8 @@ body.hasmap .peek { padding-right: 100px; }
     if (!open) $('sheet').scrollTop = 0;
     refreshSettingsUI();
     if (!open) setTimeout(() => { if (map) { map.resize(); updateMap(); } }, 300);
-    if (!open && camPaused && pausedBySheet) resumeCam();
+    if (!open && camPaused && pausedBySheet && tabNow() === 'guarda') resumeCam();
+    if (!open && tabNow() === 'guarda') showTapHint();
   }
   $('grab').addEventListener('click', () => setSheet(!$('sheet').classList.contains('open')));
   // v24: toccando la scheda (nome e dati) si apre il pannello
@@ -3962,7 +4120,7 @@ body.hasmap .peek { padding-right: 100px; }
   $('shotNames').addEventListener('click', () => { S.shotNames = !S.shotNames; saveSettings(); refreshShotNames(); });
   $('shotGo').addEventListener('click', () => { capture(); });
   $('galBtn').addEventListener('click', () => openGallery());
-  $('galBtn2').addEventListener('click', () => openGallery());
+  $('galBtn2').addEventListener('click', () => { setShooting(false); setTab('archivio'); });
 
   function toBlob(c, q) {
     return new Promise((ok, ko) => c.toBlob((b) => (b ? ok(b) : ko(new Error('immagine non creata'))), 'image/jpeg', q || 0.92));
@@ -4246,7 +4404,7 @@ body.hasmap .peek { padding-right: 100px; }
     buildStrip();
     galShow();
   }
-  $('galBack').addEventListener('click', () => { $('gal').hidden = true; $('galToast').hidden = true; });
+  $('galBack').addEventListener('click', () => { if (TAB.cur) { setTab('guarda'); return; } $('gal').hidden = true; $('galToast').hidden = true; });
   $('galHintX').addEventListener('click', () => {
     $('galHint').hidden = true;
     try { localStorage.setItem('pano.hintHome', '1'); } catch (e) {}
@@ -4853,23 +5011,27 @@ body.hasmap .peek { padding-right: 100px; }
     }
     return false;
   }
+  // v30: Comune di un punto qualsiasi (null se fuori dall'Italia o in mare; errore se i confini non si possono leggere)
+  async function comuneAt(lat, lon) {
+    const x = lon * 1e4, y = lat * 1e4;
+    if (!COM.regs) COM.regs = await cachedJson('comuni/regioni.json');
+    for (const code in COM.regs) {
+      const b = COM.regs[code];
+      if (lon < b[0] - 0.01 || lon > b[2] + 0.01 || lat < b[1] - 0.01 || lat > b[3] + 0.01) continue;
+      if (!COM.data[code]) COM.data[code] = (await cachedJson('comuni/R' + code + '.json')).c;
+      for (const c of COM.data[code]) if (inComune(c, x, y)) return { n: c[0], p: c[1], i: c[2], k: c[3] };
+    }
+    return null;
+  }
   async function updateComune() {
     if (S.lat === null) return;
     if (COM.busy) return;
     if (COM.at && geo(COM.at.lat, COM.at.lon, S.lat, S.lon).d < 30 && COM.state !== 'err') { updateCatasto(); return; }
-    const lat = S.lat, lon = S.lon, x = lon * 1e4, y = lat * 1e4;
+    const lat = S.lat, lon = S.lon;
     COM.busy = true;
     try {
-      if (!COM.regs) COM.regs = await cachedJson('comuni/regioni.json');
-      let found = null;
-      for (const code in COM.regs) {
-        const b = COM.regs[code];
-        if (lon < b[0] - 0.01 || lon > b[2] + 0.01 || lat < b[1] - 0.01 || lat > b[3] + 0.01) continue;
-        if (!COM.data[code]) COM.data[code] = (await cachedJson('comuni/R' + code + '.json')).c;
-        for (const c of COM.data[code]) if (inComune(c, x, y)) { found = c; break; }
-        if (found) break;
-      }
-      COM.cur = found ? { n: found[0], p: found[1], i: found[2], k: found[3] } : null;
+      const found = await comuneAt(lat, lon);
+      COM.cur = found;
       COM.state = found ? 'ok' : 'fuori';
       COM.at = { lat: lat, lon: lon };
     } catch (e) { COM.state = 'err'; }
@@ -4933,6 +5095,265 @@ body.hasmap .peek { padding-right: 100px; }
   }
   setInterval(() => { if (!$('hud').hidden) updateComune(); }, 2000);
 
+  /* ---------- v30: nuova struttura – Mappa · Guarda · Punto · Archivio ----------
+     Si apre sulla Mappa. Guarda è la fotocamera di sempre (scheda più snella). Punto è il cruscotto del punto scelto
+     (dove sei, oppure un punto toccato sulla mappa o nel paesaggio), con gli ambiti separati. Archivio è la galleria. */
+  const TAB = { cur: null };
+  const START_TAB = (/[?&]tab=(mappa|guarda|punto|archivio)/.exec(location.search) || [])[1] || 'mappa';
+  let VIEW = null, inSheet = false, hintTimer = null;
+  function tabNow() { return TAB.cur || 'guarda'; }
+  function setTab(t) {
+    if (t === TAB.cur) { if (t === 'mappa' && full && PT.cur === null) setFollow(true); return; }
+    const prev = TAB.cur;
+    TAB.cur = t;
+    document.body.dataset.tab = t;
+    document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+    if (shooting) setShooting(false);
+    if (align.step) $('alCancel').click();
+    if ($('sheet').classList.contains('open')) setSheet(false);
+    if (!$('bmenu').hidden) setMenu(false);
+    if (inSheet) setInSheet(false);
+    if (t !== 'archivio') { $('gal').hidden = true; $('galToast').hidden = true; }
+    $('punto').hidden = t !== 'punto';
+    if (prev === 'mappa' && t !== 'mappa') mapLeave();
+    if (t === 'mappa') mapEnter();
+    if (t === 'archivio') openGallery();
+    if (t === 'punto') { PU.view = PT.cur ? 'pt' : 'qui'; renderPunto(); }
+    if (t === 'guarda') { if (camPaused && pausedBySheet) resumeCam(); showTapHint(); }
+  }
+  document.querySelectorAll('#tabs button').forEach((b) => b.addEventListener('click', () => { haptic(); setTab(b.dataset.tab); }));
+  window.__panoTab = (t) => (t ? setTab(t) : TAB.cur);
+  window.__panoCam = () => ({ paused: camPaused, bySheet: pausedBySheet });
+  window.__panoPt = () => PT.cur;
+
+  // Mappa
+  function mapEnter() {
+    $('mapWait').hidden = mapReady;
+    setText('mapWaitTx', mapFailed ? 'La mappa non è disponibile su questo dispositivo.' : 'La mappa si apre appena il GPS trova la posizione…');
+    if (!mapReady) return;
+    $('miniCard').hidden = true; selId = null; refreshMarkerClasses();
+    if (!full) setFull(true);
+    if (PT.cur) { setFollow(false); requestAnimationFrame(() => { if (map) map.jumpTo({ center: [PT.cur.lon, PT.cur.lat] }); }); }
+    updateMapCard();
+  }
+  function mapLeave() {
+    $('mapWait').hidden = true;
+    if (full) setFull(false);
+  }
+  setInterval(() => { if (tabNow() === 'mappa' && !mapReady) { tryInitMap(); mapEnter(); } else if (tabNow() === 'mappa') updateMapCard(); }, 1000);
+
+  // Guarda: il tondo della mappa a 20 px dal bordo destro e dall'alto della scheda; toccato, si allarga dentro la scheda
+  function placeMini() {
+    const mw = $('miniWrap'), sh = $('sheet').getBoundingClientRect();
+    if (inSheet) {
+      const st = mw.style;
+      const v = [sh.left + 'px', sh.top + 'px', sh.width + 'px', sh.height + 'px'];
+      if (st.left !== v[0] || st.top !== v[1] || st.width !== v[2] || st.height !== v[3]) {
+        st.left = v[0]; st.top = v[1]; st.width = v[2]; st.height = v[3];
+        if (map) requestAnimationFrame(() => { map.resize(); updateMap(); });
+      }
+      return;
+    }
+    const mt = Math.round(sh.top + 20) + 'px';
+    if (mw.style.top !== mt) mw.style.top = mt;
+    const ht = Math.round(sh.top - 28) + 'px';
+    if ($('tapHint').style.top !== ht) $('tapHint').style.top = ht;
+    if (mw.style.left) { mw.style.left = mw.style.width = mw.style.height = ''; }
+  }
+  function setInSheet(v) {
+    inSheet = !!v;
+    $('miniWrap').classList.toggle('insheet', inSheet);
+    $('inSheetLbl').hidden = !inSheet;
+    $('miniExpand').textContent = inSheet ? '✕' : (full ? '✕' : '⤢');
+    if (!inSheet) { const st = $('miniWrap').style; st.left = st.width = st.height = ''; }
+    placeMini();
+    requestAnimationFrame(() => { if (map) { map.resize(); updateMap(); } });
+  }
+  // Suggerimento «Tocca il paesaggio per interrogarlo»: 5 secondi ogni volta che si entra in Guarda
+  function showTapHint() {
+    const h = $('tapHint');
+    clearTimeout(hintTimer);
+    h.hidden = false; h.classList.remove('off');
+    hintTimer = setTimeout(() => { h.classList.add('off'); hintTimer = setTimeout(() => { h.hidden = true; }, 700); }, 5000);
+  }
+
+  // Punto scelto (toccato sulla mappa o nel paesaggio)
+  const PT = { cur: null, pin: null, showG: false };
+  const PU = { view: 'qui' };
+  function ptSet(lat, lon, src, extra) {
+    const g = S.lat !== null ? geo(S.lat, S.lon, lat, lon) : { d: null, b: null };
+    const ground = g.d !== null ? demGet(lat, lon, demZoomFor(Math.max(g.d, 100))) : null;
+    PT.cur = { lat: lat, lon: lon, src: src, d: g.d, b: g.b, ang: extra && extra.ang, ground: ground, com: null, comState: 'loading', cat: null, catState: 'loading', t: Date.now() };
+    PT.showG = src === 'guarda';
+    ptFetch(PT.cur);
+    ptPin();
+    ptRefresh();
+  }
+  function ptClear() {
+    PT.cur = null; PT.showG = false;
+    if (PT.pin) { PT.pin.remove(); PT.pin = null; }
+    ptRefresh();
+  }
+  async function ptFetch(p) {
+    try { p.com = await comuneAt(p.lat, p.lon); p.comState = p.com ? 'ok' : 'fuori'; } catch (e) { p.comState = 'err'; }
+    ptRefresh();
+    if (!p.com) { p.catState = p.comState === 'err' ? 'err' : 'none'; ptRefresh(); return; }
+    if (!navigator.onLine) { p.catState = 'offline'; ptRefresh(); return; }
+    try {
+      const pc = await catAsk(CAT_PROXY + '?lat=' + p.lat.toFixed(6) + '&lon=' + p.lon.toFixed(6), 9000);
+      p.cat = pc; p.catState = pc ? 'ok' : 'none';
+    } catch (e) { p.catState = 'err'; }
+    ptRefresh();
+  }
+  function ptPin() {
+    if (!mapReady || !PT.cur) return;
+    if (!PT.pin) { const el = document.createElement('div'); el.className = 'ptPin'; PT.pin = new window.maplibregl.Marker({ element: el, anchor: 'center' }); }
+    PT.pin.setLngLat([PT.cur.lon, PT.cur.lat]).addTo(map);
+  }
+  // Testi comuni a Mappa, Guarda e Punto
+  function comOf(p) {
+    if (!p) return comuneText();
+    if (p.com) return p.com.n + (p.com.p ? ' (' + p.com.p + ')' : '');
+    return p.comState === 'loading' ? 'in caricamento…' : p.comState === 'fuori' ? 'fuori dall’Italia (o in mare)' : 'non disponibile';
+  }
+  function catOf(p) {
+    if (!p) return catastoText();
+    if (p.catState === 'ok' && p.cat) return 'foglio ' + p.cat.f + ' · part. ' + p.cat.p;
+    if (p.catState === 'loading') return 'in caricamento…';
+    if (p.catState === 'none') return p.com ? 'nessuna particella qui' : '–';
+    if (p.catState === 'offline') return 'serve la rete';
+    return 'non disponibile ora';
+  }
+  function catShort() {
+    if (CAT.state === 'ok' && CAT.cur && COM.cur) return 'foglio ' + CAT.cur.f + ' · part. ' + CAT.cur.p;
+    return catastoText();
+  }
+  function groundOf(p) {
+    const g = p ? p.ground : (S.dem ? DEM.ground : null);
+    return g === null || g === undefined ? null : Math.round(g);
+  }
+  function rowsHtml(p) {
+    const r = [['Catasto', p ? catOf(p) : catShort(), ''], ['Vincoli', 'in arrivo', 'na'], ['Urbanistica', 'in arrivo', 'na']];
+    return r.map((x) => '<span>' + x[0] + '</span><b class="' + x[2] + '">' + escHtml(x[1]) + '</b>').join('');
+  }
+  function escHtml(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function ptWhere(p) {
+    if (p.d === null) return fmtCoord(p.lat, p.lon);
+    return fmtDist(p.d) + ' a ' + DIRS[Math.round(p.b / 45) % 8] + (groundOf(p) !== null ? ' · ' + groundOf(p) + ' m' : '');
+  }
+  function updateMapCard() {
+    const c = $('mapCard');
+    if (tabNow() !== 'mappa' || !mapReady) { c.hidden = true; return; }
+    if (!$('miniCard').hidden) { c.hidden = true; return; }
+    c.hidden = false;
+    const p = PT.cur;
+    const com = p ? (p.com ? p.com.n + (p.com.p ? ' (' + p.com.p + ')' : '') : '') : (COM.cur ? COM.cur.n + (COM.cur.p ? ' (' + COM.cur.p + ')' : '') : '');
+    setText('mcTitle', (p ? 'Punto scelto' : 'Qui') + (com ? ' · ' + com : ''));
+    const g = groundOf(p);
+    setText('mcSub', p ? ptWhere(p) + ' · tocca la mappa per cambiarlo'
+      : (S.lat === null ? 'in attesa del GPS' : fmtCoord(S.lat, S.lon) + (g !== null ? ' · ' + g + ' m' : '') + ' · tocca la mappa per un altro punto'));
+    const html = rowsHtml(p);
+    if ($('mcRows').innerHTML !== html) $('mcRows').innerHTML = html;
+    $('mcQui').classList.toggle('ghost', !p);
+  }
+  $('mcGo').addEventListener('click', () => setTab('punto'));
+  $('mcQui').addEventListener('click', () => { ptClear(); setFollow(true); updateMapCard(); });
+
+  // Guarda: tocco sul paesaggio → punto sul terreno lungo la linea di sguardo (dal profilo del rilievo)
+  function rayHit(x, y) {
+    const V = VIEW, P = DEM.prof;
+    if (!S.dem || !P || !V || V.heading === null || V.pitch === null || S.lat === null) return { err: 'dem' };
+    const rel = Math.atan((x - V.W / 2) / (V.W / 2) * V.tanH) / RAD;
+    const az = ((V.heading + rel) % 360 + 360) % 360;
+    const ang = V.pitch - Math.atan((y - V.H / 2) / (V.H / 2) * V.tanV) / RAD;
+    const a = Math.round(az / DEM_STEP) % P.nA;
+    let hit = -1;
+    for (let i = 0; i < P.nD; i++) if (P.cum[a * P.nD + i] >= ang) { hit = i; break; }
+    if (hit < 0) return null;   // cielo, o terreno oltre la distanza scelta
+    let d = P.ds[hit];
+    if (hit === 0 && ang < 0 && DEM.ground !== null) d = Math.min(d, Math.max(3, (P.obs - DEM.ground) / Math.tan(-ang * RAD)));
+    const ll = dest(S.lat, S.lon, az, d);
+    return { lat: ll[1], lon: ll[0], d: d, b: az, ang: ang };
+  }
+  $('tapLayer').addEventListener('click', (e) => {
+    if (tabNow() !== 'guarda' || shooting || align.step) return;
+    if (inSheet) { setInSheet(false); return; }
+    const h = rayHit(e.clientX, e.clientY);
+    if (h && h.err) { toast('Per interrogare il paesaggio serve il rilievo del terreno (pannello › Rilievo del terreno).', 4500); return; }
+    if (!h) { if (PT.showG) { PT.showG = false; ptRefresh(); } return; }
+    haptic();
+    ptSet(h.lat, h.lon, 'guarda', { ang: h.ang });
+  });
+  // ogni fotogramma: segno sul punto toccato e scheda di Guarda
+  function ptFrame() {
+    const p = PT.cur, m = $('ptMark'), V = VIEW;
+    const on = !!(p && PT.showG && p.src === 'guarda' && V && V.heading !== null && V.pitch !== null);
+    if (on) {
+      const rel = norm180(p.b - V.heading);
+      const x = V.W / 2 + Math.tan(rel * RAD) / V.tanH * V.W / 2;
+      const y = V.H / 2 + Math.tan((V.pitch - p.ang) * RAD) / V.tanV * V.H / 2;
+      const vis = Math.abs(rel) < 80 && x > -20 && x < V.W + 20 && y > 0 && y < V.H;
+      m.hidden = !vis;
+      if (vis) { m.style.left = Math.round(x) + 'px'; m.style.top = Math.round(y) + 'px'; }
+      setText('aimName', 'Punto toccato');
+      setText('aimInfo', ptWhere(p));
+    } else m.hidden = true;
+    $('ptRows').hidden = !on;
+    $('here').hidden = on;
+  }
+  function ptRefresh() {
+    const p = PT.cur;
+    const html = p ? rowsHtml(p) + '<button type="button" id="ptOpen">Tutto nel Punto ›</button>' : '';
+    if ($('ptRows').dataset.h !== html) { $('ptRows').innerHTML = html; $('ptRows').dataset.h = html; }
+    updateMapCard();
+    if (tabNow() === 'punto') renderPunto();
+    ptFrame();
+  }
+  $('ptRows').addEventListener('click', (e) => { if (e.target.closest('#ptOpen')) { e.stopPropagation(); setTab('punto'); } });
+
+  // Punto: cruscotto con gli ambiti
+  const AMB = [
+    ['cat', 'Catasto', '#c92a2a'], ['vin', 'Vincoli', '#d9480f'], ['urb', 'Urbanistica', '#d6336c'],
+    ['pio', 'Pioggia', '#1c7ed6'], ['ene', 'Energia', '#e0a800'], ['sit', 'Sito', '#2f9e44']
+  ];
+  (function movePunto() { $('puDet').appendChild($('spot')); })();
+  function renderPunto() {
+    const p = PU.view === 'pt' ? PT.cur : null;
+    $('puSeg').hidden = !PT.cur;
+    document.querySelectorAll('#puSeg button').forEach((b) => b.classList.toggle('on', b.dataset.pu === (p ? 'pt' : 'qui')));
+    const com = p ? comOf(p) : comuneText();
+    setText('puTitle', p ? 'Punto scelto' : 'Qui');
+    setText('puSub', p ? com + ' · ' + ptWhere(p) + (p.src === 'guarda' ? ' · toccato nel paesaggio' : ' · scelto sulla mappa')
+      : (S.lat === null ? 'in attesa del GPS' : com + ' · ' + fmtCoord(S.lat, S.lon)));
+    const g = groundOf(p);
+    const val = { cat: p ? catOf(p) : catShort(), sit: g !== null ? 'quota ≈ ' + g + ' m · altri dati in arrivo' : 'in arrivo' };
+    const html = AMB.map((a) => {
+      const v = val[a[0]] || 'in arrivo', soon = !val[a[0]];
+      return '<button type="button" class="puTile' + (soon ? ' na' : '') + '" data-amb="' + a[0] + '" style="--c:' + a[2] + '"><b>' + a[1] + '</b><span>' + escHtml(v) + '</span></button>';
+    }).join('');
+    if ($('puGrid').innerHTML !== html) $('puGrid').innerHTML = html;
+    $('spot').hidden = !!p;
+    $('ptDet').hidden = !p;
+    if (p) {
+      const rows = [['Coordinate', fmtCoord(p.lat, p.lon)], ['Distanza', p.d === null ? '–' : fmtDist(p.d) + ', ' + dirText(p.b)],
+        ['Quota terreno', g !== null ? '≈ ' + g + ' m s.l.m.' : 'non disponibile'], ['Comune', com], ['Catasto', catOf(p)],
+        ['Scelto', (p.src === 'guarda' ? 'toccando il paesaggio, ' : 'sulla mappa, ') + fmtWhen(p.t)]];
+      const dh = rows.map((r) => '<div class="kv"><span>' + r[0] + '</span><b>' + escHtml(r[1]) + '</b></div>').join('') +
+        '<p class="hint">Il punto toccato nel paesaggio viene dal rilievo del terreno (celle di circa 30 m) e dalla bussola: è indicativo. Comune e particella non hanno valore di certificato (fanno fede CDU e visura).</p>';
+      if ($('ptDet').innerHTML !== dh) $('ptDet').innerHTML = dh;
+    } else updateSpot(S.heading === null ? null : trueHeading(), S.pitch === null ? null : S.pitch + S.pitchOff);
+  }
+  setInterval(() => { if (tabNow() === 'punto') renderPunto(); }, 1000);
+  $('puSeg').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; PU.view = b.dataset.pu; renderPunto(); });
+  $('puGrid').addEventListener('click', (e) => {
+    const b = e.target.closest('.puTile');
+    if (!b) return;
+    const p = PU.view === 'pt' ? PT.cur : null;
+    if (b.dataset.amb === 'cat') { if (p) openCatMap(p.lat, p.lon); else if (S.lat !== null) openCatMap(S.lat, S.lon); return; }
+    toast(b.querySelector('b').textContent + ': in arrivo nelle prossime versioni.', 2500);
+  });
+
+
   /* ---------- v22: la fotocamera la disegna l'app ---------- */
   const camCv = $('camCv'), camCtx = camCv.getContext('2d', { alpha: false });
   let camDrawOn = false, lastCamDraw = 0, lastCamPaint = 0;
@@ -4940,7 +5361,7 @@ body.hasmap .peek { padding-right: 100px; }
     lastCamDraw = Date.now();
     const v = $('video');
     // v24: col pannello aperto (copre tutto) la fotocamera resta accesa ma non si ridisegna
-    if (sheetIsOpen()) { nextCamDraw(); return; }
+    if (camHidden()) { nextCamDraw(); return; }
     // v25: telefono fermo → l'immagine si ridisegna 15 volte al secondo invece di 30 (si salta un fotogramma su due)
     if (!camPaused && phoneStill() && !shooting && lastCamDraw - lastCamPaint < 60) { nextCamDraw(); return; }
     if (!camPaused && v.videoWidth && !v.classList.contains('switching')) {
@@ -4960,13 +5381,15 @@ body.hasmap .peek { padding-right: 100px; }
   }
   function nextCamDraw() {
     const v = $('video');
-    if (typeof v.requestVideoFrameCallback === 'function' && v.videoWidth && !camPaused && !sheetIsOpen()) v.requestVideoFrameCallback(camDraw);
-    else setTimeout(camDraw, camPaused || sheetIsOpen() ? 500 : 50);
+    if (typeof v.requestVideoFrameCallback === 'function' && v.videoWidth && !camPaused && !camHidden()) v.requestVideoFrameCallback(camDraw);
+    else setTimeout(camDraw, camPaused || camHidden() ? 500 : 50);
   }
   // se Safari smette di avvisare dei fotogrammi nuovi (cambio di flusso), si riparte
   setInterval(() => { if (camDrawOn && Date.now() - lastCamDraw > 1500) nextCamDraw(); }, 1000);
   function startCamDraw() { if (!camDrawOn) { camDrawOn = true; nextCamDraw(); } }
   function sheetIsOpen() { return $('sheet').classList.contains('open'); }
+  // v30: fotocamera non visibile (pannello aperto o un'altra sezione): resta accesa 15 s, poi si spegne
+  function camHidden() { return sheetIsOpen() || tabNow() !== 'guarda'; }
 
   /* ---------- v20: pausa automatica per risparmiare batteria ---------- */
   // Telefono rivolto a terra (o al cielo) per 10 s (v25; prima 20 s): fotocamera spenta. Si riprende alzandolo o toccando lo schermo.
@@ -4991,7 +5414,7 @@ body.hasmap .peek { padding-right: 100px; }
     if ($('hud').hidden) return;
     // v24: pannello aperto per più di 15 secondi → fotocamera spenta; si riaccende chiudendo il pannello
     const nowS = Date.now();
-    if (sheetIsOpen() && !shooting) {
+    if (camHidden() && !shooting) {
       sheetSince = sheetSince || nowS;
       if (!camPaused && nowS - sheetSince > 15000) pauseCam(true);
       return;
@@ -5116,10 +5539,13 @@ body.hasmap .peek { padding-right: 100px; }
       setInterval(maybeFetchStream, 4000);   // v28: torrenti (solo se accesi)
       setInterval(sunAnalyze, 1000);   // v20: una volta al secondo, solo quando serve
       loadMapLib(tryInitMap);
-      setInterval(() => { if (!camPaused) updateMap(); }, 400);   // v20: meno spesso
+      setInterval(() => { if (!camPaused || tabNow() === 'mappa') updateMap(); }, 400);   // v20: meno spesso; v30: sempre nella Mappa
 
       $('start').hidden = true;
       $('hud').hidden = false;
+      $('tabs').hidden = false;
+      document.body.classList.add('tabs');
+      setTab(START_TAB);
       if (F.sun) sunToggle(true);
       if (fovWasReset) { saveSettings(); setTimeout(() => toast('Campo visivo riportato ai valori di partenza (era stato tarato sull\'immagine piccola).', 6000), 1500); }
       if (pitchWasReset !== null) toast('Inclinazione azzerata (era ' + fmtDeg(Math.round(pitchWasReset * 10) / 10) + '): ora viene solo dai sensori del telefono.', 7000);

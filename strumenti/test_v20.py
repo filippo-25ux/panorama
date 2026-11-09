@@ -42,7 +42,7 @@ def main():
             if 'maplibre-gl' in u and ML and os.path.isdir(ML): return r.fulfill(path=ML + ('maplibre-gl.css' if u.endswith('.css') else 'maplibre-gl.js'))
             return r.abort()
         page.route('**/*', route)
-        page.goto('http://127.0.0.1:8771/beta/index.html')
+        page.goto('http://127.0.0.1:8771/beta/index.html?tab=guarda')
         page.click('#go'); page.wait_for_timeout(4000)
         if page.locator('#alCancel').first.is_visible(): page.locator('#alCancel').first.click(); page.wait_for_timeout(300)
         # ridisegno: col telefono fermo pochi disegni al secondo (si misura il nastro dei gradi ridisegnato)
