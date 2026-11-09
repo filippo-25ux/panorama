@@ -1098,7 +1098,7 @@ body.hasmap .peek { padding-right: 100px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v28 · torrenti</span>
+          <span class="ver">Beta v29 · creste a tre livelli</span>
         </div>
       </div>
     </section>
@@ -1238,7 +1238,7 @@ body.hasmap .peek { padding-right: 100px; }
       <label class="sw t-river"><i class="swi" data-t="river"></i><span>Fiumi<small id="riverNote">il nome dove lo sguardo incrocia il fiume, se si vede</small></span><em id="nRiver"></em><input type="checkbox" data-f="river"></label>
       <label class="sw t-river"><i class="swi" data-t="stream"></i><span>Anche i torrenti<small id="streamNote">solo con nome, lunghi almeno 3 km, entro 10 km</small></span><em id="nStream"></em><input type="checkbox" data-f="stream"></label>
       <label class="sw t-relief"><i class="swi" data-t="relief"></i><span>Rilievo del terreno<small>nasconde le vette coperte da monti più vicini</small></span><em id="demState"></em><input type="checkbox" data-f="dem"></label>
-      <label class="sw t-relief"><i class="swi" data-t="ridge"></i><span>Linea delle creste<small>tratteggio leggero sul profilo dei monti</small></span><input type="checkbox" data-f="ridge"></label>
+      <label class="sw t-relief"><i class="swi" data-t="ridge"></i><span>Linea delle creste<small>tre livelli (vicino, medio, lontano) con la distanza</small></span><input type="checkbox" data-f="ridge"></label>
       <label class="sw t-land"><i class="swi" data-t="church"></i><span>Chiese, torri, castelli</span><em>entro 10 km, online</em><input type="checkbox" data-f="land"></label>
       <label class="sw t-sun"><i class="swi" data-t="sun"></i><span>Percorso del sole</span><input type="checkbox" data-f="sun"></label>
       <div id="sunRow" hidden>
@@ -1830,11 +1830,13 @@ body.hasmap .peek { padding-right: 100px; }
     for (let d = DEM_NEAR; d <= R; d += Math.max(25, d * 0.012)) ds.push(d);
     const nD = ds.length, nA = Math.round(360 / DEM_STEP);
     const cum = new Float32Array(nA * nD), hz = new Float32Array(nA), hzD = new Float32Array(nA);
+    // v29: tre livelli di creste (vicina, media, lontana): l'orizzonte che si vedrebbe se il terreno finisse a quelle distanze
+    const LV = ridgeLevels(R), hzL = new Float32Array(3 * nA), hzLD = new Float32Array(3 * nA);
     const kLat = 1 / (EARTH * RAD), kLon = kLat / Math.cos(lat * RAD);
     const zs = ds.map(demZoomFor), drops = ds.map((d) => d * d / (2 * EARTH) * (1 - REFR));
     for (let a = 0; a < nA; a++) {
       const br = a * DEM_STEP * RAD, cb = Math.cos(br) * kLat, sb = Math.sin(br) * kLon;
-      let mx = -90, mxD = 0;
+      let mx = -90, mxD = 0, k = 0;
       for (let i = 0; i < nD; i++) {
         const d = ds[i];
         const h = demGet(lat + d * cb, lon + d * sb, zs[i]);
@@ -1843,11 +1845,17 @@ body.hasmap .peek { padding-right: 100px; }
           if (ang > mx) { mx = ang; mxD = d; }
         }
         cum[a * nD + i] = mx;
+        while (k < 3 && (i === nD - 1 || ds[i + 1] > LV[k])) { hzL[k * nA + a] = mx; hzLD[k * nA + a] = mxD; k++; }
       }
+      while (k < 3) { hzL[k * nA + a] = mx; hzLD[k * nA + a] = mxD; k++; }
       hz[a] = mx; hzD[a] = mxD;
       if ((a & 63) === 63) await new Promise((r) => setTimeout(r, 0));   // lascia respirare lo schermo
     }
-    return { lat: lat, lon: lon, R: R, obs: obs, ds: Float32Array.from(ds), nD: nD, nA: nA, cum: cum, hz: hz, hzD: hzD };
+    return { lat: lat, lon: lon, R: R, obs: obs, ds: Float32Array.from(ds), nD: nD, nA: nA, cum: cum, hz: hz, hzD: hzD, LV: LV, hzL: hzL, hzLD: hzLD };
+  }
+  // Distanze dei tre livelli: vicina (fino a 4 km), media (fino a 12 km), lontana (tutta la distanza scelta)
+  function ridgeLevels(R) {
+    return [Math.min(4000, R * 0.3), Math.min(12000, R * 0.6), R];
   }
   // Angolo più alto del terreno tra il punto di ripresa e la distanza d, nella direzione b (minimo tra i due raggi vicini: nel dubbio si mostra)
   function demOccl(P, b, d) {
@@ -2943,7 +2951,7 @@ body.hasmap .peek { padding-right: 100px; }
   function alRidge() {
     align.step = 'ridge'; align.target = null; align.r0 = S.alOff; align.relief = null;
     const rr = ridgeReady();
-    alUI('Allinea', 'Trascina col dito a destra o a sinistra finché i nomi cadono sui luoghi' + (rr ? ', o la linea azzurra sui monti' : '') + '. Se combacia al centro ma non ai lati, allarga o stringi con due dita.', 'Fatto', 'Annulla', 'ridge');
+    alUI('Allinea', 'Trascina col dito a destra o a sinistra finché i nomi cadono sui luoghi' + (rr ? ', o una delle linee azzurre sui monti (la più lontana è la più precisa, se si vede bene)' : '') + '. Se combacia al centro ma non ai lati, allarga o stringi con due dita.', 'Fatto', 'Annulla', 'ridge');
     $('alAlt').textContent = 'Preferisci scegliere un luogo o il sole?';
   }
 
@@ -3113,10 +3121,22 @@ body.hasmap .peek { padding-right: 100px; }
     if (h0 < -45 || h1 < -45) return null;
     return h0 * (1 - w) + h1 * w;
   }
+  // Livello k del profilo (0 vicino, 1 medio, 2 lontano) nella direzione az, con la distanza della cresta
+  function profLvl(P, az, k) {
+    const f = ((az % 360) + 360) % 360 / DEM_STEP, a0 = Math.floor(f) % P.nA, a1 = (a0 + 1) % P.nA, w = f - Math.floor(f);
+    const h0 = P.hzL[k * P.nA + a0], h1 = P.hzL[k * P.nA + a1];
+    if (h0 < -45 || h1 < -45) return null;
+    return { alt: h0 * (1 - w) + h1 * w, d: w < 0.5 ? P.hzLD[k * P.nA + a0] : P.hzLD[k * P.nA + a1] };
+  }
+  function fmtKm(m) { return m < 9500 ? (Math.round(m / 100) / 10).toFixed(1).replace('.', ',') + ' km' : Math.round(m / 1000) + ' km'; }
+  // v29: tre livelli di creste, dal più vicino (più marcato) al più lontano (più chiaro), ognuno con la sua distanza.
+  // Una linea più lontana si disegna solo dove sporge sopra quella più vicina (altrimenti coinciderebbero).
+  const RIDGE_ALPHA = [1, 0.72, 0.48];
+  let ridgeLabels = [], ridgeAvoid = [];   // ridgeAvoid: nomi e colonne di tasti già sullo schermo
   function drawRidge(W, H, heading, pitch, tanH, tanV) {
     const P = DEM.prof, aligning = align.step === 'ridge';
-    if (!(aligning || (S.ridge && ridgeReady())) || !P || heading === null || pitch === null) {
-      if (ridgeDrawn) { ridgeCtx.setTransform(1, 0, 0, 1, 0, 0); ridgeCtx.clearRect(0, 0, ridgeCv.width, ridgeCv.height); ridgeDrawn = false; }
+    if (!(aligning || (S.ridge && ridgeReady())) || !P || !P.hzL || heading === null || pitch === null) {
+      if (ridgeDrawn) { ridgeCtx.setTransform(1, 0, 0, 1, 0, 0); ridgeCtx.clearRect(0, 0, ridgeCv.width, ridgeCv.height); ridgeDrawn = false; ridgeLabels = []; }
       return;
     }
     const d = window.devicePixelRatio || 1;
@@ -3124,32 +3144,88 @@ body.hasmap .peek { padding-right: 100px; }
     ridgeCtx.setTransform(d, 0, 0, d, 0, 0);
     ridgeCtx.clearRect(0, 0, W, H);
     ridgeDrawn = true;
-    const segs = [];
-    let cur = null, lo = 90, hi = -90;
+    const segD = [];           // per ogni segmento: livello, punti e distanze delle creste (per scrivere la distanza)
+    const cur = [null, null, null], curD = [null, null, null];
+    let lo = 90, hi = -90;
     for (let x = 0; x <= W + 2; x += 3) {
       const rel = Math.atan((x - W / 2) / (W / 2) * tanH) / RAD;
-      const alt = profAlt(P, heading + rel);
-      if (alt === null) { cur = null; continue; }
-      lo = Math.min(lo, alt); hi = Math.max(hi, alt);
-      const y = H / 2 + Math.tan((pitch - alt) * RAD) / tanV * H / 2;
-      if (!cur) { cur = []; segs.push(cur); }
-      cur.push(x, y);
+      let prev = null;
+      for (let k = 0; k < 3; k++) {
+        const q = profLvl(P, heading + rel, k);
+        if (q === null) { cur[k] = null; continue; }
+        if (k === 2) { lo = Math.min(lo, q.alt); hi = Math.max(hi, q.alt); }
+        const gap = prev === null ? 1 : q.alt - prev;
+        // niente linea dove la cresta «vera» non c'è: il punto più alto è proprio al limite del livello (il pendio continua oltre);
+        // si confronta sempre con l'ultima linea disegnata davanti
+        if (gap < 0.04 || (k < 2 && q.d > P.LV[k] * 0.96)) { cur[k] = null; continue; }
+        prev = q.alt;
+        const y = H / 2 + Math.tan((pitch - q.alt) * RAD) / tanV * H / 2;
+        // un salto di distanza (es. da una cresta vicina a una vetta lontana che sporge) apre un nuovo tratto, con la sua distanza
+        if (cur[k] && curD[k].d.length) {
+          const ld = curD[k].d[curD[k].d.length - 1];
+          if (Math.abs(q.d - ld) > Math.max(600, 0.3 * Math.min(q.d, ld))) {
+            const px = cur[k][cur[k].length - 2], py = cur[k][cur[k].length - 1];
+            cur[k] = [px, py]; curD[k] = { k: k, p: cur[k], d: [] }; segD.push(curD[k]);
+          }
+        }
+        if (!cur[k]) { cur[k] = []; curD[k] = { k: k, p: cur[k], d: [] }; segD.push(curD[k]); }
+        cur[k].push(x, y); curD[k].d.push(q.d);
+      }
     }
     ridgeCtx.lineJoin = 'round'; ridgeCtx.lineCap = 'round';
-    // Durante l'allineamento: azzurra e marcata; nell'uso normale: bianca, sottile e trasparente
-    ridgeCtx.globalAlpha = aligning ? 1 : 0.42;
-    for (const pass of [0, 1]) {
-      ridgeCtx.setLineDash(pass ? (aligning ? [9, 6] : [5, 6]) : []);
-      ridgeCtx.strokeStyle = pass ? (aligning ? qcol('--accent', '#8fd3ff') : '#ffffff') : (aligning ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.3)');
-      ridgeCtx.lineWidth = pass ? (aligning ? 2.4 : 1.3) : (aligning ? 5 : 3);
-      for (const sg of segs) {
-        if (sg.length < 4) continue;
-        ridgeCtx.beginPath(); ridgeCtx.moveTo(sg[0], sg[1]);
-        for (let i = 2; i < sg.length; i += 2) ridgeCtx.lineTo(sg[i], sg[i + 1]);
-        ridgeCtx.stroke();
+    // intensità secondo la distanza vera del tratto: vicino marcato, lontano più chiaro
+    for (const sg of segD) { const dd = sg.d.slice().sort((a, b) => a - b); sg.dm = dd[dd.length >> 1] || 0; sg.c = sg.dm < 6000 ? 0 : sg.dm < 15000 ? 1 : 2; }
+    for (const c of [2, 1, 0]) {
+      const a = RIDGE_ALPHA[c] * (aligning ? 1 : 0.45);
+      for (const pass of [0, 1]) {
+        ridgeCtx.globalAlpha = a;
+        ridgeCtx.setLineDash(pass ? (aligning ? [9, 6] : [5, 6]) : []);
+        ridgeCtx.strokeStyle = pass ? (aligning ? qcol('--accent', '#8fd3ff') : '#ffffff') : (aligning ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.3)');
+        ridgeCtx.lineWidth = (pass ? (aligning ? 2.4 : 1.3) : (aligning ? 5 : 3)) * (c === 0 ? 1 : c === 1 ? 0.85 : 0.72);
+        for (const sg of segD) {
+          if (sg.c !== c || sg.p.length < 4) continue;
+          ridgeCtx.beginPath(); ridgeCtx.moveTo(sg.p[0], sg.p[1]);
+          for (let i = 2; i < sg.p.length; i += 2) ridgeCtx.lineTo(sg.p[i], sg.p[i + 1]);
+          ridgeCtx.stroke();
+        }
       }
     }
     ridgeCtx.setLineDash([]);
+    // Distanze scritte sulle linee: una per tratto abbastanza lungo (i più lunghi prima), senza ripetere distanze simili né sovrapporle
+    ridgeLabels = [];
+    ridgeCtx.font = '600 11px -apple-system, system-ui, sans-serif';
+    ridgeCtx.textAlign = 'center'; ridgeCtx.textBaseline = 'middle';
+    segD.sort((a, b) => b.d.length - a.d.length);
+    for (const sg of segD) {
+      if (ridgeLabels.length >= 4 || sg.d.length * 3 < 45) continue;
+      const dd = sg.d.slice().sort((a, b) => a - b), dm = dd[dd.length >> 1];
+      if (!(dm > 0) || ridgeLabels.some((r) => Math.abs(r.d - dm) < Math.max(400, dm * 0.15))) continue;
+      // punto del tratto dentro i margini che non copra nomi, tasti o altre distanze
+      const txt = fmtKm(dm), tw = ridgeCtx.measureText(txt).width + 14;
+      const idx = [];
+      for (let i = 0; i < sg.p.length; i += 2) {
+        const x = sg.p[i], y = sg.p[i + 1];
+        if (x >= 30 && x <= W - 30 && y >= 40 && y <= H - 40) idx.push(i);
+      }
+      // prima il centro del tratto (es. la cima di una vetta che sporge), poi via via verso i bordi
+      const mid = (sg.p.length >> 2) << 1;
+      idx.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid));
+      const free = (lx, ly) => !ridgeLabels.some((r) => Math.abs(r.x - lx) < (r.w + tw) / 2 + 4 && Math.abs(r.y - ly) < 20) &&
+        !ridgeAvoid.some((r) => lx + tw / 2 > r.l - 4 && lx - tw / 2 < r.r + 4 && ly + 9 > r.t - 4 && ly - 9 < r.b + 4);
+      let lx = null, ly = null;
+      for (let n = 0; n < idx.length && lx === null; n += 2) {
+        const x = sg.p[idx[n]], y = sg.p[idx[n] + 1];
+        if (free(x, y - 15)) { lx = x; ly = y - 15; } else if (free(x, y + 15)) { lx = x; ly = y + 15; }
+      }
+      if (lx === null) continue;
+      ridgeLabels.push({ k: sg.k, c: sg.c, x: lx, y: ly, w: tw, d: dm, txt: txt });
+      ridgeCtx.globalAlpha = (aligning ? 1 : 0.8) * RIDGE_ALPHA[sg.c];
+      ridgeCtx.fillStyle = 'rgba(0,0,0,0.42)';
+      if (ridgeCtx.roundRect) { ridgeCtx.beginPath(); ridgeCtx.roundRect(lx - tw / 2, ly - 9, tw, 18, 9); ridgeCtx.fill(); }
+      else ridgeCtx.fillRect(lx - tw / 2, ly - 9, tw, 18);
+      ridgeCtx.fillStyle = '#ffffff';
+      ridgeCtx.fillText(txt, lx, ly + 0.5);
+    }
     ridgeCtx.globalAlpha = 1;
     if (!aligning) return;
     align.relief = hi >= lo ? hi - lo : 0;
@@ -3157,6 +3233,7 @@ body.hasmap .peek { padding-right: 100px; }
     setText('alInfo', 'Correzione ' + fmtDeg(corr) + ' · campo visivo ' + String(S.fov).replace('.', ',') + '°' +
       (align.relief < 1 ? ' · qui le creste sono quasi piatte: meglio un luogo o il sole' : ''));
   }
+  window.__panoRidge = () => ridgeLabels;
   window.__pano = { S: S, items: () => items, trueHeading: trueHeading, align: align, sunPos: sunPos, dem: () => DEM };
 
   /* ---------- Percorso del sole ---------- */
@@ -3550,6 +3627,7 @@ body.hasmap .peek { padding-right: 100px; }
         lab.pin.style.height = Math.max(0, ay - got.top - got.h) + 'px';
         lab.cur = { m: got.m, left: got.left, top: got.top, w: got.w, h: got.h, x: x, ay: ay, n: it.n, sub: subText, t: it.t };
       }
+      ridgeAvoid = placed;
     }
 
     for (const id in pool) {

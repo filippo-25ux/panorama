@@ -14,3 +14,5 @@
   `python3 test_v23.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
 - `test_v27.py` prova i fiumi (v27) e i torrenti (v28: spenti all’inizio, solo con nome e lunghi almeno 3 km, entro 10 km) con lo stesso rilievo finto di `test_rilievo.py` e una risposta finta di OpenStreetMap: un fiume in pianura deve avere il nome dove lo sguardo lo incrocia, uno dietro la cresta no; tracciati sulla mappa, filtro «Fiumi», niente nomi senza rilievo:
   `python3 test_v27.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
+- `test_v29.py` prova le creste a tre livelli (v29) con il rilievo finto di `test_rilievo.py`: la cresta a 4 km e la vetta a 10 km che sporge hanno ciascuna la sua distanza scritta; in pianura nessuna linea inventata; spegnendo la linea spariscono anche le distanze:
+  `python3 test_v29.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
