@@ -922,6 +922,13 @@ body.hasmap .peek { padding-right: 100px; }
 }
 #miniWrap.full #catBtn[aria-pressed="true"] { background: var(--pri); color: var(--pri-tx); }
 #miniWrap.full #miniCenter { left: 50%; }
+#catNote { display: none; }
+#miniWrap.full #catNote:not([hidden]) {
+  display: block; position: absolute; left: 12px; right: 12px; bottom: calc(34px + env(safe-area-inset-bottom, 0px)); z-index: 3;
+  padding: 7px 11px; border-radius: 12px; font-size: 12px; line-height: 1.35; color: var(--tx);
+  background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow);
+}
+#miniWrap.full:has(#miniCard:not([hidden])) #catNote { display: none; }
 #miniWrap.full #catHint:not([hidden]) {
   display: block; position: absolute; left: 12px; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 3; max-width: 70%;
   padding: 6px 10px; border-radius: 10px; font-size: 12px; color: var(--tx); background: var(--glass-card); box-shadow: var(--card-shadow);
@@ -1078,7 +1085,7 @@ body.hasmap .peek { padding-right: 100px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v25 · batteria e animazione</span>
+          <span class="ver">Beta v26 · catasto più chiaro</span>
         </div>
       </div>
     </section>
@@ -1144,6 +1151,7 @@ body.hasmap .peek { padding-right: 100px; }
     <button id="miniCenter" type="button" hidden>Ricentra</button>
     <button id="catBtn" type="button" aria-pressed="false">Catasto</button>
     <div id="catHint" hidden></div>
+    <div id="catNote" hidden>Catasto indicativo: può essere spostato di alcuni metri rispetto alla mappa. Il cerchio azzurro è l’errore del GPS.</div>
     <div id="miniCard" hidden><b id="miniCardName"></b><span id="miniCardInfo"></span><button class="btn" id="miniCardBack" type="button">Torna alla camera</button></div>
   </div>
   <div id="zoom" role="group" aria-label="Zoom della fotocamera"></div>
@@ -2420,13 +2428,16 @@ body.hasmap .peek { padding-right: 100px; }
     map.touchZoomRotate.disableRotation();
     map.on('load', () => {
       const empty = { type: 'FeatureCollection', features: [] };
-      for (const id of ['sunsweep', 'sunrise', 'sunset', 'fan', 'cone', 'me']) map.addSource(id, { type: 'geojson', data: empty });
+      for (const id of ['sunsweep', 'sunrise', 'sunset', 'fan', 'cone', 'acc', 'me']) map.addSource(id, { type: 'geojson', data: empty });
       map.addLayer({ id: 'sunsweep', type: 'fill', source: 'sunsweep', paint: { 'fill-color': '#ffd166', 'fill-opacity': 0.18 } });
       map.addLayer({ id: 'sunrise', type: 'line', source: 'sunrise', paint: { 'line-color': '#ff9f1c', 'line-width': 3, 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'sunset', type: 'line', source: 'sunset', paint: { 'line-color': '#e4572e', 'line-width': 3, 'line-dasharray': [2, 1] } });
       map.addLayer({ id: 'fan', type: 'fill', source: 'fan', paint: { 'fill-color': '#8fd3ff', 'fill-opacity': 0.18 } });
       map.addLayer({ id: 'cone', type: 'fill', source: 'cone', paint: { 'fill-color': '#ffc928', 'fill-opacity': 0.34 } });
       map.addLayer({ id: 'coneLine', type: 'line', source: 'cone', paint: { 'line-color': '#e0a800', 'line-width': 1, 'line-opacity': 0.6 } });
+      // v26: cerchio della precisione del GPS (si vede soprattutto sulla mappa grande, da vicino)
+      map.addLayer({ id: 'acc', type: 'fill', source: 'acc', paint: { 'fill-color': '#0a84ff', 'fill-opacity': 0.12 } });
+      map.addLayer({ id: 'accLine', type: 'line', source: 'acc', paint: { 'line-color': '#0a84ff', 'line-width': 1, 'line-opacity': 0.55 } });
       map.addLayer({ id: 'me', type: 'circle', source: 'me', paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-color': '#1d1d1f', 'circle-stroke-width': 1.4 } });
       mapReady = true;
       $('miniWrap').hidden = false;
@@ -2455,6 +2466,7 @@ body.hasmap .peek { padding-right: 100px; }
   function catHint(t) { $('catHint').hidden = !t; $('catHint').textContent = t || ''; }
   function catUpdate() {
     $('catBtn').setAttribute('aria-pressed', String(!!S.catLayer));
+    $('catNote').hidden = !catOn();
     if (!catOn()) { if (CATL.img) CATL.img.style.display = 'none'; catHint(''); return; }
     if (!CATL.img) {
       CATL.img = document.createElement('img');
@@ -2511,6 +2523,11 @@ body.hasmap .peek { padding-right: 100px; }
     if (S.heading === null) return;
     map.getSource('cone').setData(sector(S.lat, S.lon, hd - halfH, hd + halfH, R));
     map.getSource('fan').setData(sector(S.lat, S.lon, hd - halfH - acc, hd + halfH + acc, R));
+    if (S.gpsAcc) {
+      const ring = [];
+      for (let i = 0; i <= 72; i++) ring.push(dest(S.lat, S.lon, i * 5, S.gpsAcc));
+      map.getSource('acc').setData({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: {} });
+    }
     map.getSource('me').setData({ type: 'Feature', geometry: { type: 'Point', coordinates: [S.lon, S.lat] }, properties: {} });
   }
 
@@ -3606,7 +3623,7 @@ body.hasmap .peek { padding-right: 100px; }
       pitch: S.pitch === null ? null : S.pitch + S.pitchOff,
       ground: S.dem && DEM.ground !== null ? Math.round(DEM.ground) : null, dem: !!(S.dem && DEM.prof),
       comune: COM.cur ? COM.cur.n : null, prov: COM.cur ? COM.cur.p : null, istat: COM.cur ? COM.cur.i : null,
-      catasto: CAT.cur && COM.cur && CAT.cur.c === COM.cur.k ? CAT.cur : null,
+      catasto: CAT.cur && COM.cur && CAT.cur.c === COM.cur.k ? Object.assign({ edge: !!CAT.edge }, CAT.cur) : null,
       aligned: !!S.alPos, lens: CAM.kind, zoom: zoomLabel(CAM.kind === 'tele' ? 'T' : CAM.zk), fov: S.fov, dz: CAM.dz
     };
   }
@@ -3975,7 +3992,7 @@ body.hasmap .peek { padding-right: 100px; }
     const parts = [];
     if (m.place) parts.push(m.place);
     if (m.comune) parts.push('Comune di ' + m.comune + (m.prov ? ' (' + m.prov + ')' : ''));
-    if (m.catasto) parts.push('catasto: foglio ' + m.catasto.f + ', particella ' + m.catasto.p);
+    if (m.catasto) parts.push('catasto: foglio ' + m.catasto.f + ', particella ' + m.catasto.p + (m.catasto.edge ? ' (vicino al confine)' : ''));
     if (m.alt !== null && m.alt !== undefined) parts.push('quota ' + Math.round(m.alt) + ' m');
     if (m.lat !== null && m.lat !== undefined) parts.push(fmtCoord(m.lat, m.lon));
     if (m.gpsAcc !== null && m.gpsAcc !== undefined) parts.push('GPS ±' + Math.round(m.gpsAcc) + ' m');
@@ -4563,23 +4580,36 @@ body.hasmap .peek { padding-right: 100px; }
     const lat = S.lat, lon = S.lon;
     // v25: la richiesta passa dal server di passaggio dell'utente (Cloudflare Worker), che la gira all'Agenzia delle Entrate
     const url = CAT_PROXY + '?lat=' + lat.toFixed(6) + '&lon=' + lon.toFixed(6);
+    try {
+      const pc = await catAsk(url, 9000);
+      CAT.cur = pc; CAT.state = pc ? 'ok' : 'none'; CAT.at = { lat: lat, lon: lon }; CAT.edge = false;
+      // v26: vicino ai confini? Si chiede la particella anche in 4 punti attorno, alla distanza dell'errore del GPS (5–25 m)
+      if (pc) {
+        const r = Math.max(5, Math.min(25, S.gpsAcc || 10)), dLat = r / 111320, dLon = r / (111320 * Math.cos(lat * RAD));
+        const around = [[dLat, 0], [-dLat, 0], [0, dLon], [0, -dLon]].map((o) =>
+          catAsk(CAT_PROXY + '?lat=' + (lat + o[0]).toFixed(6) + '&lon=' + (lon + o[1]).toFixed(6), 9000).catch(() => null));
+        const res = await Promise.all(around);
+        CAT.edge = res.some((x) => x && x.id !== pc.id);
+      }
+    } catch (e) {
+      CAT.state = 'err';
+      CAT.msg = e && e.name === 'AbortError' ? 'il servizio dell’Agenzia non risponde' : String(e && e.message || e);
+    }
+  }
+  async function catAsk(url, ms) {
     const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const to = setTimeout(() => { if (ctl) ctl.abort(); }, 9000);
+    const to = setTimeout(() => { if (ctl) ctl.abort(); }, ms);
     try {
       const r = await fetch(url, ctl ? { signal: ctl.signal } : undefined);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const html = await r.text();
       const m = /localId<\/th>\s*<td>([^<]+)/i.exec(html) || /nationalCadastralReference<\/th>\s*<td>([^<]+)/i.exec(html) || /([A-Z]\d{3}[A-Z0-9]?_\d{4}[A-Z0-9]{2}\.[0-9A-Z]+)/.exec(html);
-      const pc = m ? parseParcel(m[1]) : null;
-      CAT.cur = pc; CAT.state = pc ? 'ok' : 'none'; CAT.at = { lat: lat, lon: lon };
-    } catch (e) {
-      CAT.state = 'err';
-      CAT.msg = e && e.name === 'AbortError' ? 'il servizio dell’Agenzia non risponde' : String(e && e.message || e);
+      return m ? parseParcel(m[1]) : null;
     } finally { clearTimeout(to); }
   }
   function catastoText() {
     if (!COM.cur) return '–';
-    if (CAT.state === 'ok' && CAT.cur) return 'foglio ' + CAT.cur.f + ', particella ' + CAT.cur.p;
+    if (CAT.state === 'ok' && CAT.cur) return 'foglio ' + CAT.cur.f + ', particella ' + CAT.cur.p + (CAT.edge ? ' (vicino al confine: verifica)' : '');
     if (CAT.state === 'loading' || CAT.state === 'idle') return 'in caricamento…';
     if (CAT.state === 'none') return 'nessuna particella qui (strada, acqua o zona non mappata)';
     if (CAT.state === 'offline') return 'serve la rete';

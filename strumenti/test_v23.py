@@ -107,7 +107,7 @@ def main():
             print('     Comune: ' + com + ' · Catasto: ' + cat)
             check(com.startswith('Ariano Irpino'), f'tema {scheme}: Comune del punto di ripresa = Ariano Irpino (AV)')
             if scheme == 'light':
-                check(cat == 'foglio 42, particella 123', 'catasto (risposta finta): «foglio 42, particella 123»')
+                check(cat.startswith('foglio 42, particella 123'), 'catasto (risposta finta): «foglio 42, particella 123»')
             else:
                 check('Mappa' in cat, 'catasto senza risposta: rimanda a «Mappa»')
             page.screenshot(path=f'{OUT}/v23-{scheme}-pannello.png')
@@ -117,6 +117,8 @@ def main():
                 check('GetMap' in src and 'CadastralParcel' in src, '«Mappa» del catasto: mappa grande con le particelle dell\'Agenzia')
                 check(page.locator('#catBtn').get_attribute('aria-pressed') == 'true', 'tasto «Catasto» acceso sulla mappa grande')
                 page.screenshot(path=f'{OUT}/v24-catasto-mappa.png')
+                check(page.locator('#catNote').is_visible(), 'nota «Catasto indicativo» visibile col catasto acceso')
+                check(page.evaluate("window.__panoMap.getSource('acc')._data.geometry.coordinates[0].length") > 60, 'cerchio di precisione del GPS sulla mappa')
                 page.click('#catBtn'); page.wait_for_timeout(300)
                 check(page.evaluate("getComputedStyle(document.getElementById('catImg')).display") == 'none', 'tasto «Catasto» spegne il livello')
                 page.click('#miniExpand'); page.wait_for_timeout(500)
