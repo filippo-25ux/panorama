@@ -175,6 +175,13 @@ def main():
         page.screenshot(path=f'{OUT}/v31-cronologia.png')
         page.locator('#puHist .phRow').nth(1).click(); page.wait_for_timeout(500)
         check(page.inner_text('#puTitle') == 'Punto scelto' and 'mappa' in page.inner_text('#puSub'), 'toccando un punto della cronologia torna quel punto')
+        page.evaluate("document.getElementById('puHist').scrollIntoView()")
+        page.click('#puHistClr'); page.wait_for_timeout(200)
+        check(page.inner_text('#puHistClr') == 'Sì, cancella' and page.evaluate("document.querySelectorAll('#puHist .phRow').length") >= 2, 'Cancella chiede conferma')
+        page.click('#puHistClr'); page.wait_for_timeout(200)
+        check(page.evaluate("document.querySelectorAll('#puHist .phRow').length") == 0 and page.inner_text('#puHistClr') == 'Annulla', 'cronologia cancellata, con «Annulla»')
+        page.click('#puHistClr'); page.wait_for_timeout(200)
+        check(page.evaluate("document.querySelectorAll('#puHist .phRow').length") >= 2, '«Annulla» rimette i punti')
         # Archivio
         page.click('#tabs button[data-tab="archivio"]'); page.wait_for_timeout(800)
         check(page.locator('#gal').is_visible() and page.locator('#tabs').is_visible(), 'Archivio = galleria, con la barra delle sezioni')
