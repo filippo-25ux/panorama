@@ -1078,7 +1078,7 @@ body.hasmap .peek { padding-right: 100px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v25 · catasto e batteria</span>
+          <span class="ver">Beta v25 · batteria e animazione</span>
         </div>
       </div>
     </section>
@@ -2154,6 +2154,36 @@ body.hasmap .peek { padding-right: 100px; }
     if (walk.active) walkSample(p.coords);
   }
 
+  // v25: GPS a riposo. Se da 30 s la posizione non si sposta (meno di 10 m, o meno della precisione), il GPS continuo si spegne
+  // e si fa una lettura precisa ogni minuto; appena una lettura mostra uno spostamento di oltre 25 m torna continuo.
+  const GPS = { watch: null, low: false, timer: null, anchor: null, anchorAt: 0 };
+  function gpsStart() {
+    if (GPS.timer) { clearInterval(GPS.timer); GPS.timer = null; }
+    GPS.low = false;
+    if (GPS.watch === null) GPS.watch = navigator.geolocation.watchPosition(gpsOnPos, onPosErr, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+  }
+  function gpsRest() {
+    if (GPS.watch !== null) { navigator.geolocation.clearWatch(GPS.watch); GPS.watch = null; }
+    GPS.low = true;
+    GPS.timer = setInterval(() => {
+      if ($('hud').hidden || camPaused) return;
+      navigator.geolocation.getCurrentPosition(gpsOnPos, () => {}, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+    }, 60000);
+  }
+  function gpsOnPos(p) {
+    const c = p.coords, now = Date.now();
+    if (!GPS.anchor || geo(GPS.anchor.lat, GPS.anchor.lon, c.latitude, c.longitude).d > Math.max(10, Math.min(c.accuracy || 10, 30))) {
+      GPS.anchor = { lat: c.latitude, lon: c.longitude }; GPS.anchorAt = now;
+      if (GPS.low && S.lat !== null && geo(S.lat, S.lon, c.latitude, c.longitude).d > 25) gpsStart();
+    }
+    onPos(p);
+  }
+  function gpsCheck() {
+    const busy = walk.active || align.step || $('hud').hidden;
+    if (!GPS.low && !busy && GPS.anchor && Date.now() - GPS.anchorAt > 30000 && S.gpsAcc !== null && S.gpsAcc <= 30) gpsRest();
+    else if (GPS.low && busy && !$('hud').hidden) gpsStart();
+  }
+  window.__panoGps = GPS;
   function onPosErr(err) {
     S.gpsMsg = (err && err.code === 1) ? 'permesso negato' : 'non disponibile';
     statusMsg = 'Senza la posizione non posso cercare i luoghi.';
@@ -3379,13 +3409,15 @@ body.hasmap .peek { padding-right: 100px; }
     frame.aim = aim;
   }
   // v20: il disegno parte da qui. Massimo 30 volte al secondo; se il telefono è fermo, 4 volte al secondo.
-  let lastDraw = 0, lastKey = '';
+  let lastDraw = 0, lastKey = '', lastHP = '', lastMoveAt = Date.now();
+  const phoneStill = () => Date.now() - lastMoveAt > 1500;   // v25: telefono fermo da 1,5 s
   function tick(now) {
     if (!camPaused) {
       const hk = S.heading === null ? 'x' : Math.round(trueHeading() * 20);
       const pk = S.pitch === null ? 'x' : Math.round((S.pitch + S.pitchOff) * 20);
       const key = hk + '|' + pk + '|' + S.alOff + '|' + S.off + '|' + selId + '|' + S.fov + '|' + CAM.dz + '|' + window.innerWidth + 'x' + window.innerHeight + '|' + (align.step || '') + '|' + document.body.className;
       const dt = now - lastDraw;
+      if (key !== lastKey && hk + '|' + pk !== lastHP) { lastHP = hk + '|' + pk; lastMoveAt = Date.now(); }
       if (dt >= 32 && (key !== lastKey || dt > 250)) { lastDraw = now; lastKey = key; frame(); }
     }
     requestAnimationFrame(tick);
@@ -4460,6 +4492,7 @@ body.hasmap .peek { padding-right: 100px; }
   // Catasto: servizio WMS dell'Agenzia delle Entrate (serve la rete; se il servizio non risponde al sito lo si dice).
   const COM = { regs: null, data: {}, loading: {}, cur: null, at: null, state: 'idle' };
   const CAT = { cur: null, state: 'idle', at: null, tried: 0, msg: '' };
+  const CAT_PROXY = 'https://orientis-catasto.filippotiso.workers.dev/catasto';
   async function cachedJson(url) {
     let cache = null;
     try { cache = await caches.open('orientis-comuni-v1'); const hit = await cache.match(url); if (hit) return hit.json(); } catch (e) { cache = null; }
@@ -4527,10 +4560,9 @@ body.hasmap .peek { padding-right: 100px; }
     const moved = !CAT.at || geo(CAT.at.lat, CAT.at.lon, S.lat, S.lon).d > 12;
     if (!moved || CAT.state === 'loading' || now - CAT.tried < (CAT.state === 'err' ? 60000 : 8000)) return;
     CAT.tried = now; CAT.state = 'loading';
-    const lat = S.lat, lon = S.lon, d = 0.00001;
-    const url = 'https://wms.cartografia.agenziaentrate.gov.it/inspire/wms/ows01.php?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo' +
-      '&SRS=EPSG:4258&BBOX=' + [lon - d, lat - d, lon + d, lat + d].map((v) => v.toFixed(6)).join(',') +
-      '&WIDTH=9&HEIGHT=9&X=4&Y=4&LAYERS=CP.CadastralParcel&QUERY_LAYERS=CP.CadastralParcel&STYLES=&FORMAT=image/png&INFO_FORMAT=text/html';
+    const lat = S.lat, lon = S.lon;
+    // v25: la richiesta passa dal server di passaggio dell'utente (Cloudflare Worker), che la gira all'Agenzia delle Entrate
+    const url = CAT_PROXY + '?lat=' + lat.toFixed(6) + '&lon=' + lon.toFixed(6);
     const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const to = setTimeout(() => { if (ctl) ctl.abort(); }, 9000);
     try {
@@ -4542,7 +4574,7 @@ body.hasmap .peek { padding-right: 100px; }
       CAT.cur = pc; CAT.state = pc ? 'ok' : 'none'; CAT.at = { lat: lat, lon: lon };
     } catch (e) {
       CAT.state = 'err';
-      CAT.msg = e && e.name === 'AbortError' ? 'il servizio dell’Agenzia non risponde' : e && e.name === 'TypeError' ? 'il servizio dell’Agenzia non risponde al sito' : String(e && e.message || e);
+      CAT.msg = e && e.name === 'AbortError' ? 'il servizio dell’Agenzia non risponde' : String(e && e.message || e);
     } finally { clearTimeout(to); }
   }
   function catastoText() {
@@ -4551,19 +4583,22 @@ body.hasmap .peek { padding-right: 100px; }
     if (CAT.state === 'loading' || CAT.state === 'idle') return 'in caricamento…';
     if (CAT.state === 'none') return 'nessuna particella qui (strada, acqua o zona non mappata)';
     if (CAT.state === 'offline') return 'serve la rete';
-    return 'qui non si legge in automatico: tocca «Mappa» per vedere foglio e particella';
+    return (navigator.onLine ? 'non disponibile ora' : 'serve la rete') + ': tocca «Mappa» per vedere foglio e particella';
   }
   setInterval(() => { if (!$('hud').hidden) updateComune(); }, 2000);
 
   /* ---------- v22: la fotocamera la disegna l'app ---------- */
   const camCv = $('camCv'), camCtx = camCv.getContext('2d', { alpha: false });
-  let camDrawOn = false, lastCamDraw = 0;
+  let camDrawOn = false, lastCamDraw = 0, lastCamPaint = 0;
   function camDraw() {
     lastCamDraw = Date.now();
     const v = $('video');
     // v24: col pannello aperto (copre tutto) la fotocamera resta accesa ma non si ridisegna
     if (sheetIsOpen()) { nextCamDraw(); return; }
+    // v25: telefono fermo → l'immagine si ridisegna 15 volte al secondo invece di 30 (si salta un fotogramma su due)
+    if (!camPaused && phoneStill() && !shooting && lastCamDraw - lastCamPaint < 60) { nextCamDraw(); return; }
     if (!camPaused && v.videoWidth && !v.classList.contains('switching')) {
+      lastCamPaint = lastCamDraw;
       const W = window.innerWidth, H = window.innerHeight;
       const r = Math.min(window.devicePixelRatio || 1, 2);
       const cw = Math.round(W * r), ch = Math.round(H * r);
@@ -4588,7 +4623,7 @@ body.hasmap .peek { padding-right: 100px; }
   function sheetIsOpen() { return $('sheet').classList.contains('open'); }
 
   /* ---------- v20: pausa automatica per risparmiare batteria ---------- */
-  // Telefono rivolto a terra (o al cielo) per 20 s: fotocamera spenta. Si riprende alzandolo o toccando lo schermo.
+  // Telefono rivolto a terra (o al cielo) per 10 s (v25; prima 20 s): fotocamera spenta. Si riprende alzandolo o toccando lo schermo.
   let camPaused = false, oddSince = 0, okSince = 0;
   let pausedBySheet = false, sheetSince = 0;
   function pauseCam(quiet) {
@@ -4626,16 +4661,15 @@ body.hasmap .peek { padding-right: 100px; }
     }
     okSince = 0;
     const busy = shooting || align.step || !$('gal').hidden || !$('edit').hidden || $('sheet').classList.contains('open') || full;
-    if (odd && !busy) { oddSince = oddSince || now; if (now - oddSince > 20000) pauseCam(); } else oddSince = 0;
+    if (odd && !busy) { oddSince = oddSince || now; if (now - oddSince > 10000) pauseCam(); } else oddSince = 0;
   }, 1000);
 
   /* ---------- Avvio ---------- */
-  // v25: animazione della pagina iniziale (circa 5 s) con requestAnimationFrame e attributi SVG
+  // v25: animazione della pagina iniziale (circa 5 s) con requestAnimationFrame e attributi SVG; sempre visibile, anche con «Riduci movimento» (scelta dell'utente)
   (function introAnim() {
     const q = (sel) => document.querySelector('#start ' + sel);
     const hills = [q('.o-l1'), q('.o-l2'), q('.o-l3'), q('.o-l4')], sun = q('.o-sun'), line = q('.o-draw'), dot = q('.lg-sun');
     if (!line || !sun) return;
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const L = line.getTotalLength ? Math.ceil(line.getTotalLength()) + 2 : 640;
     const ease = (t) => 1 - Math.pow(1 - t, 3);
     const seg = (t, d, dur) => Math.max(0, Math.min(1, (t - d) / dur));
@@ -4650,7 +4684,6 @@ body.hasmap .peek { padding-right: 100px; }
       // il punto del logo: nel gruppo capovolto del logo +y va verso l'alto, quindi parte da −100 (sotto la linea di base)
       if (dot) dot.setAttribute('transform', 'translate(0 ' + (-100 * (1 - ease(seg(t, 3900, 1100)))).toFixed(1) + ')');
     }
-    if (reduce) { frame(1e9); return; }
     frame(0);
     let t0 = null;
     function step(now) {
@@ -4703,9 +4736,8 @@ body.hasmap .peek { padding-right: 100px; }
 
       // 3. Posizione
       if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(onPos, onPosErr, {
-          enableHighAccuracy: true, maximumAge: 1000, timeout: 20000
-        });
+        gpsStart();
+        setInterval(gpsCheck, 5000);
       } else {
         S.gpsMsg = 'non disponibile';
       }

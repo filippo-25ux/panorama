@@ -49,7 +49,7 @@ def main():
             '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--no-sandbox'])
 
         def open_page(scheme):
-            ctx = b.new_context(viewport={'width': 402, 'height': 874}, device_scale_factor=2, color_scheme=scheme)
+            ctx = b.new_context(viewport={'width': 402, 'height': 874}, device_scale_factor=2, color_scheme=scheme, reduced_motion='reduce' if scheme == 'dark' else 'no-preference')
             ctx.add_init_script(INIT)
             page = ctx.new_page()
             errs = []
@@ -61,7 +61,7 @@ def main():
                     return r.continue_()
                 if 'agenziaentrate' in u and 'GetMap' in u:   # immagine finta del catasto
                     return r.fulfill(status=200, content_type='image/png', body=PNG)
-                if 'agenziaentrate' in u and scheme == 'light':   # risposta finta del catasto (formato INSPIRE dell'Agenzia)
+                if ('agenziaentrate' in u or 'workers.dev' in u) and scheme == 'light':   # risposta finta del catasto (formato INSPIRE dell'Agenzia)
                     return r.fulfill(status=200, content_type='text/html', headers={'Access-Control-Allow-Origin': '*'},
                                      body='<table><tr><th>InspireId localId</th><td>IT.AGE.PLA.A399_0042A0.123</td></tr></table>')
                 if 'maplibre-gl' in u and ML and os.path.isdir(ML):
@@ -76,7 +76,12 @@ def main():
         for scheme in ('light', 'dark'):
             ctx, page, errs = open_page(scheme)
             check(theme(page) == scheme, f'automatico: iPhone in tema {scheme} → app in tema {scheme}')
-            page.wait_for_timeout(3600)   # animazione della pagina iniziale
+            page.wait_for_timeout(1500)
+            tr = page.evaluate("document.querySelector('#start .lg-sun').getAttribute('transform')")
+            check(tr and tr != 'translate(0 0.0)', f'animazione iniziale in corso a 1,5 s (Riduci movimento {"acceso" if scheme == "dark" else "spento"})')
+            page.wait_for_timeout(4200)   # fine dell'animazione
+            tr = page.evaluate("document.querySelector('#start .lg-sun').getAttribute('transform')")
+            check(tr == 'translate(0 0.0)', 'il punto del logo è sorto alla fine')
             page.screenshot(path=f'{OUT}/v23-{scheme}-avvio.png')
             check(page.locator('.ver').inner_text().startswith('Beta v2'), f'tema {scheme}: pagina iniziale con «Beta v2x»')
             if scheme == 'light':
@@ -134,6 +139,13 @@ def main():
         page.reload(); page.wait_for_timeout(500)
         check(theme(page) == 'dark', '«Scuro» resta dopo aver riaperto la pagina')
         page.evaluate("window.panoTheme.set('auto')")
+        # v25: GPS a riposo dopo 30 s fermi
+        page.click('#go'); page.wait_for_timeout(3000)
+        if page.locator('#alCancel').first.is_visible():
+            page.locator('#alCancel').first.click()
+        page.wait_for_timeout(36000)
+        print('     ', page.evaluate("JSON.stringify({g: window.__panoGps, hud: document.getElementById('hud').hidden})"))
+        check(page.evaluate("window.__panoGps && window.__panoGps.low") is True, 'GPS a riposo dopo 30 s senza spostamenti (lettura ogni minuto)')
         check(theme(page) == 'light', '«Automatico» torna al tema dell\'iPhone')
         check(not errs, 'nessun errore JavaScript ' + ('' if not errs else str(errs[:2])))
         ctx.close()
