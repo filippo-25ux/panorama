@@ -70,9 +70,11 @@ def main():
                 return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({
                     'type': 'standard', 'title': ttl, 'extract': ttl + ' è un luogo di prova con una lunga storia.', 'wikibase_item': 'Q42',
                     'content_urls': {'mobile': {'page': 'https://it.m.wikipedia.org/wiki/' + ttl}}, 'coordinates': {'lat': la, 'lon': lo}}))
+            if 'wikipedia.org/w/api.php' in u and 'prop=extracts' in u:
+                return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'query': {'pages': {'1': {'extract': 'Introduzione lunga di prova. ' * 12}}}}))
             if 'wikipedia.org/w/api.php' in u:
                 return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'query': {'geosearch': [
-                    {'title': 'Castello di Prova', 'dist': 850.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Chiesa di San Prova', 'dist': 1900.0, 'lat': 40.0, 'lon': 15.3}]}}))
+                    {'title': 'Castello di Prova', 'dist': 850.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Biblioteca civica di Prova', 'dist': 900.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Museo di Prova', 'dist': 950.0, 'lat': 40.0, 'lon': 15.3}, {'title': 'Chiesa di San Prova', 'dist': 1900.0, 'lat': 40.0, 'lon': 15.3}]}}))
             if 'wikidata.org' in u:
                 return r.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body=json.dumps({'claims': {'P856': [{'mainsnak': {'datavalue': {'value': 'https://www.comune.prova.it'}}}]}}))
             if 'interpreter' in u:
@@ -91,6 +93,8 @@ def main():
             page.locator('#alCancel').first.click()
         check(page.evaluate('window.__panoTab()') == 'mappa', 'dopo Avvia si apre la Mappa')
         check(page.locator('#tabs').is_visible(), 'barra delle sezioni visibile')
+        page.wait_for_timeout(2500)
+        check(not page.locator('#alignBar').is_visible(), 'nella Mappa non compare l’invito ad allineare la bussola (solo in Guarda)')
         check(page.evaluate('window.__panoCam().paused'), 'partendo dalla Mappa la fotocamera si spegne subito dopo il permesso')
         for _ in range(40):
             if page.evaluate("!!window.__panoMap && document.getElementById('miniWrap').classList.contains('full')"):
@@ -121,6 +125,7 @@ def main():
         print('     storia:', sto.replace('\n', ' | ')[:220])
         check(nm in sto and 'Leggi su Wikipedia' in sto and 'Sito ufficiale' in sto and 'Castello di Prova' in sto, 'Storia e cultura: riassunto, sito ufficiale, voci nei dintorni')
         check(nm in page.inner_text('#puGrid .puTile[data-amb="sto"]'), 'pastiglia «Storia e cultura» col titolo della voce')
+        check('Introduzione lunga di prova' in sto and 'Biblioteca' not in sto and 'Museo' not in sto, 'descrizione più ampia; niente biblioteche e musei nei dintorni')
         page.evaluate("document.getElementById('puSto').scrollIntoView()")
         page.screenshot(path=f'{OUT}/v33-storia.png')
         page.click('#tabs button[data-tab="mappa"]'); page.wait_for_timeout(500)
@@ -158,6 +163,9 @@ def main():
         page.screenshot(path=f'{OUT}/v30-punto-qui.png')
         # Guarda
         page.click('#tabs button[data-tab="guarda"]')
+        page.wait_for_timeout(2000)
+        check(page.locator('#alignBar').is_visible(), 'entrando in Guarda compare l’invito ad allineare la bussola')
+        page.locator('#alCancel').first.click()
         for _ in range(40):
             if page.evaluate("document.getElementById('demState').textContent") in ('attivo', 'non disponibile', 'incompleto'):
                 break

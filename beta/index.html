@@ -1245,7 +1245,7 @@ body.tabs .gacts { padding-bottom: 10px; }
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v33 · Luogo, storia e cultura</span>
+          <span class="ver">Beta v34 · storia più ricca</span>
         </div>
       </div>
     </section>
@@ -3206,7 +3206,7 @@ body.tabs .gacts { padding-bottom: 10px; }
   }
   let introDone = false;
   setInterval(() => {
-    if (introDone || align.step || $('hud').hidden) return;
+    if (introDone || align.step || $('hud').hidden || tabNow() !== 'guarda') return;   // v34: solo in Guarda
     if (S.heading === null || S.lat === null || !items.length) return;
     introDone = true;
     if (!S.alPos) alIntro();
@@ -5434,11 +5434,22 @@ body.tabs .gacts { padding-bottom: 10px; }
   async function wikiSummary(title) {
     const j = await wjson(WIKI + '/api/rest_v1/page/summary/' + encodeURIComponent(title.replace(/ /g, '_')));
     if (!j || j.type === 'disambiguation' || !j.extract) return null;
-    return { title: j.title, text: j.extract, url: j.content_urls && j.content_urls.mobile ? j.content_urls.mobile.page : WIKI + '/wiki/' + encodeURIComponent(j.title), qid: j.wikibase_item || null, thumb: j.thumbnail ? j.thumbnail.source : null, lat: j.coordinates ? j.coordinates.lat : null, lon: j.coordinates ? j.coordinates.lon : null };
+    // v34: descrizione più ampia: tutta l'introduzione della voce (fino a circa 900 caratteri, tagliata a fine frase)
+    let text = j.extract;
+    try {
+      const q = await wjson(WIKI + '/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&redirects=1&format=json&origin=*&titles=' + encodeURIComponent(j.title));
+      const pg = q && q.query && q.query.pages ? Object.values(q.query.pages)[0] : null;
+      let t = pg && pg.extract ? pg.extract.replace(/\n+/g, ' ').trim() : '';
+      if (t.length > 900) { const cut = t.lastIndexOf('. ', 900); t = t.slice(0, cut > 300 ? cut + 1 : 900) + ' …'; }
+      if (t.length > text.length) text = t;
+    } catch (e) {}
+    return { title: j.title, text: text, url: j.content_urls && j.content_urls.mobile ? j.content_urls.mobile.page : WIKI + '/wiki/' + encodeURIComponent(j.title), qid: j.wikibase_item || null, thumb: j.thumbnail ? j.thumbnail.source : null, lat: j.coordinates ? j.coordinates.lat : null, lon: j.coordinates ? j.coordinates.lon : null };
   }
   async function wikiNear(lat, lon, r) {
-    const j = await wjson(WIKI + '/w/api.php?action=query&list=geosearch&gscoord=' + lat.toFixed(5) + '|' + lon.toFixed(5) + '&gsradius=' + r + '&gslimit=25&format=json&origin=*');
-    return ((j && j.query && j.query.geosearch) || []).map((g) => ({ title: g.title, d: g.dist, lat: g.lat, lon: g.lon }));
+    const j = await wjson(WIKI + '/w/api.php?action=query&list=geosearch&gscoord=' + lat.toFixed(5) + '|' + lon.toFixed(5) + '&gsradius=' + r + '&gslimit=60&format=json&origin=*');
+    // v34: niente biblioteche, musei, archivi, scuole, stazioni, ospedali e simili: restano monumenti, chiese, castelli, siti, frazioni…
+    const NO = /^(biblioteca|museo|archivio|pinacoteca|scuola|liceo|istituto|universit|stazione|fermata|ospedale|stadio|palazzetto|cinema|ufficio|caserma|cimitero|campo sportivo|centro commerciale|aeroporto|autostrada|strada statale|ss\d)/i;
+    return ((j && j.query && j.query.geosearch) || []).filter((g) => !NO.test(g.title)).map((g) => ({ title: g.title, d: g.dist, lat: g.lat, lon: g.lon }));
   }
   async function wikiSite(qid) {
     const j = await wjson('https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=' + qid + '&property=P856&format=json&origin=*');
