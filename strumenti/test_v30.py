@@ -73,6 +73,7 @@ def main():
             page.locator('#alCancel').first.click()
         check(page.evaluate('window.__panoTab()') == 'mappa', 'dopo Avvia si apre la Mappa')
         check(page.locator('#tabs').is_visible(), 'barra delle sezioni visibile')
+        check(page.evaluate('window.__panoCam().paused'), 'partendo dalla Mappa la fotocamera si spegne subito dopo il permesso')
         for _ in range(40):
             if page.evaluate("!!window.__panoMap && document.getElementById('miniWrap').classList.contains('full')"):
                 break

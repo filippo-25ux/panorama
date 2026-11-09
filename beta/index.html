@@ -5546,6 +5546,8 @@ body.tabs .gacts { padding-bottom: 10px; }
       $('tabs').hidden = false;
       document.body.classList.add('tabs');
       setTab(START_TAB);
+      // v31: la fotocamera serviva solo per il permesso: se non si parte da Guarda si spegne subito (si riaccende entrando in Guarda)
+      setTimeout(() => { if (tabNow() !== 'guarda' && !camPaused) pauseCam(true); }, 800);
       if (F.sun) sunToggle(true);
       if (fovWasReset) { saveSettings(); setTimeout(() => toast('Campo visivo riportato ai valori di partenza (era stato tarato sull\'immagine piccola).', 6000), 1500); }
       if (pitchWasReset !== null) toast('Inclinazione azzerata (era ' + fmtDeg(Math.round(pitchWasReset * 10) / 10) + '): ora viene solo dai sensori del telefono.', 7000);
