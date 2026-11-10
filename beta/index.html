@@ -1229,6 +1229,10 @@ body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(66px + env(safe-area
 body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
 body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(150px + env(safe-area-inset-top, 0px)); }
 #lyNote { display: none; }
+.keyRow { display: block; padding: 10px 0; }
+.keyRow span { display: block; font-size: 15px; }
+.keyRow small { display: block; margin-top: 2px; font-size: 12px; color: var(--tx2); }
+.keyRow input { margin-top: 8px; width: 100%; height: 40px; padding: 0 12px; border: 0; border-radius: 10px; font: inherit; font-size: 15px; color: var(--tx); background: var(--fill); }
 /* v38: foto satellitare e ricerca dei Comuni (tasti tondi a destra, sotto «i») */
 #satBtn, #findBtn, #findBox { display: none; }
 body[data-tab="mappa"] #miniWrap.full .mapRnd { display: flex; align-items: center; justify-content: center; position: absolute; right: 12px; z-index: 4;
@@ -1540,9 +1544,10 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       </div>
       <h3>Aspetto</h3>
       <div class="seg" id="segT"><button type="button" data-th="auto">Automatico</button><button type="button" data-th="light">Chiaro</button><button type="button" data-th="dark">Scuro</button></div>
-      <p class="hint">Automatico segue l'impostazione dell'iPhone (Impostazioni → Schermo e luminosità).</p>
+      <p class="hint">Automatico segue l’aspetto chiaro o scuro scelto nelle impostazioni del telefono.</p>
       <h3>Livelli sulla mappa</h3>
-      <div class="soon">Frane e alluvioni (IdroGEO)<em>in arrivo</em></div>
+      <label class="keyRow"><span>Chiave Esri per la foto satellitare dettagliata<small>si incolla una volta e resta solo su questo dispositivo; senza chiave si usa Sentinel-2 (EOX)</small></span>
+        <input type="password" id="esriKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AAPT…"></label>
       <label class="sw"><span>Catasto<small>particelle e numeri dell’Agenzia delle Entrate sulla mappa grande; serve la rete</small></span><input type="checkbox" id="catLayer"></label>
       <h3 id="advSec">Bussola e taratura (avanzate)</h3>
         <label class="sw"><span>Correzione automatica col sole<small>quando il sole è netto e fermo; ti avvisa sempre, con Annulla</small></span><input type="checkbox" id="autoSun"></label>
@@ -1859,13 +1864,13 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       if (s.ridge === false) S.ridge = false;
       if (s.autoSun === false) S.autoSun = false;
       if (s.catLayer === true) S.catLayer = true;
-      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true; S.coneOff = s.coneOff === true; S.sat = s.sat === true;
+      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true; S.coneOff = s.coneOff === true; S.sat = s.sat === true; S.esriKey = typeof s.esriKey === 'string' ? s.esriKey : '';
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; F.river = s.f.river !== false; F.stream = s.f.stream === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, coneOff: !!S.coneOff, sat: !!S.sat, v22: true, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, coneOff: !!S.coneOff, sat: !!S.sat, esriKey: S.esriKey || '', v22: true, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -2996,7 +3001,16 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   /* ---------- v38: foto satellitare ----------
      Di serie Sentinel-2 cloudless di EOX (aperta, circa 10 m, uso non commerciale con citazione).
      Con una chiave Esri (account sviluppatore ArcGIS gratuito) si usa World Imagery, molto più dettagliata. */
-  const ESRI_KEY = '';
+  // Chiave API di ArcGIS Location Platform: NON sta nel codice (il repository è pubblico). Si incolla una volta nelle Impostazioni
+  // e resta solo su quel telefono (S.esriKey). Se Esri non risponde (chiave scaduta, quota esaurita) si torna a EOX.
+  let ESRI_KEY = '';
+  function esriSet(k) {
+    k = String(k || '').trim();
+    if (k === ESRI_KEY) return;
+    ESRI_KEY = k; satErr = 0;
+    if (mapReady && map.getSource('sat')) { try { map.removeLayer('sat'); map.removeSource('sat'); map.addSource('sat', SAT_SRC()); map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } }, 'comB'); } catch (er) {} }
+    satApply();
+  }
   const SAT_YEARS = ['2024', '2023', '2021'];   // se un anno non risponde si passa al precedente
   let satY = 0, satErr = 0;
   function SAT_SRC() {
@@ -3006,14 +3020,14 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   }
   function satAttr() {
     const y = SAT_YEARS[satY];
-    return ESRI_KEY ? 'Foto: Esri, Maxar, Earthstar Geographics'
+    return ESRI_KEY ? 'Foto: Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community'
       : 'Foto: <a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + y + '</a> by EOX IT Services GmbH (contiene dati Copernicus Sentinel ' + y + ' modificati), licenza CC BY-NC-SA 4.0';
   }
   // anno non disponibile: dopo qualche errore dei tasselli satellitari si prova l'anno precedente
   function satOnError(e) {
-    if (ESRI_KEY || !e || e.sourceId !== 'sat' || satY >= SAT_YEARS.length - 1) return;
-    if (++satErr < 4) return;
-    satErr = 0; satY++;
+    if (!e || e.sourceId !== 'sat') return;
+    if (ESRI_KEY) { if (++satErr < 6) return; satErr = 0; ESRI_KEY = ''; }
+    else { if (satY >= SAT_YEARS.length - 1 || ++satErr < 4) return; satErr = 0; satY++; }
     try { map.removeLayer('sat'); map.removeSource('sat'); map.addSource('sat', SAT_SRC()); map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } }, 'comB'); satApply(); } catch (er) {}
   }
   function satApply() {
@@ -3024,8 +3038,9 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     const v = on ? 'visible' : 'none';
     if (map.getLayoutProperty('sat', 'visibility') !== v) map.setLayoutProperty('sat', 'visibility', v);
     const sh = $('miniAttr').querySelector('.s');
-    if (sh) sh.innerHTML = on ? (ESRI_KEY ? '© Esri' : '<a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + SAT_YEARS[satY] + '</a> · Copernicus') : '© OSM';
+    if (sh) sh.innerHTML = on ? (ESRI_KEY ? 'Powered by <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a> · Maxar, Earthstar Geographics' : '<a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + SAT_YEARS[satY] + '</a> · Copernicus') : '© OSM';
   }
+  $('esriKey').addEventListener('change', () => { S.esriKey = $('esriKey').value.trim(); saveSettings(); esriSet(S.esriKey); });
   $('satBtn').addEventListener('click', (e) => {
     e.stopPropagation(); S.sat = !S.sat; saveSettings(); satApply();
     if (S.sat && !ESRI_KEY && mapReady && map.getZoom() > 15) mapHint('Foto satellitare con poco dettaglio da vicino (circa 10 m).');
@@ -5017,6 +5032,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   galLoad().then(setThumbs).catch(() => {});
 
   loadSettings();
+  $('esriKey').value = S.esriKey || ''; esriSet(S.esriKey);
   if (pitchWasReset !== null) { saveSettings(); }
   loadCache();
   refreshSettingsUI();

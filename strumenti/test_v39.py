@@ -51,7 +51,8 @@ def main():
         ctx = b.new_context(viewport={'width': 402, 'height': 874}, device_scale_factor=2)
         ctx.add_init_script(INIT)
         page = ctx.new_page()
-        errs, leg, sat = [], [], []
+        errs, leg, sat, esri = [], [], [], []
+        ESRI_DOWN = [False]
         page.on('pageerror', lambda e: errs.append(str(e)))
         ML = os.path.join(NPM, 'node_modules/maplibre-gl/dist/') if NPM else ''
 
@@ -75,6 +76,11 @@ def main():
                     leg.append(u)
                     return r.fulfill(status=200, content_type='application/json', headers=h, body=json.dumps(LEGEND if 'PAI_Frane' in u else {'error': {'message': 'prova'}}))
                 return r.fulfill(status=200, content_type='application/json', headers=h, body='{"results": []}')
+            if 'ibasemaps-api.arcgis.com' in u:
+                esri.append(u)
+                if ESRI_DOWN[0]:
+                    return r.fulfill(status=403, content_type='application/json', headers=h, body='{"error":{"code":498}}')
+                return r.fulfill(status=200, content_type='image/jpeg', headers=h, body=PNG1)
             if 'maps.eox.at' in u:
                 sat.append(u)
                 return r.fulfill(status=200, content_type='image/jpeg', headers=h, body=PNG1)
@@ -142,16 +148,25 @@ def main():
         check(vis() == 'none' and page.evaluate("window.__panoMap.getLayoutProperty('fan', 'visibility')") == 'none', '«Cono» spegne il cono e la fascia della bussola')
         page.click('#lyCone'); page.wait_for_timeout(300)
         check(vis() == 'visible', '«Cono» lo riaccende')
+        # v39: chiave Esri incollata nelle Impostazioni (finta), mai nel codice
+        page.evaluate("(() => { const i = document.getElementById('esriKey'); i.value = 'AAPTprova123'; i.dispatchEvent(new Event('change')); })()")
+        page.wait_for_timeout(300)
+        check(not re.search(r'AAPT[A-Za-z0-9_.-]{30,}', open(os.path.join(REPO, 'beta/index.html'), encoding='utf-8').read()), 'nessuna chiave Esri nel codice pubblico')
         # v38: foto satellitare
         satv = lambda: page.evaluate("window.__panoMap.getLayoutProperty('sat', 'visibility')")
         check(satv() == 'none' and page.get_attribute('#satBtn', 'aria-pressed') == 'false', 'satellite spento di serie')
         page.click('#satBtn'); page.wait_for_timeout(1500)
-        check(satv() == 'visible' and sat and 's2cloudless-2024_3857' in sat[0], 'tasto satellite: foto Sentinel-2 cloudless di EOX')
-        check('EOxCloudless' in page.inner_text('#miniAttr'), 'citazione EOX visibile sulla mappa: ' + page.inner_text('#miniAttr'))
+        check(satv() == 'visible' and esri and 'World_Imagery' in esri[0] and 'token=AAPTprova123' in esri[0] and not sat, 'tasto satellite: foto Esri World Imagery con la chiave')
+        check('Powered by Esri' in page.inner_text('#miniAttr'), 'citazione Esri visibile sulla mappa: ' + page.inner_text('#miniAttr'))
         page.screenshot(path=f'{OUT}/v38-satellite.png')
         page.click('#mapInfoBtn'); page.wait_for_timeout(300)
-        check('CC BY-NC-SA' in page.inner_text('#mapInfo'), 'nelle note la licenza della foto satellitare')
+        check('Earthstar Geographics' in page.inner_text('#mapInfo'), 'nelle note le fonti della foto satellitare')
         page.click('#mapInfoClose'); page.wait_for_timeout(200)
+        # Esri che non risponde (chiave scaduta o quota finita): si torna da soli a EOX
+        ESRI_DOWN[0] = True
+        page.evaluate("window.__panoMap.setZoom(window.__panoMap.getZoom() + 1.3)"); page.wait_for_timeout(2500)
+        page.evaluate("window.__panoMap.panBy([300, 300], {duration: 0})"); page.wait_for_timeout(2500)
+        check(sat and 's2cloudless-2024_3857' in sat[-1] and 'EOxCloudless' in page.inner_text('#miniAttr'), 'Esri non risponde: torna da sola la foto EOX')
         page.click('#satBtn'); page.wait_for_timeout(300)
         check(satv() == 'none' and '© OSM' in page.inner_text('#miniAttr'), 'satellite spento: torna la mappa OSM')
         # v38: ricerca del Comune per nome
