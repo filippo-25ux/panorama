@@ -1224,6 +1224,25 @@ body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(66px + env(safe-area
 body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
 body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(150px + env(safe-area-inset-top, 0px)); }
 #lyNote { display: none; }
+/* v38: foto satellitare e ricerca dei Comuni (tasti tondi a destra, sotto «i») */
+#satBtn, #findBtn, #findBox { display: none; }
+body[data-tab="mappa"] #miniWrap.full .mapRnd { display: flex; align-items: center; justify-content: center; position: absolute; right: 12px; z-index: 4;
+  width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); }
+body[data-tab="mappa"] #miniWrap.full #satBtn { top: calc(56px + env(safe-area-inset-top, 0px)); }
+body[data-tab="mappa"] #miniWrap.full #findBtn { top: calc(100px + env(safe-area-inset-top, 0px)); }
+body[data-tab="mappa"] #miniWrap.full #satBtn[aria-pressed="true"], body[data-tab="mappa"] #miniWrap.full #findBtn[aria-expanded="true"] { color: #fff; background: var(--acc); }
+body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(142px + env(safe-area-inset-top, 0px)); }
+body.sat[data-tab="mappa"] #miniWrap.full #miniAttr { color: #fff; text-shadow: 0 0 3px rgba(0,0,0,.7); }
+body[data-tab="mappa"] #miniWrap.full #findBox:not([hidden]) { display: block; position: absolute; left: 12px; right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 6;
+  padding: 8px; border-radius: 18px; background: var(--glass-card); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: var(--card-shadow); }
+#findBox .fbRow { display: flex; gap: 6px; }
+#findIn { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; font: inherit; font-size: 16px; color: var(--tx); background: var(--fill); outline: none; }
+#findX { border: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--acc); padding: 0 8px; }
+#findList { max-height: 50vh; overflow: auto; }
+#findList button { display: flex; justify-content: space-between; gap: 8px; width: 100%; padding: 11px 8px; border: 0; border-bottom: 0.5px solid var(--line); background: transparent; font: inherit; font-size: 15px; color: var(--tx); text-align: left; }
+#findList button span { color: var(--tx2); font-size: 13px; white-space: nowrap; }
+#findList button:last-child { border-bottom: 0; }
+#findList p { margin: 10px 8px 4px; font-size: 13px; color: var(--tx2); }
 /* v37: note della mappa in un tasto «i»; i consigli d'uso in basso, senza pastiglia, per pochi secondi; niente ghiera fuori da Guarda */
 body[data-tab]:not([data-tab="guarda"]) #tape { display: none !important; }
 body[data-tab="mappa"] #miniWrap.full #catNote, body[data-tab="mappa"] #miniWrap.full #catHint { display: none !important; }
@@ -1232,7 +1251,7 @@ body[data-tab="mappa"] #miniWrap.full #mapInfoBtn { display: flex; align-items: 
   width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); }
 body[data-tab="mappa"] #miniWrap.full #mapInfoBtn[aria-expanded="true"] { color: #fff; background: var(--acc); }
 body[data-tab="mappa"] #miniWrap.full #lyBar { right: 56px; }
-body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(54px + env(safe-area-inset-top, 0px)); font-size: 10px; color: var(--tx2); }
+body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(142px + env(safe-area-inset-top, 0px)); font-size: 10px; color: var(--tx2); }
 body[data-tab="mappa"] #miniWrap.full #miniAttr .l { display: none; }
 body[data-tab="mappa"] #miniWrap.full #miniAttr .s { display: inline; }
 body[data-tab="mappa"] #miniWrap.full #mapInfo:not([hidden]) { display: block; position: absolute; left: 12px; right: 12px; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 5;
@@ -1242,6 +1261,7 @@ body[data-tab="mappa"] #miniWrap.full #mapInfo:not([hidden]) { display: block; p
 #mapInfo dt { margin-top: 2px; width: 16px; height: 16px; border-radius: 5px; }
 #mapInfo dd { margin: 0; color: var(--tx2); }
 #mapInfo dd b { color: var(--tx); font-weight: 600; }
+#mapInfo dd a, #miniAttr a { color: inherit; }
 #mapInfo .mi-close { display: block; margin: 12px auto 0; padding: 6px 18px; border: 0; border-radius: 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--acc); background: transparent; }
 body[data-tab="mappa"] #miniWrap.full #mapHint:not([hidden]) { display: block; position: absolute; left: 16px; right: 16px; z-index: 3; text-align: center; pointer-events: none;
   font-size: 13px; font-weight: 600; color: #1d1d1f; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 6px #fff; transition: opacity 0.6s; }
@@ -1334,7 +1354,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v37 · Sito ed Energia</span>
+          <span class="ver">Beta v38 · satellite e clima futuro</span>
         </div>
       </div>
     </section>
@@ -1405,6 +1425,9 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     <button id="miniCenter" type="button" aria-label="Ricentra sulla tua posizione" title="Ricentra" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20.5 3.5 3.6 10.6c-.7.3-.6 1.3.1 1.5l6.6 1.6 1.6 6.6c.2.7 1.2.8 1.5.1l7.1-16.9z" fill="currentColor"/></svg></button>
     <div id="lyBar"><button id="catBtn" type="button" aria-pressed="false">Catasto</button><button class="lyB" id="lyFr" type="button" aria-pressed="false">Frane</button><button class="lyB" id="lyAl" type="button" aria-pressed="false">Alluvioni</button><button class="lyB" id="lyCone" type="button" aria-pressed="true" aria-label="Cono visivo">Cono</button></div>
     <button id="mapInfoBtn" type="button" aria-label="Note sulla mappa" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7.6" r="1.25" fill="currentColor"/><path d="M12 10.8v6.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+    <button id="satBtn" class="mapRnd" type="button" aria-label="Foto satellitare" aria-pressed="false"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><path d="M12 3 2.5 8 12 13l9.5-5L12 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16l9.5 5 9.5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+    <button id="findBtn" class="mapRnd" type="button" aria-label="Cerca un Comune" aria-expanded="false"><svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.3 15.3 5 5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+    <div id="findBox" hidden><div class="fbRow"><input id="findIn" type="search" placeholder="Cerca un Comune" autocomplete="off" autocapitalize="words" enterkeyhint="search" aria-label="Nome del Comune"><button type="button" id="findX">Chiudi</button></div><div id="findList" role="listbox"></div></div>
     <div id="mapInfo" hidden></div>
     <div id="mapHint" hidden></div>
     <div id="lyNote" hidden></div>
@@ -1831,13 +1854,13 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       if (s.ridge === false) S.ridge = false;
       if (s.autoSun === false) S.autoSun = false;
       if (s.catLayer === true) S.catLayer = true;
-      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true; S.coneOff = s.coneOff === true;
+      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true; S.coneOff = s.coneOff === true; S.sat = s.sat === true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; F.river = s.f.river !== false; F.stream = s.f.stream === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, coneOff: !!S.coneOff, v22: true, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, coneOff: !!S.coneOff, sat: !!S.sat, v22: true, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -2902,6 +2925,12 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       const empty = { type: 'FeatureCollection', features: [] };
       for (const id of ['sunsweep', 'sunrise', 'sunset', 'fan', 'cone', 'acc', 'me', 'rivers']) map.addSource(id, { type: 'geojson', data: empty });
       // v27: fiumi con nome, sotto il cono
+      // v38: foto satellitare (sopra la mappa OSM, sotto tutto il resto) e confine del Comune cercato
+      map.addSource('sat', SAT_SRC());
+      map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } });
+      map.addSource('comB', { type: 'geojson', data: empty });
+      map.on('error', satOnError);
+      map.addLayer({ id: 'comB', type: 'line', source: 'comB', paint: { 'line-color': '#e8590c', 'line-width': 2.2, 'line-dasharray': [3, 1.5], 'line-opacity': 0.9 } });
       map.addLayer({ id: 'rivers', type: 'line', source: 'rivers', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#2b86c5', 'line-width': ['interpolate', ['linear'], ['zoom'], 9, ['case', ['get', 's'], 0.7, 1.2], 15, ['case', ['get', 's'], 1.8, 3]], 'line-opacity': 0.85 } });
       map.addLayer({ id: 'sunsweep', type: 'fill', source: 'sunsweep', paint: { 'fill-color': '#ffd166', 'fill-opacity': 0.18 } });
       map.addLayer({ id: 'sunrise', type: 'line', source: 'sunrise', paint: { 'line-color': '#ff9f1c', 'line-width': 3, 'line-dasharray': [2, 1] } });
@@ -2958,6 +2987,99 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     h.hidden = false; h.classList.remove('off');
     MH.t = setTimeout(() => { h.classList.add('off'); MH.t = setTimeout(() => { h.hidden = true; }, 700); }, 4000);
   }
+
+  /* ---------- v38: foto satellitare ----------
+     Di serie Sentinel-2 cloudless di EOX (aperta, circa 10 m, uso non commerciale con citazione).
+     Con una chiave Esri (account sviluppatore ArcGIS gratuito) si usa World Imagery, molto più dettagliata. */
+  const ESRI_KEY = '';
+  const SAT_YEARS = ['2024', '2023', '2021'];   // se un anno non risponde si passa al precedente
+  let satY = 0, satErr = 0;
+  function SAT_SRC() {
+    return ESRI_KEY
+      ? { type: 'raster', tiles: ['https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=' + ESRI_KEY], tileSize: 256, maxzoom: 19 }
+      : { type: 'raster', tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-' + SAT_YEARS[satY] + '_3857/default/g/{z}/{y}/{x}.jpg'], tileSize: 256, maxzoom: 15 };
+  }
+  function satAttr() {
+    const y = SAT_YEARS[satY];
+    return ESRI_KEY ? 'Foto: Esri, Maxar, Earthstar Geographics'
+      : 'Foto: <a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + y + '</a> by EOX IT Services GmbH (contiene dati Copernicus Sentinel ' + y + ' modificati), licenza CC BY-NC-SA 4.0';
+  }
+  // anno non disponibile: dopo qualche errore dei tasselli satellitari si prova l'anno precedente
+  function satOnError(e) {
+    if (ESRI_KEY || !e || e.sourceId !== 'sat' || satY >= SAT_YEARS.length - 1) return;
+    if (++satErr < 4) return;
+    satErr = 0; satY++;
+    try { map.removeLayer('sat'); map.removeSource('sat'); map.addSource('sat', SAT_SRC()); map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } }, 'comB'); satApply(); } catch (er) {}
+  }
+  function satApply() {
+    const on = !!S.sat && full && tabNow() === 'mappa';
+    $('satBtn').setAttribute('aria-pressed', String(!!S.sat));
+    document.body.classList.toggle('sat', on);
+    if (!mapReady || !map.getLayer('sat')) return;
+    const v = on ? 'visible' : 'none';
+    if (map.getLayoutProperty('sat', 'visibility') !== v) map.setLayoutProperty('sat', 'visibility', v);
+    const sh = $('miniAttr').querySelector('.s');
+    if (sh) sh.innerHTML = on ? (ESRI_KEY ? '© Esri' : '<a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + SAT_YEARS[satY] + '</a> · Copernicus') : '© OSM';
+  }
+  $('satBtn').addEventListener('click', (e) => {
+    e.stopPropagation(); S.sat = !S.sat; saveSettings(); satApply();
+    if (S.sat && !ESRI_KEY && mapReady && map.getZoom() > 15) mapHint('Foto satellitare con poco dettaglio da vicino (circa 10 m).');
+  });
+
+  /* ---------- v38: ricerca dei Comuni per nome ---------- */
+  const FIND = { idx: null, state: 'idle' };
+  const fNorm = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  async function findLoad() {
+    if (FIND.idx || FIND.state === 'loading') return;
+    FIND.state = 'loading';
+    try { FIND.idx = (await cachedJson('comuni/indice.json?v=38')).c.map((r) => r.concat([fNorm(r[0].replace('/', ' '))])); FIND.state = 'ok'; } catch (e) { FIND.state = 'err'; }
+    findRender();
+  }
+  function findRender() {
+    const q = fNorm($('findIn').value), L = $('findList');
+    if (!FIND.idx) { L.innerHTML = '<p>' + (FIND.state === 'err' ? 'Elenco dei Comuni non disponibile ora (serve la rete la prima volta).' : 'Carico l’elenco dei Comuni…') + '</p>'; return; }
+    if (q.length < 2) { L.innerHTML = '<p>Scrivi almeno due lettere del nome.</p>'; return; }
+    const a = [], b = [];
+    for (const r of FIND.idx) {
+      const n = r[6];
+      if (n.startsWith(q)) a.push(r); else if (n.includes(' ' + q) || (q.length >= 3 && n.includes(q))) b.push(r);
+    }
+    const res = a.concat(b).slice(0, 12);
+    L.innerHTML = res.length ? res.map((r) => '<button type="button" role="option" data-i="' + r[2] + '">' + escHtml(r[0]) + '<span>' + r[1] + '</span></button>').join('')
+      : '<p>Nessun Comune con questo nome.</p>';
+  }
+  function findOpen(on) {
+    $('findBox').hidden = !on;
+    $('findBtn').setAttribute('aria-expanded', String(on));
+    if (on) { mapInfoOpen(false); findLoad(); findRender(); setTimeout(() => $('findIn').focus(), 50); }
+    else $('findIn').blur();
+  }
+  async function findGo(istat) {
+    const r = FIND.idx && FIND.idx.find((x) => x[2] === istat);
+    if (!r) return;
+    findOpen(false);
+    setFollow(false);
+    let c = null;
+    try {
+      if (!COM.data[r[3]]) COM.data[r[3]] = (await cachedJson('comuni/R' + r[3] + '.json')).c;
+      c = COM.data[r[3]].find((x) => x[2] === istat);
+    } catch (e) { c = null; }
+    if (mapReady) {
+      if (c) {
+        const ring = (q) => { const o = []; for (let i = 0; i < q.length; i += 2) o.push([q[i] / 1e4, q[i + 1] / 1e4]); return o; };
+        map.getSource('comB').setData({ type: 'Feature', properties: {}, geometry: { type: 'MultiLineString', coordinates: c[5].flatMap((pl) => pl.map(ring)) } });
+        const mc = $('mapCard');
+        map.fitBounds([[c[4][0], c[4][1]], [c[4][2], c[4][3]]], { padding: { top: 70, left: 40, right: 60, bottom: (mc && !mc.hidden ? mc.offsetHeight : 160) + 20 }, maxZoom: 15, duration: 600 });
+      } else map.jumpTo({ center: [r[5], r[4]], zoom: 12 });
+    }
+    ptSet(r[4], r[5], 'mappa', { name: r[0], type: 'comune' });
+  }
+  $('findBtn').addEventListener('click', (e) => { e.stopPropagation(); findOpen($('findBox').hidden); });
+  $('findX').addEventListener('click', (e) => { e.stopPropagation(); findOpen(false); });
+  $('findBox').addEventListener('click', (e) => { e.stopPropagation(); const b = e.target.closest('button[data-i]'); if (b) findGo(b.dataset.i); });
+  $('findIn').addEventListener('input', findRender);
+  $('findIn').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const b = $('findList').querySelector('button[data-i]'); if (b) findGo(b.dataset.i); } if (e.key === 'Escape') findOpen(false); });
+  window.__panoFind = (q) => { $('findIn').value = q; findRender(); };
   // v37: note della mappa (prescrizioni) dietro al tasto «i»
   function mapInfoHtml() {
     const row = (sw, t) => '<dt style="' + sw + '"></dt><dd>' + t + '</dd>';
@@ -2967,6 +3089,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       row('background:#fff;border:1px solid #888', '<b>Catasto</b> (Agenzia delle Entrate): indicativo, può essere spostato di alcuni metri rispetto alla mappa. Non ha valore di certificato.') +
       row('background:#d9480f', '<b>Frane e alluvioni</b>: mosaicatura nazionale dei PAI (ISPRA), indicativa: fanno fede il piano dell’Autorità di bacino e le sue norme.') +
       row('background:var(--line)', 'Mappa © OpenStreetMap contributors · rilievo Terrarium (Mapzen/AWS).') +
+      row('background:#3d5a40', satAttr() + '. Comuni e confini: ISTAT.') +
       '</dl><button type="button" class="mi-close" id="mapInfoClose">Chiudi</button>';
   }
   function mapInfoOpen(on) {
@@ -2975,7 +3098,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     el.hidden = !on;
     $('mapInfoBtn').setAttribute('aria-expanded', String(on));
   }
-  $('mapInfoBtn').addEventListener('click', (e) => { e.stopPropagation(); mapInfoOpen($('mapInfo').hidden); });
+  $('mapInfoBtn').addEventListener('click', (e) => { e.stopPropagation(); if ($('mapInfo').hidden) findOpen(false); mapInfoOpen($('mapInfo').hidden); });
   $('mapInfo').addEventListener('click', (e) => { e.stopPropagation(); if (e.target.id === 'mapInfoClose') mapInfoOpen(false); });
   // v31: col server aggiornato («/tile») il catasto arriva a tasselli, come la mappa: più veloce, e i tasselli già visti
   // restano nella memoria del server e del telefono. Col server di prima resta l'immagine unica.
@@ -5690,6 +5813,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     $('lyAl').setAttribute('aria-pressed', String(!!S.lyAl));
     $('lyCone').setAttribute('aria-pressed', String(!S.coneOff));
     if (!mapReady) return;
+    satApply();
     const cv = S.coneOff && full && tabNow() === 'mappa' ? 'none' : 'visible';
     for (const id of ['cone', 'coneLine', 'fan']) if (map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== cv) map.setLayoutProperty(id, 'visibility', cv);
     for (const [k, on] of [['fr', S.lyFr && full], ['al', S.lyAl && full]]) {
@@ -5938,7 +6062,9 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     dm: 'https://www.gazzettaufficiale.it/eli/gu/2025/12/05/283/sg',
     ntc: 'https://www.gazzettaufficiale.it/eli/id/2018/02/20/18A00716/sg',
     rad: 'https://www.arpalombardia.it/temi-ambientali/radioattivita/il-radon/aree-prioritarie-in-italia/',
-    radL: 'https://www.normattiva.it/uri-res/N2Ls?urn%3Anir%3Astato%3Adecreto.legislativo%3A2020-07-31%3B101'
+    radL: 'https://www.normattiva.it/uri-res/N2Ls?urn%3Anir%3Astato%3Adecreto.legislativo%3A2020-07-31%3B101',
+    pnar: 'https://www.gazzettaufficiale.it/eli/gu/2024/02/21/43/sg',
+    lrCa: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:regione.campania:legge:2019-07-08;13'
   };
   function nf(x, d) { return x.toFixed(d).replace('.', ','); }
   // Calcolo per un Comune e una quota: tutto quello che serve alla pastiglia e alla pagina
@@ -6049,8 +6175,37 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     else if (st === 'zero') { rv = 'no'; rt = rn + ' ha deciso che nel suo territorio non ci sono aree prioritarie.'; }
     else { rv = 'non ancora pubblicata'; rc = 'sub'; rt = rn + ' non ha ancora pubblicato l’elenco delle aree prioritarie.'; }
     h += rows([['Area prioritaria', rv, rc]]) + '<p class="sitTxt">' + rt.charAt(0).toUpperCase() + rt.slice(1) + '</p>';
-    if (r && r[3] === 1) h += '<p class="sitTxt">Nelle aree prioritarie la legge chiede di misurare il radon nei luoghi di lavoro al piano terra e interrati (D.Lgs 101/2020); per le case è consigliato.</p>';
-    h += '<p class="sitSrc">Elenco nazionale dei Comuni in area prioritaria (ARPA Lombardia' + (D.radV ? ', ' + D.radV : '') + ', dagli atti delle Regioni in Gazzetta Ufficiale). ' + aLink('rad', 'Fonte') + ' ' + aLink('radL', 'D.Lgs 101/2020') + '</p>';
+    h += '<p class="sitSrc">Elenco nazionale dei Comuni in area prioritaria (ARPA Lombardia' + (D.radV ? ', ' + D.radV : '') + ', dagli atti delle Regioni in Gazzetta Ufficiale). ' + aLink('rad', 'Fonte') + '</p>';
+    const prio = r && r[3] === 1;
+    h += '<div class="sitCard"><b>Livelli di riferimento</b><span>Concentrazione media annua di radon in aria · D.Lgs 101/2020, art. 12</span>' +
+      '<table class="sitU"><tr><th>Ambiente</th><th>Bq/m³</th></tr>' +
+      '<tr><td>Abitazioni esistenti</td><td>300</td></tr><tr><td>Abitazioni costruite dopo il 31/12/2024</td><td>200</td></tr><tr><td>Luoghi di lavoro</td><td>300</td></tr></table></div>';
+    h += '<div class="sitCard"><b>Cosa chiede la legge</b><span>D.Lgs 101/2020, artt. 16–18, e Piano nazionale d’azione per il radon 2023–2032</span>' +
+      '<p class="sitTxt"><b>Luoghi di lavoro.</b> Misura della media annua nei locali interrati ' + (prio ? 'e, essendo area prioritaria, anche nei seminterrati e al piano terra' : 'ovunque; nei seminterrati e al piano terra solo nelle aree prioritarie') +
+      '; inoltre negli stabilimenti termali. Entro 24 mesi dall’inizio dell’attività, con un servizio di dosimetria riconosciuto. Se sotto il livello: si ripete ogni 8 anni e dopo lavori strutturali al piano terra o di isolamento termico. Se sopra: rimedi entro 2 anni con un esperto in interventi di risanamento radon, nuova misura di verifica, poi ogni 4 anni.</p>' +
+      '<p class="sitTxt"><b>Abitazioni.</b> Nessun obbligo nazionale di misura: è consigliata' + (prio ? ', soprattutto qui,' : '') + ' nei locali al piano terra e seminterrati. Se si supera il livello conviene intervenire, per esempio con ventilazione o depressurizzazione del vespaio, sigillatura delle vie d’ingresso dal terreno, ventilazione dei locali.</p>' +
+      '<p class="sitTxt"><b>Progetto.</b> Il Piano nazionale (asse 2) punta a sistemi di prevenzione nei nuovi edifici, perché restino sotto 200 Bq/m³: per esempio vespaio aerato, barriere e sigillature verso il terreno. Le regole precise stanno nelle norme regionali e nel regolamento edilizio del Comune.</p></div>';
+    if (o.reg === '15') {
+      h += '<div class="sitCard"><b>Campania · Legge regionale 13/2019</b><span>Riduzione dell’esposizione al gas radon in ambienti chiusi</span>' +
+        '<table class="sitU"><tr><th>Edifici</th><th>Bq/m³</th></tr>' +
+        '<tr><td>Nuove costruzioni, ristrutturazioni e manutenzioni straordinarie (ogni locale)</td><td>200</td></tr>' +
+        '<tr><td>Scuole, asili nido e scuole dell’infanzia esistenti</td><td>300</td></tr>' +
+        '<tr><td>Interrati, seminterrati e piano terra di edifici non residenziali aperti al pubblico</td><td>300</td></tr></table>' +
+        '<p class="sitTxt">Per i nuovi interventi il progetto comprende una relazione tecnica su suolo, sottosuolo, materiali e accorgimenti contro l’accumulo di radon; le misure in tutti i locali iniziano entro 6 mesi dalla segnalazione certificata per l’agibilità. Per gli edifici esistenti oltre il limite serve un piano di risanamento; se mancano misure o lavori l’agibilità può essere sospesa.</p>' +
+        '<p class="sitNote">Da verificare con il Comune come la legge regionale si coordina oggi con il D.Lgs 101/2020.</p></div>';
+    } else h += '<p class="sitNote">Leggi regionali sul radon: non ancora raccolte nell’app per questa Regione; verificare il regolamento edilizio del Comune.</p>';
+    h += '<p class="sitSrc">' + aLink('radL', 'D.Lgs 101/2020') + ' ' + aLink('pnar', 'Piano nazionale radon') + (o.reg === '15' ? ' ' + aLink('lrCa', 'LR Campania 13/2019') : '') + '</p>';
+    // Clima futuro
+    h += '<h4>Clima futuro</h4>';
+    const CP = { AV: 'avellino', BN: 'benevento', CE: 'caserta', NA: 'napoli', SA: 'salerno' }[o.com.p];
+    if (o.reg === '15' && CP) {
+      const slug = o.com.n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      h += '<p class="sitTxt">La Regione Campania ha preparato una scheda climatica per ogni Comune (PR FESR 2021-27, dati del Piano nazionale di adattamento PNACC 2024): temperature, ondate di calore, notti tropicali, gradi giorno di riscaldamento e raffrescamento, piogge intense, siccità, oggi e in futuro, con le classi di pericolo.</p>' +
+        '<p class="sitSrc"><a href="https://prfesr2127.regione.campania.it/wp-content/uploads/2026/08/' + CP + '-' + slug + '.pdf" target="_blank" rel="noopener">Scheda di ' + escHtml(o.com.n) + ' (PDF) ›</a> ' +
+        '<a href="https://prfesr2127.regione.campania.it/schede-climatiche-' + CP + '/" target="_blank" rel="noopener">Schede della provincia ›</a> ' +
+        '<a href="https://geomaps.regione.campania.it/portal/apps/experiencebuilder/experience/?id=dbf62f935d6f4a8ea1f559b996a99fa6" target="_blank" rel="noopener">WebGIS pericoli climatici ›</a></p>' +
+        '<p class="sitNote">Le schede non indicano periodi e scenario climatico; alcuni valori «futuri» sembrano variazioni rispetto a oggi.</p>';
+    } else h += '<p class="sitTxt">Per questa Regione non c’è una scheda climatica comunale. Gli indicatori del Piano nazionale di adattamento (ISPRA) per tutta Italia arriveranno in una prossima versione.</p>';
     h += '<p class="hint">Informazioni indicative, per orientarsi: fanno fede le norme, gli uffici regionali e comunali e il progettista.</p>';
     return h;
   }

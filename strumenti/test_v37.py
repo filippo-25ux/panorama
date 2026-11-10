@@ -153,7 +153,7 @@ def main():
         check('dal 15 ottobre al 15 aprile, max 14 ore' in sb, 'pagina: periodo di riscaldamento della zona E')
         check('0,26' in sb and '0,28' in sb and '1,40' in sb, 'pagina: trasmittanze del DM 28/10/2025 per la zona E')
         cards = page.locator('#sitBox .sitCard')
-        check(cards.count() == 2 and 'Edificio di riferimento' in cards.nth(0).inner_text() and 'Riqualificazione' in cards.nth(1).inner_text(), 'riferimento e riqualificazione in due tabelle distinte')
+        check(cards.count() >= 2 and 'Edificio di riferimento' in cards.nth(0).inner_text() and 'Riqualificazione' in cards.nth(1).inner_text(), 'riferimento e riqualificazione in due tabelle distinte')
         c0, c1 = cards.nth(0).inner_text(), cards.nth(1).inner_text()
         check('0,22' in c0 and '0,75' in c0 and '0,80' in c0, 'riferimento zona E: coperture 0,22, H′T 0,75, divisori 0,80')
         check('0,24' in c1 and '0,29' in c1 and '0,364' in c1, 'riqualificazione zona E: coperture 0,24, pavimenti 0,29, pareti +30% 0,364')
