@@ -203,7 +203,7 @@ def main():
         check(any(h.endswith('/2026/08/avellino-ariano-irpino.pdf') for h in hrefs), 'Clima futuro: scheda climatica comunale della Campania')
         check('clima futuro' in sb.lower() and any('schede-climatiche-avellino' in h for h in hrefs), 'Clima futuro: elenco della provincia')
         page.wait_for_timeout(1500); sb = page.inner_text('#sitBox')
-        check('Notti tropicali' in sb and 'RCP4.5' in sb and '13,8 °C' in sb and '+1,6' in sb, 'Clima futuro PNACC: Ariano 13,8 °C, +1,6 °C con RCP4.5')
+        check('Notti tropicali' in sb and 'RCP4.5' in sb and 'Temperatura media annua, °C' in sb and '13,8' in sb and '+1,6' in sb and '≈ 0' not in sb.split('Giorni di gelo')[0], 'Clima futuro PNACC: Ariano 13,8 °C, +1,6 °C con RCP4.5')
         check('E-OBS' in sb and 'ISPRA' in sb, 'Clima futuro: fonti e citazione E-OBS')
         page.click('#puGrid .puTile[data-amb="sit"]'); page.wait_for_timeout(800)
         page.set_viewport_size({'width': 402, 'height': 4200}); page.wait_for_timeout(800); page.locator('#sitBox').screenshot(path=f'{OUT}/v39-sitbox.png'); page.set_viewport_size({'width': 402, 'height': 874})
