@@ -26,3 +26,5 @@
 - `make_indice.py` crea `beta/comuni/indice.json` (v38) per la ricerca dei Comuni: nome, provincia, codice ISTAT, regione e un punto sicuramente dentro il Comune. Va rifatto quando cambiano i file `R*.json`.
 - `test_v38.py` (parte da test_v37) prova anche la foto satellitare (Sentinel-2 cloudless di EOX, finta), la ricerca dei Comuni con il confine disegnato, il radon completo (D.Lgs 101/2020 e legge della Campania) e il Clima futuro (scheda della Campania):
   `python3 test_v38.py <cartella del repository> <cartella per gli screenshot> [cartella npm con maplibre-gl]`
+- `make_clima.py` crea `beta/clima-it.json` (v39, «Clima futuro»): indicatori PNACC 2024 di ISPRA, clima 1981-2010 (E-OBS, 0,1°) e variazioni al 2036-2065 (EURO-CORDEX, RCP2.6/4.5/8.5) dagli zip interni dei 4 pacchetti scaricati da climadat.isprambiente.it (alcuni pacchetti hanno un indice zip rovinato: si estraggono leggendo le intestazioni locali dei file).
+- `test_v39.py` (parte da test_v38) prova anche la tabella del Clima futuro per Ariano Irpino.

@@ -1195,6 +1195,11 @@ body.tabs .gacts { padding-bottom: 10px; }
 .sitU.ht th { font-weight: 500; color: var(--tx2); }
 #sitBox .sitHt { margin: 10px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--tx2); }
 .sitU th { white-space: nowrap; }
+.sitU.cli { font-size: 12px; }
+.sitU.cli th { font-size: 10.5px; white-space: normal; }
+.sitU.cli td { padding-left: 4px; }
+.sitU.cli td.m { color: var(--acc); }
+.sitU.cli tr.g td { padding-top: 10px; border-top: 0; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--tx3); }
 /* v33: Storia e cultura */
 .puGrid .puTile[data-amb="sto"] { grid-column: 1 / -1; min-height: 80px; }
 #stoBox { padding: 14px; border-radius: 16px; background: var(--sf); }
@@ -6073,7 +6078,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     const D = SITO.d;
     const reg = com.r || (D && D.pr ? D.pr[String(com.i).slice(0, 3)] : null);
     const row = D && D.c ? D.c[com.i] : null;
-    const o = { com: com, reg: reg, row: row, quota: quota };
+    const o = { com: com, reg: reg, row: row, quota: quota, lat: lat, lon: lon };
     const nz = NEVE_P[com.p];
     if (nz) {
       const Z = NEVE_Z[nz];
@@ -6084,6 +6089,62 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       o.vento = { z: vz, vb0: V[0], v: quota === null ? null : quota <= V[1] ? V[0] : quota <= 1500 ? V[0] * (1 + V[2] * (quota / V[1] - 1)) : NaN };
     }
     return o;
+  }
+
+  /* ---------- v39: Clima futuro (PNACC 2024, ISPRA) ----------
+     clima-it.json (strumenti/make_clima.py): clima 1981-2010 da E-OBS (griglia 0,1°) e variazioni al 2036-2065 secondo
+     l'insieme di modelli EURO-CORDEX (~12 km) negli scenari RCP2.6, RCP4.5, RCP8.5. Si usa il nodo più vicino di ciascuna griglia. */
+  const CLIMA = { d: null, state: 'idle', t: 0 };
+  async function climaLoad() {
+    if (CLIMA.d || CLIMA.state === 'loading' || (CLIMA.state === 'err' && Date.now() - CLIMA.t < 60000)) return;
+    CLIMA.state = 'loading'; CLIMA.t = Date.now();
+    try { CLIMA.d = await cachedJson('clima-it.json?v=39'); CLIMA.state = 'ok'; } catch (e) { CLIMA.state = 'err'; }
+    if (tabNow() === 'punto') renderPunto();
+  }
+  function climaNear(g, lat, lon) {
+    const P = CLIMA.d[g].p, k = Math.cos(lat * Math.PI / 180);
+    let bi = -1, bd = Infinity;
+    for (let i = 0; i < P[0].length; i++) { const dx = (P[0][i] - lon) * k, dy = P[1][i] - lat, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; bi = i; } }
+    return { i: bi, km: Math.sqrt(bd) * 111.2 };
+  }
+  // [chiave, nome, unità del valore 1981-2010, decimali, gruppo]
+  const CLIMA_IND = [
+    ['tg', 'Temperatura media annua', '°C', 1, 'Temperature'], ['tg_jja', 'Temperatura media estiva (giu-ago)', '°C', 1, 'Temperature'], ['tg_djf', 'Temperatura media invernale (dic-feb)', '°C', 1, 'Temperature'],
+    ['su95p', 'Giorni estivi (max > 29,2 °C)', 'giorni', 0, 'Caldo'], ['tr', 'Notti tropicali (min > 20 °C)', 'giorni', 0, 'Caldo'], ['wsdi', 'Giorni in ondata di calore (WSDI)', 'giorni', 0, 'Caldo'], ['humidex5', 'Giorni di forte disagio (humidex > 45 °C)', 'giorni', 0, 'Caldo'],
+    ['hdds', 'Gradi giorno di riscaldamento¹', 'GG', 0, 'Energia'], ['cdds', 'Gradi giorno di raffrescamento¹', 'GG', 0, 'Energia'],
+    ['fd', 'Giorni di gelo (min < 0 °C)', 'giorni', 0, 'Freddo'],
+    ['prcptot', 'Pioggia annua', 'mm', 0, 'Piogge e siccità'], ['r20', 'Giorni di pioggia intensa (> 20 mm)', 'giorni', 0, 'Piogge e siccità'], ['rx1day', 'Pioggia massima in un giorno', 'mm', 0, 'Piogge e siccità'], ['cdd', 'Giorni secchi consecutivi, al massimo', 'giorni', 0, 'Piogge e siccità'],
+    ['fwi', 'Indice di pericolo incendi (FWI)', '', 0, 'Incendi e vento'], ['ews', 'Vento estremo (98° percentile)', '', 0, 'Incendi e vento']
+  ];
+  function climaHtml(lat, lon) {
+    climaLoad();
+    if (!CLIMA.d) return '<p class="stoNote">' + (CLIMA.state === 'err' ? 'Dati climatici non disponibili ora (serve la rete la prima volta).' : 'Carico i dati climatici…') + '</p>';
+    const D = CLIMA.d, R = climaNear('ref', lat, lon), C = climaNear('sc', lat, lon);
+    if (C.km > 15) return '<p class="sitTxt">Punto fuori dalla griglia dei dati climatici (in mare o fuori dall’Italia).</p>';
+    const sg = (x, dec, pc) => {
+      if (x === null || x === undefined) return '–';
+      const d = Math.abs(x) < 1 && !pc ? 1 : pc ? 0 : dec, t = nf(Math.abs(x), d);
+      if (/^0(,0)?$/.test(t)) return '≈ 0';
+      return (x > 0 ? '+' : '−') + t + (pc ? '%' : '');
+    };
+    let h = '<div class="sitCard"><b>Oggi e al 2036–2065</b><span>Valori 1981–2010 e variazioni previste nei tre scenari: RCP2.6 forte riduzione delle emissioni, RCP4.5 intermedio, RCP8.5 emissioni ancora in crescita</span>' +
+      '<table class="sitU cli"><tr><th>Indicatore</th><th>1981–2010</th><th>RCP2.6</th><th>RCP4.5</th><th>RCP8.5</th></tr>';
+    let grp = '';
+    for (const [k, nm, u, dec] of CLIMA_IND.map((x) => x)) {
+      const it = CLIMA_IND.find((x) => x[0] === k), g = it[4];
+      const sc = D.sc.i[k]; if (!sc) continue;
+      if (g !== grp) { grp = g; h += '<tr class="g"><td colspan="5">' + g + (g === 'Caldo' || g === 'Freddo' || g === 'Piogge e siccità' ? ' · giorni all’anno' : '') + '</td></tr>'; }
+      const rv = D.ref.i[k] ? D.ref.i[k][R.i] : null, pc = D.u[k] === '%';
+      const dd = k === 'tg' || k === 'tg_jja' || k === 'tg_djf' ? 1 : dec;
+      h += '<tr><td>' + nm + (u && u !== 'giorni' ? ', ' + u : '') + '</td><td>' + (rv === null || rv === undefined ? '–' : nf(rv, dec)) + '</td>' +
+        ['26', '45', '85'].map((c) => '<td class="' + (c === '45' ? 'm' : '') + '">' + sg(sc[c][C.i], dd, pc) + '</td>').join('') + '</tr>';
+    }
+    h += '</table></div>';
+    h += '<p class="sitNote">Variazioni: media dei modelli EURO-CORDEX (celle di circa 12 km); valori 1981–2010: osservazioni E-OBS (celle di circa 10 km), quindi medie di cella che in collina e montagna possono scostarsi dal punto. ' +
+      '¹ Gradi giorno del PNACC (soglie 18/15 °C e 21/24 °C), diversi da quelli di legge del DPR 412/93. Incendi e vento: variazione percentuale.</p>';
+    h += '<p class="sitSrc">ISPRA, indicatori del Piano nazionale di adattamento ai cambiamenti climatici (PNACC 2024), dati CMCC; clima di riferimento E-OBS (We acknowledge the E-OBS dataset and the data providers in the ECA&amp;D project). ' +
+      '<a href="https://climadat.isprambiente.it/pnacc/dati-indicatori-mappe-pnacc/aree-terrestri/" target="_blank" rel="noopener">Fonte ›</a></p>';
+    return h;
   }
   function sitoTile(o) {
     if (!o) return S.lat === null ? 'in attesa del GPS' : 'in attesa del Comune';
@@ -6195,17 +6256,18 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         '<p class="sitNote">Da verificare con il Comune come la legge regionale si coordina oggi con il D.Lgs 101/2020.</p></div>';
     } else h += '<p class="sitNote">Leggi regionali sul radon: non ancora raccolte nell’app per questa Regione; verificare il regolamento edilizio del Comune.</p>';
     h += '<p class="sitSrc">' + aLink('radL', 'D.Lgs 101/2020') + ' ' + aLink('pnar', 'Piano nazionale radon') + (o.reg === '15' ? ' ' + aLink('lrCa', 'LR Campania 13/2019') : '') + '</p>';
-    // Clima futuro
+    // Clima futuro: indicatori PNACC (ISPRA) nel punto, clima 1981-2010 e variazioni al 2036-2065 nei tre scenari
     h += '<h4>Clima futuro</h4>';
+    h += climaHtml(o.lat, o.lon);
     const CP = { AV: 'avellino', BN: 'benevento', CE: 'caserta', NA: 'napoli', SA: 'salerno' }[o.com.p];
     if (o.reg === '15' && CP) {
       const slug = o.com.n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      h += '<p class="sitTxt">La Regione Campania ha preparato una scheda climatica per ogni Comune (PR FESR 2021-27, dati del Piano nazionale di adattamento PNACC 2024): temperature, ondate di calore, notti tropicali, gradi giorno di riscaldamento e raffrescamento, piogge intense, siccità, oggi e in futuro, con le classi di pericolo.</p>' +
+      h += '<p class="sitTxt">In Campania c’è anche la scheda climatica ufficiale di ogni Comune (PR FESR 2021-27, dati del Piano nazionale di adattamento PNACC 2024): temperature, ondate di calore, notti tropicali, gradi giorno di riscaldamento e raffrescamento, piogge intense, siccità, oggi e in futuro, con le classi di pericolo.</p>' +
         '<p class="sitSrc"><a href="https://prfesr2127.regione.campania.it/wp-content/uploads/2026/08/' + CP + '-' + slug + '.pdf" target="_blank" rel="noopener">Scheda di ' + escHtml(o.com.n) + ' (PDF) ›</a> ' +
         '<a href="https://prfesr2127.regione.campania.it/schede-climatiche-' + CP + '/" target="_blank" rel="noopener">Schede della provincia ›</a> ' +
         '<a href="https://geomaps.regione.campania.it/portal/apps/experiencebuilder/experience/?id=dbf62f935d6f4a8ea1f559b996a99fa6" target="_blank" rel="noopener">WebGIS pericoli climatici ›</a></p>' +
         '<p class="sitNote">Le schede non indicano periodi e scenario climatico; alcuni valori «futuri» sembrano variazioni rispetto a oggi.</p>';
-    } else h += '<p class="sitTxt">Per questa Regione non c’è una scheda climatica comunale. Gli indicatori del Piano nazionale di adattamento (ISPRA) per tutta Italia arriveranno in una prossima versione.</p>';
+    }
     h += '<p class="hint">Informazioni indicative, per orientarsi: fanno fede le norme, gli uffici regionali e comunali e il progettista.</p>';
     return h;
   }
