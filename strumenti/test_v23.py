@@ -118,7 +118,9 @@ def main():
                 check('GetMap' in src and 'CadastralParcel' in src, '«Mappa» del catasto: mappa grande con le particelle dell\'Agenzia')
                 check(page.locator('#catBtn').get_attribute('aria-pressed') == 'true', 'tasto «Catasto» acceso sulla mappa grande')
                 page.screenshot(path=f'{OUT}/v24-catasto-mappa.png')
-                check(page.locator('#catNote').is_visible(), 'nota «Catasto indicativo» visibile col catasto acceso')
+                page.click('#mapInfoBtn'); page.wait_for_timeout(300)   # v37: la nota sta nel tasto «i»
+                check('indicativo' in page.inner_text('#mapInfo') and not page.locator('#catNote').is_visible(), 'nota «Catasto indicativo» nel tasto «i», non fissa sulla mappa')
+                page.click('#mapInfoClose'); page.wait_for_timeout(200)
                 check(page.evaluate("window.__panoMap.getSource('acc')._data.geometry.coordinates[0].length") > 60, 'cerchio di precisione del GPS sulla mappa')
                 page.click('#catBtn'); page.wait_for_timeout(300)
                 check(page.evaluate("getComputedStyle(document.getElementById('catImg')).display") == 'none', 'tasto «Catasto» spegne il livello')
