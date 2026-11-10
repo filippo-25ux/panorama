@@ -1363,7 +1363,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v38 · satellite e clima futuro</span>
+          <span class="ver">Beta v39 · clima futuro in tutta Italia</span>
         </div>
       </div>
     </section>
@@ -6187,6 +6187,8 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         ' Di norma in tutta Italia si progetta secondo le NTC 2018; deposito o autorizzazione al Genio civile dipendono dalla Regione e dalla zona.</p>';
     } else h += rows([['Zona sismica', 'non trovata', 'na']]);
     h += '<p class="sitSrc">Dipartimento della Protezione Civile, classificazione per Comune' + (D.sisV ? ' (' + D.sisV + ')' : '') + '. ' + aLink('sis', 'Fonte') + '</p>';
+    h += '<p class="sitTxt">Pericolosità di base del punto (a<sub>g</sub>, F<sub>0</sub>, T<sub>C</sub>* per i periodi di ritorno delle NTC): non ancora calcolata nell’app. I valori ufficiali si leggono sulla mappa interattiva INGV, alle coordinate ' + o.lat.toFixed(4).replace('.', ',') + ' N, ' + o.lon.toFixed(4).replace('.', ',') + ' E.</p>' +
+      '<p class="sitSrc"><a href="https://esse1-gis.mi.ingv.it/" target="_blank" rel="noopener">Mappa INGV della pericolosità sismica ›</a></p>';
     // Clima (Comuni nati da fusione dopo il 2009: valori degli ex Comuni)
     h += '<h4>Clima e riscaldamento</h4>';
     const fx = D.fx && D.fx[o.com.i], ntab = D.nt && D.nt[o.com.i];
