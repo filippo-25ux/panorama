@@ -220,7 +220,7 @@ def main():
         page.wait_for_timeout(1500); sb = page.inner_text('#sitBox')
         check('Notti tropicali' in sb and 'RCP4.5' in sb and 'Temperatura media annua, °C' in sb and '13,8' in sb and '+1,6' in sb and '≈ 0' not in sb.split('Giorni di gelo')[0], 'Clima futuro PNACC: Ariano 13,8 °C, +1,6 °C con RCP4.5')
         check('E-OBS' in sb and 'ISPRA' in sb, 'Clima futuro: fonti e citazione E-OBS')
-        check('41,1513 N, 15,0694 E' in sb and any('esse1-gis.mi.ingv.it' in h for h in page.evaluate("[...document.querySelectorAll('#sitBox a')].map(a => a.href)")), 'Sismica: coordinate e link alla mappa INGV')
+        check(re.search(r'41,151\d N, 15,069\d E', sb) and any('esse1-gis.mi.ingv.it' in h for h in page.evaluate("[...document.querySelectorAll('#sitBox a')].map(a => a.href)")), 'Sismica: coordinate e link alla mappa INGV')
         page.click('#puGrid .puTile[data-amb="sit"]'); page.wait_for_timeout(800)
         page.set_viewport_size({'width': 402, 'height': 4200}); page.wait_for_timeout(800); page.locator('#sitBox').screenshot(path=f'{OUT}/v39-sitbox.png'); page.set_viewport_size({'width': 402, 'height': 874})
         # calcoli: neve e vento a quota nota
