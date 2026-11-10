@@ -1183,6 +1183,18 @@ body.tabs .gacts { padding-bottom: 10px; }
 .sitU th:first-child, .sitU td:first-child { text-align: left; padding-left: 0; }
 .sitU td { text-align: right; padding: 5px 0 5px 6px; border-top: 0.5px solid var(--line); font-weight: 600; }
 .sitU td:first-child { font-weight: 500; color: var(--tx2); }
+#sitBox .sitCard { margin: 8px 0 0; padding: 10px 12px 8px; border-radius: 12px; background: var(--bg); }
+#sitBox .sitCard > b { display: block; font-size: 14px; }
+#sitBox .sitCard > span { display: block; margin: 2px 0 6px; font-size: 11.5px; line-height: 1.35; color: var(--tx2); }
+#sitBox .sitNote { margin: 8px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--tx2); }
+.sitU td.t { font-weight: 400; color: var(--tx3); font-size: 11.5px; }
+.sitU td.p { font-weight: 500; color: var(--tx2); }
+.sitU td:first-child { padding-right: 8px; line-height: 1.3; }
+.sitU.ht { margin-top: 2px; table-layout: fixed; }
+.sitU.ht th, .sitU.ht td, .sitU.ht th:first-child, .sitU.ht td:first-child { text-align: center; padding-left: 0; padding-right: 0; font-weight: 600; color: var(--tx); }
+.sitU.ht th { font-weight: 500; color: var(--tx2); }
+#sitBox .sitHt { margin: 10px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--tx2); }
+.sitU th { white-space: nowrap; }
 /* v33: Storia e cultura */
 .puGrid .puTile[data-amb="sto"] { grid-column: 1 / -1; min-height: 80px; }
 #stoBox { padding: 14px; border-radius: 16px; background: var(--sf); }
@@ -1212,6 +1224,29 @@ body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(66px + env(safe-area
 body[data-tab="mappa"] #miniWrap.full #catNote:not([hidden]) { top: calc(104px + env(safe-area-inset-top, 0px)); }
 body[data-tab="mappa"] #miniWrap.full #catHint:not([hidden]) { top: calc(150px + env(safe-area-inset-top, 0px)); }
 #lyNote { display: none; }
+/* v37: note della mappa in un tasto «i»; i consigli d'uso in basso, senza pastiglia, per pochi secondi; niente ghiera fuori da Guarda */
+body[data-tab]:not([data-tab="guarda"]) #tape { display: none !important; }
+body[data-tab="mappa"] #miniWrap.full #catNote, body[data-tab="mappa"] #miniWrap.full #catHint { display: none !important; }
+#mapInfoBtn, #mapInfo, #mapHint { display: none; }
+body[data-tab="mappa"] #miniWrap.full #mapInfoBtn { display: flex; align-items: center; justify-content: center; position: absolute; right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 4;
+  width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--card-shadow); }
+body[data-tab="mappa"] #miniWrap.full #mapInfoBtn[aria-expanded="true"] { color: #fff; background: var(--acc); }
+body[data-tab="mappa"] #miniWrap.full #lyBar { right: 56px; }
+body[data-tab="mappa"] #miniWrap.full #miniAttr { top: calc(54px + env(safe-area-inset-top, 0px)); font-size: 10px; color: var(--tx2); }
+body[data-tab="mappa"] #miniWrap.full #miniAttr .l { display: none; }
+body[data-tab="mappa"] #miniWrap.full #miniAttr .s { display: inline; }
+body[data-tab="mappa"] #miniWrap.full #mapInfo:not([hidden]) { display: block; position: absolute; left: 12px; right: 12px; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 5;
+  max-height: 60vh; overflow: auto; padding: 14px 16px 12px; border-radius: 18px; color: var(--tx); background: var(--glass-card); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: var(--card-shadow); }
+#mapInfo h4 { margin: 0 0 8px; font-size: 15px; }
+#mapInfo dl { margin: 0; display: grid; grid-template-columns: 22px 1fr; gap: 9px 8px; font-size: 12.5px; line-height: 1.4; }
+#mapInfo dt { margin-top: 2px; width: 16px; height: 16px; border-radius: 5px; }
+#mapInfo dd { margin: 0; color: var(--tx2); }
+#mapInfo dd b { color: var(--tx); font-weight: 600; }
+#mapInfo .mi-close { display: block; margin: 12px auto 0; padding: 6px 18px; border: 0; border-radius: 14px; font: inherit; font-size: 13px; font-weight: 600; color: var(--acc); background: transparent; }
+body[data-tab="mappa"] #miniWrap.full #mapHint:not([hidden]) { display: block; position: absolute; left: 16px; right: 16px; z-index: 3; text-align: center; pointer-events: none;
+  font-size: 13px; font-weight: 600; color: #1d1d1f; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 6px #fff; transition: opacity 0.6s; }
+#mapHint.off { opacity: 0; }
+#lyBar #lyCone[aria-pressed="true"] { background: #e0a800; color: #1d1d1f; }
 /* v37: Ricentra = tastino tondo con solo il simbolo; legenda dei livelli accesi nella scheda sotto la mappa */
 #miniWrap.full #miniCenter { width: 44px; height: 44px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--acc); }
 #miniWrap.full #miniCenter[hidden] { display: none; }
@@ -1368,7 +1403,10 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     <div id="sunLegend"><div><i class="r"></i>Alba</div><div><i class="s"></i>Tramonto</div><div><i class="w"></i>Percorso del sole nel giorno</div></div>
     <button id="miniExpand" type="button" aria-label="Ingrandisci o riduci la mappa">⤢</button>
     <button id="miniCenter" type="button" aria-label="Ricentra sulla tua posizione" title="Ricentra" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20.5 3.5 3.6 10.6c-.7.3-.6 1.3.1 1.5l6.6 1.6 1.6 6.6c.2.7 1.2.8 1.5.1l7.1-16.9z" fill="currentColor"/></svg></button>
-    <div id="lyBar"><button id="catBtn" type="button" aria-pressed="false">Catasto</button><button class="lyB" id="lyFr" type="button" aria-pressed="false">Frane</button><button class="lyB" id="lyAl" type="button" aria-pressed="false">Alluvioni</button></div>
+    <div id="lyBar"><button id="catBtn" type="button" aria-pressed="false">Catasto</button><button class="lyB" id="lyFr" type="button" aria-pressed="false">Frane</button><button class="lyB" id="lyAl" type="button" aria-pressed="false">Alluvioni</button><button class="lyB" id="lyCone" type="button" aria-pressed="true" aria-label="Cono visivo">Cono</button></div>
+    <button id="mapInfoBtn" type="button" aria-label="Note sulla mappa" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7.6" r="1.25" fill="currentColor"/><path d="M12 10.8v6.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+    <div id="mapInfo" hidden></div>
+    <div id="mapHint" hidden></div>
     <div id="lyNote" hidden></div>
     <div id="catHint" hidden></div>
     <div id="catNote" hidden>Catasto indicativo: può essere spostato di alcuni metri rispetto alla mappa. Il cerchio azzurro è l’errore del GPS.</div>
@@ -1536,7 +1574,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   </div>
   <div id="galInfo"></div>
   <div id="galHint" hidden>
-    <p><b>Per non perdere le foto</b> aggiungi Orientis alla schermata Home (in Safari: Condividi ↑ → Aggiungi alla schermata Home). Per tenerne una copia sicura: Condividi → Salva immagine. Le foto scattate in Safari e quelle nell'app della schermata Home restano separate.</p>
+    <p><b>Per non perdere le foto</b> aggiungi Orientis alla schermata Home (dal menù del browser: Condividi ↑ → Aggiungi alla schermata Home). Per tenerne una copia sicura: Condividi → Salva immagine. Le foto scattate in Safari e quelle nell'app della schermata Home restano separate.</p>
     <button type="button" id="galHintX" aria-label="Chiudi il consiglio">✕</button>
   </div>
   <div id="galStrip"></div>
@@ -1793,13 +1831,13 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       if (s.ridge === false) S.ridge = false;
       if (s.autoSun === false) S.autoSun = false;
       if (s.catLayer === true) S.catLayer = true;
-      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true;
+      S.lyFr = s.lyFr === true; S.lyAl = s.lyAl === true; S.coneOff = s.coneOff === true;
       if (s.radius === 10000 || s.radius === 25000 || s.radius === 50000) S.radius = s.radius;
       if (s.f) { F.town = s.f.town !== false; F.peak = s.f.peak !== false; F.sun = s.f.sun === true; F.river = s.f.river !== false; F.stream = s.f.stream === true; if (DENS[s.f.dens]) F.dens = s.f.dens; }
     } catch (e) { /* si usano i valori di partenza */ }
   }
   function saveSettings() {
-    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, v22: true, f: F })); } catch (e) {}
+    try { localStorage.setItem('pano.settings', JSON.stringify({ fov: S.fovs.std, fovs: S.fovs, shotNames: S.shotNames, shotHi: S.shotHi, off: S.off, pitchOff: 0, pitchSensors: true, radius: S.radius, land: S.land, dem: S.dem, ridge: S.ridge, autoSun: S.autoSun, catLayer: !!S.catLayer, lyFr: !!S.lyFr, lyAl: !!S.lyAl, coneOff: !!S.coneOff, v22: true, f: F })); } catch (e) {}
   }
   function loadCache() {
     try {
@@ -2905,7 +2943,40 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     const st = CATL.img.style;
     st.left = a.x + 'px'; st.top = a.y + 'px'; st.width = (b.x - a.x) + 'px'; st.height = (b.y - a.y) + 'px';
   }
-  function catHint(t) { $('catHint').hidden = !t; $('catHint').textContent = t || ''; }
+  function catHint(t) { $('catHint').hidden = !t; $('catHint').textContent = t || ''; if (t && tabNow() === 'mappa') mapHint(t); }
+  // v37: consiglio d'uso in basso sulla mappa (come «Tocca il paesaggio»): 4 secondi, lo stesso testo non torna prima di 40 s
+  const MH = { t: 0, seen: {} };
+  function mapHint(t) {
+    if (!t || !full || tabNow() !== 'mappa') return;
+    const now = Date.now();
+    if (MH.seen[t] && now - MH.seen[t] < 40000) return;
+    MH.seen[t] = now;
+    const h = $('mapHint'), mc = $('mapCard');
+    h.textContent = t;
+    h.style.bottom = ((mc && !mc.hidden ? mc.offsetHeight : 0) + 18) + 'px';
+    clearTimeout(MH.t);
+    h.hidden = false; h.classList.remove('off');
+    MH.t = setTimeout(() => { h.classList.add('off'); MH.t = setTimeout(() => { h.hidden = true; }, 700); }, 4000);
+  }
+  // v37: note della mappa (prescrizioni) dietro al tasto «i»
+  function mapInfoHtml() {
+    const row = (sw, t) => '<dt style="' + sw + '"></dt><dd>' + t + '</dd>';
+    return '<h4>Note sulla mappa</h4><dl>' +
+      row('background:rgba(10,132,255,.18);border:1px solid #0a84ff;border-radius:50%', '<b>Cerchio azzurro</b>: l’errore possibile del GPS attorno alla tua posizione.') +
+      row('background:rgba(255,201,40,.5);border:1px solid #e0a800', '<b>Cono giallo</b>: dove guarda la fotocamera; la fascia celeste è l’incertezza della bussola. Si spegne con «Cono».') +
+      row('background:#fff;border:1px solid #888', '<b>Catasto</b> (Agenzia delle Entrate): indicativo, può essere spostato di alcuni metri rispetto alla mappa. Non ha valore di certificato.') +
+      row('background:#d9480f', '<b>Frane e alluvioni</b>: mosaicatura nazionale dei PAI (ISPRA), indicativa: fanno fede il piano dell’Autorità di bacino e le sue norme.') +
+      row('background:var(--line)', 'Mappa © OpenStreetMap contributors · rilievo Terrarium (Mapzen/AWS).') +
+      '</dl><button type="button" class="mi-close" id="mapInfoClose">Chiudi</button>';
+  }
+  function mapInfoOpen(on) {
+    const el = $('mapInfo');
+    if (on) el.innerHTML = mapInfoHtml();
+    el.hidden = !on;
+    $('mapInfoBtn').setAttribute('aria-expanded', String(on));
+  }
+  $('mapInfoBtn').addEventListener('click', (e) => { e.stopPropagation(); mapInfoOpen($('mapInfo').hidden); });
+  $('mapInfo').addEventListener('click', (e) => { e.stopPropagation(); if (e.target.id === 'mapInfoClose') mapInfoOpen(false); });
   // v31: col server aggiornato («/tile») il catasto arriva a tasselli, come la mappa: più veloce, e i tasselli già visti
   // restano nella memoria del server e del telefono. Col server di prima resta l'immagine unica.
   const CAT_BASE = 'https://orientis-catasto.filippotiso.workers.dev';
@@ -5410,6 +5481,10 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     if (p.d === null) return fmtCoord(p.lat, p.lon);
     return fmtDist(p.d) + ' a ' + DIRS[Math.round(p.b / 45) % 8] + (groundOf(p) !== null ? ' · ' + groundOf(p) + ' m' : '');
   }
+  function ptComLine(p) {
+    if (p.com) return 'nel territorio di ' + p.com.n + (p.com.p ? ' (' + p.com.p + ')' : '');
+    return p.comState === 'loading' ? 'cerco il Comune…' : p.comState === 'fuori' ? 'fuori dai Comuni italiani' : 'Comune non disponibile ora';
+  }
   function updateMapCard() {
     const c = $('mapCard');
     if (tabNow() !== 'mappa' || !mapReady) { c.hidden = true; return; }
@@ -5417,9 +5492,9 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     c.hidden = false;
     const p = PT.cur;
     const com = p ? (p.com ? p.com.n + (p.com.p ? ' (' + p.com.p + ')' : '') : '') : (COM.cur ? COM.cur.n + (COM.cur.p ? ' (' + COM.cur.p + ')' : '') : '');
-    setText('mcTitle', (p ? (p.nm || 'Punto scelto') : 'Qui') + (com && !(p && p.nm === (p.com && p.com.n)) ? ' · ' + com : ''));
+    setText('mcTitle', p ? (p.nm || 'Punto scelto') : 'Qui' + (com ? ' · ' + com : ''));
     const g = groundOf(p);
-    setText('mcSub', p ? ptWhere(p) + ' · tocca la mappa per cambiarlo'
+    setText('mcSub', p ? ptComLine(p) + ' · ' + ptWhere(p)
       : (S.lat === null ? 'in attesa del GPS' : fmtCoord(S.lat, S.lon) + (g !== null ? ' · ' + g + ' m' : '') + ' · tocca la mappa per un altro punto'));
     const html = rowsHtml(p);
     if ($('mcRows').innerHTML !== html) $('mcRows').innerHTML = html;
@@ -5473,7 +5548,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       m.hidden = !vis;
       if (vis) { m.style.left = Math.round(x) + 'px'; m.style.top = Math.round(y) + 'px'; }
       setText('aimName', 'Punto toccato');
-      setText('aimInfo', ptWhere(p));
+      setText('aimInfo', ptComLine(p) + ' · ' + ptWhere(p));
     } else m.hidden = true;
     $('ptRows').hidden = !on;
     $('here').hidden = on;
@@ -5613,7 +5688,10 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   function lyUpdate() {
     $('lyFr').setAttribute('aria-pressed', String(!!S.lyFr));
     $('lyAl').setAttribute('aria-pressed', String(!!S.lyAl));
+    $('lyCone').setAttribute('aria-pressed', String(!S.coneOff));
     if (!mapReady) return;
+    const cv = S.coneOff && full && tabNow() === 'mappa' ? 'none' : 'visible';
+    for (const id of ['cone', 'coneLine', 'fan']) if (map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== cv) map.setLayoutProperty(id, 'visibility', cv);
     for (const [k, on] of [['fr', S.lyFr && full], ['al', S.lyAl && full]]) {
       const id = 'ly_' + k;
       if (on && !map.getSource(id)) {
@@ -5661,13 +5739,14 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       h += '<div class="lgRow"><b>' + (k === 'fr' ? 'Frane PAI' : 'Alluvioni PAI') + '</b>' +
         items.map((it) => '<span>' + (it.img ? '<img alt="" src="' + it.img + '">' : '<i></i>') + it.c + ' ' + LEG_LBL[k][it.c] + '</span>').join('') + '</div>';
     }
-    h += '<p>' + (mapReady && map.getZoom() < 9 ? 'Avvicina la mappa per vedere le aree. ' : '') + (lyErr > 3 ? 'Il servizio ISPRA non risponde ora. ' : '') +
-      'ISPRA, indicativo: fanno fede il piano e le sue norme.</p>';
+    if (mapReady && map.getZoom() < 9) mapHint('Avvicina la mappa per vedere frane e alluvioni.');
+    if (lyErr > 3) mapHint('Il servizio ISPRA non risponde ora: riprova più tardi.');
     if (el.innerHTML !== h) el.innerHTML = h;
     el.hidden = false;
   }
   $('lyFr').addEventListener('click', (e) => { e.stopPropagation(); S.lyFr = !S.lyFr; saveSettings(); lyUpdate(); });
   $('lyAl').addEventListener('click', (e) => { e.stopPropagation(); S.lyAl = !S.lyAl; saveSettings(); lyUpdate(); });
+  $('lyCone').addEventListener('click', (e) => { e.stopPropagation(); S.coneOff = !S.coneOff; saveSettings(); lyUpdate(); });
   setInterval(() => { if (tabNow() === 'mappa') lyUpdate(); }, 1500);
 
   // Classe di pericolosità nel punto: si cerca «P1…P4» o «AA» (aree di attenzione) nella risposta del servizio
@@ -5847,6 +5926,11 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     ref: { A: [0.43, 0.35, 0.44, 3.00], B: [0.43, 0.35, 0.44, 3.00], C: [0.34, 0.33, 0.38, 2.20], D: [0.29, 0.26, 0.29, 1.80], E: [0.26, 0.22, 0.26, 1.40], F: [0.24, 0.20, 0.24, 1.10] },
     riq: { A: [0.40, 0.32, 0.42, 3.00], B: [0.40, 0.32, 0.42, 3.00], C: [0.36, 0.32, 0.38, 2.00], D: [0.32, 0.26, 0.32, 1.80], E: [0.28, 0.24, 0.29, 1.40], F: [0.26, 0.22, 0.28, 1.10] }
   };
+  // DM 28/10/2025, App. A Tab. 10: H'T massimo per nuove costruzioni [S/V < 0,4; 0,4 ≤ S/V < 0,7; S/V ≥ 0,7]
+  const DM_HT = { A: [0.80, 0.63, 0.58], B: [0.80, 0.63, 0.58], C: [0.80, 0.60, 0.55], D: [0.80, 0.58, 0.53], E: [0.75, 0.55, 0.50], F: [0.70, 0.53, 0.48] };
+  const REG_N = { '01': 'il Piemonte', '02': 'la Valle d’Aosta', '03': 'la Lombardia', '05': 'il Veneto', '06': 'il Friuli Venezia Giulia',
+    '07': 'la Liguria', '08': 'l’Emilia-Romagna', '09': 'la Toscana', '10': 'l’Umbria', '11': 'le Marche', '12': 'il Lazio', '13': 'l’Abruzzo', '14': 'il Molise', '15': 'la Campania',
+    '16': 'la Puglia', '17': 'la Basilicata', '18': 'la Calabria', '19': 'la Sicilia', '20': 'la Sardegna' };
   const SITO_LINK = {
     sis: 'https://rischi.protezionecivile.gov.it/en/approfondimento/seismic-classification/',
     cli: 'https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1993-08-26;412',
@@ -5878,7 +5962,9 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
   function sitoTile(o) {
     if (!o) return S.lat === null ? 'in attesa del GPS' : 'in attesa del Comune';
     if (!o.row) return SITO.state === 'err' ? 'non disponibile ora (serve la rete la prima volta)' : SITO.state === 'ok' ? 'Comune non trovato nelle tabelle' : 'in caricamento…';
-    return 'zona sismica ' + o.row[0] + ' · clima ' + o.row[1] + (o.row[2] ? ', ' + fmtInt(o.row[2]) + ' GG' : '') + (o.neve && o.neve.q ? ' · neve ' + nf(o.neve.q, 2) + ' kN/m²' : '');
+    const fx = SITO.d.fx && SITO.d.fx[o.com.i];
+    const cl = o.row[1] ? 'clima ' + o.row[1] + (o.row[2] ? ', ' + fmtInt(o.row[2]) + ' GG' : '') : fx ? 'clima ' + [...new Set(fx.map((x) => x[1]))].join('/') + ' (ex Comuni)' : 'clima non in tabella';
+    return 'zona sismica ' + o.row[0] + ' · ' + cl + (o.neve && o.neve.q ? ' · neve ' + nf(o.neve.q, 2) + ' kN/m²' : '');
   }
   function fmtInt(x) { return String(Math.round(x)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
   function aLink(k, t) { return '<a href="' + SITO_LINK[k] + '" target="_blank" rel="noopener">' + t + ' ›</a>'; }
@@ -5891,29 +5977,59 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     // Sismica
     h += '<h4>Sismica</h4>';
     if (r && r[0]) {
-      const n = parseInt(r[0], 10);
-      h += rows([['Zona sismica', String(r[0]), n <= 2 ? 'warn' : '']]);
-      h += '<p class="sitTxt">Zona ' + n + ': ' + (SIS_TXT[n] || '') + '.' + (String(r[0]).length > 1 ? ' La lettera indica una sottozona decisa dalla Regione.' : '') +
+      const zz = String(r[0]).split('-'), n = Math.min(...zz.map((x) => parseInt(x, 10)));
+      h += rows([['Zona sismica', zz.join(', '), n <= 2 ? 'warn' : '']]);
+      h += '<p class="sitTxt">' + (zz.length > 1 ? 'Il territorio comunale è diviso in più zone, secondo la delibera della Regione. La più pericolosa è la ' + n + ': ' : 'Zona ' + n + ': ') +
+        (SIS_TXT[n] || '') + '.' + (/[A-Z]/.test(r[0]) ? ' La lettera indica una sottozona decisa dalla Regione.' : '') +
         ' Di norma in tutta Italia si progetta secondo le NTC 2018; deposito o autorizzazione al Genio civile dipendono dalla Regione e dalla zona.</p>';
     } else h += rows([['Zona sismica', 'non trovata', 'na']]);
     h += '<p class="sitSrc">Dipartimento della Protezione Civile, classificazione per Comune' + (D.sisV ? ' (' + D.sisV + ')' : '') + '. ' + aLink('sis', 'Fonte') + '</p>';
-    // Clima
+    // Clima (Comuni nati da fusione dopo il 2009: valori degli ex Comuni)
     h += '<h4>Clima e riscaldamento</h4>';
-    if (r && r[1]) {
-      const P = CLI_PER[r[1]];
-      h += rows([['Zona climatica', r[1]], ['Gradi giorno', r[2] ? fmtInt(r[2]) : '–'],
+    const fx = D.fx && D.fx[o.com.i], ntab = D.nt && D.nt[o.com.i];
+    const zc = r && r[1] ? r[1] : null;
+    if (fx) {
+      const gs = fx.map((x) => x[2]).filter((x) => x > 0), zs = [...new Set(fx.map((x) => x[1]))].sort();
+      h += rows([['Zona climatica', zc || zs.join(' / ')], ['Gradi giorno', gs.length ? (Math.min(...gs) === Math.max(...gs) ? fmtInt(gs[0]) : 'da ' + fmtInt(Math.min(...gs)) + ' a ' + fmtInt(Math.max(...gs))) : '–', 'sub']]);
+      h += '<p class="sitTxt">Comune nato da fusione dopo il 2009: la Tabella A riporta gli ex Comuni ' +
+        fx.map((x) => escHtml(x[0]) + ' (' + x[1] + ', ' + fmtInt(x[2]) + ' GG)').join(', ') + '. Quale valore applicare va verificato con il Comune.</p>';
+    } else if (zc) {
+      const P = CLI_PER[zc];
+      h += rows([['Zona climatica', zc], ['Gradi giorno', r[2] ? fmtInt(r[2]) : '–'],
         ['Riscaldamento', P ? 'dal ' + P[0] + ' al ' + P[1] + ', max ' + P[2] + ' ore al giorno' : 'nessun limite (zona F)', 'sub']]);
-    } else h += rows([['Zona climatica', 'non trovata', 'na']]);
-    h += '<p class="sitSrc">DPR 412/93, Tabella A' + (D.cliV ? ' (' + D.cliV + ')' : '') + '; periodi dal DPR 74/2013. ' + aLink('cli', 'DPR 412/93') + ' ' + aLink('acc', 'DPR 74/2013') + '</p>';
-    // Requisiti minimi
-    if (r && DM_U.ref[r[1]]) {
-      const z = r[1], f = (a) => a.map((x) => '<td>' + nf(x, 2) + '</td>').join('');
-      h += '<h4>Requisiti minimi · zona ' + z + '</h4>';
-      h += '<table class="sitU"><tr><th>U (W/m²K)</th><th>Pareti</th><th>Coperture</th><th>Pavimenti</th><th>Finestre</th></tr>' +
-        '<tr><td>Edificio di riferimento</td>' + f(DM_U.ref[z]) + '</tr><tr><td>Riqualificazione</td>' + f(DM_U.riq[z]) + '</tr></table>';
-      h += '<p class="sitTxt">Riferimento: nuove costruzioni e ristrutturazioni importanti di 1° livello (App. A). Riqualificazione: limiti per ristrutturazioni di 2° livello e riqualificazioni (App. B), da aumentare del 30% con isolamento interno o in intercapedine. Schermature: g<sub>gl+sh</sub> ≤ 0,35.</p>';
-      h += '<p class="sitSrc">DM 28 ottobre 2025 (GU n. 283 del 5/12/2025, in vigore dal 3/6/2026). ' + aLink('dm', 'Gazzetta Ufficiale') + '</p>';
+    } else {
+      h += rows([['Zona climatica', 'non in Tabella A', 'na']]);
+      h += '<p class="sitTxt">Il Comune non compare nella Tabella A (istituito o rinominato dopo il 2009): zona e gradi giorno vanno chiesti al Comune.</p>';
     }
+    h += '<p class="sitSrc">DPR 412/93, Tabella A' + (D.cliV ? ' ' + D.cliV : '') + (ntab ? ', alla voce «' + escHtml(ntab) + '»' : '') + '; periodi di accensione dal DPR 74/2013. ' + aLink('cli', 'DPR 412/93') + ' ' + aLink('acc', 'DPR 74/2013') + '</p>';
+    // Requisiti minimi DM 28/10/2025: edificio di riferimento e riqualificazione in due tabelle distinte
+    if (zc && DM_U.ref[zc]) {
+      const z = zc, R = DM_U.ref[z], Q = DM_U.riq[z], HT = DM_HT[z];
+      const u = (x) => '<td>' + nf(x, 2) + '</td>';
+      h += '<h4>Requisiti minimi · zona ' + z + '</h4>';
+      h += '<div class="sitCard"><b>Edificio di riferimento</b><span>Nuove costruzioni, demolizione e ricostruzione, ristrutturazioni importanti di 1° livello · DM, Appendice A</span>' +
+        '<table class="sitU"><tr><th>Elemento</th><th>Tab.</th><th>U (W/m²K)</th></tr>' +
+        '<tr><td>Pareti verticali opache¹</td><td class="t">1</td>' + u(R[0]) + '</tr>' +
+        '<tr><td>Coperture¹</td><td class="t">2</td>' + u(R[1]) + '</tr>' +
+        '<tr><td>Pavimenti¹</td><td class="t">3</td>' + u(R[2]) + '</tr>' +
+        '<tr><td>Finestre, chiusure trasparenti e cassonetti (con infissi)</td><td class="t">4</td>' + u(R[3]) + '</tr>' +
+        '<tr><td>Divisori tra unità immobiliari o edifici²</td><td class="t">5</td><td>0,80</td></tr>' +
+        '<tr><td>g<sub>gl+sh</sub> (componenti trasparenti da Est a Ovest passando per Sud)</td><td class="t">6</td><td>0,35</td></tr></table>' +
+        '<p class="sitHt">H′<sub>T</sub> massimo per nuove costruzioni e demolizione e ricostruzione (Tab. 10), W/m²K</p>' +
+        '<table class="sitU ht"><tr><th>S/V &lt; 0,4</th><th>0,4 ≤ S/V &lt; 0,7</th><th>S/V ≥ 0,7</th></tr>' +
+        '<tr>' + HT.map(u).join('') + '</tr></table></div>';
+      h += '<div class="sitCard"><b>Riqualificazione energetica</b><span>Ristrutturazioni importanti di 2° livello e riqualificazioni · DM, Appendice B · U in W/m²K; +30% con isolamento interno o in intercapedine</span>' +
+        '<table class="sitU"><tr><th>Elemento</th><th>Tab.</th><th>U max</th><th>+30%³</th></tr>' +
+        '<tr><td>Pareti verticali opache¹</td><td class="t">1</td>' + u(Q[0]) + '<td class="p">' + nf(Q[0] * 1.3, 3) + '</td></tr>' +
+        '<tr><td>Coperture¹</td><td class="t">2</td>' + u(Q[1]) + '<td class="p">' + nf(Q[1] * 1.3, 3) + '</td></tr>' +
+        '<tr><td>Pavimenti¹</td><td class="t">3</td>' + u(Q[2]) + '<td class="p">' + nf(Q[2] * 1.3, 3) + '</td></tr>' +
+        '<tr><td>Finestre, chiusure trasparenti e cassonetti (con infissi)</td><td class="t">4</td>' + u(Q[3]) + '<td class="p">–</td></tr>' +
+        '<tr><td>g<sub>gl+sh</sub> (con schermature mobili, da Est a Ovest passando per Sud)</td><td class="t">8</td><td>0,35</td><td class="p">–</td></tr></table></div>';
+      h += '<p class="sitNote">¹ Verso l’esterno, ambienti non climatizzati o terreno; verso ambienti non climatizzati il valore si corregge con il fattore b<sub>tr</sub> (App. A §1.1 e App. B). ' +
+        '² Limite per nuove costruzioni e demolizione e ricostruzione nelle zone da C a F, esclusa la categoria E.8 (Allegato 1 §3.3). ' +
+        '³ Valori delle Tabelle 1–3 aumentati del 30% (Allegato 1 §1.4.3). Le trasmittanze comprendono i ponti termici; per il 1° livello H′<sub>T</sub> dipende dal rapporto vetrato (Tab. 11).</p>';
+      h += '<p class="sitSrc">DM 28 ottobre 2025 (GU n. 283 del 5/12/2025, in vigore dal 3/6/2026). ' + aLink('dm', 'Gazzetta Ufficiale') + '</p>';
+    } else if (fx) h += '<p class="sitNote">Requisiti minimi: dipendono dalla zona climatica da applicare (vedi sopra).</p>';
     // Neve e vento
     h += '<h4>Neve e vento' + (o.quota !== null ? ' · quota ≈ ' + o.quota + ' m' : '') + '</h4>';
     const nv = [];
@@ -5926,12 +6042,13 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     // Radon
     h += '<h4>Radon</h4>';
     const st = D.rad && o.reg ? D.rad[o.reg] : null;
-    let rv, rc = '';
-    if (r && r[3] === 1) { rv = 'sì, Comune in area prioritaria'; rc = 'warn'; }
-    else if (st === 'pub') rv = 'no (la Regione ha pubblicato l’elenco)';
-    else if (st === 'zero') rv = 'no: la Regione non ha individuato aree prioritarie';
-    else rv = 'la Regione non ha ancora pubblicato le aree prioritarie';
-    h += rows([['Area prioritaria', rv, rc]]);
+    let rv, rc = '', rt;
+    const rn = o.reg === '04' ? (o.com.p === 'BZ' ? 'la Provincia di Bolzano' : 'la Provincia di Trento') : REG_N[o.reg] || 'la Regione';
+    if (r && r[3] === 1) { rv = 'sì'; rc = 'warn'; rt = 'Il Comune è nell’elenco delle aree prioritarie pubblicato da ' + rn + '.'; }
+    else if (st === 'pub') { rv = 'no'; rt = rn + ' ha pubblicato l’elenco: il Comune non è tra le aree prioritarie.'; }
+    else if (st === 'zero') { rv = 'no'; rt = rn + ' ha deciso che nel suo territorio non ci sono aree prioritarie.'; }
+    else { rv = 'non ancora pubblicata'; rc = 'sub'; rt = rn + ' non ha ancora pubblicato l’elenco delle aree prioritarie.'; }
+    h += rows([['Area prioritaria', rv, rc]]) + '<p class="sitTxt">' + rt.charAt(0).toUpperCase() + rt.slice(1) + '</p>';
     if (r && r[3] === 1) h += '<p class="sitTxt">Nelle aree prioritarie la legge chiede di misurare il radon nei luoghi di lavoro al piano terra e interrati (D.Lgs 101/2020); per le case è consigliato.</p>';
     h += '<p class="sitSrc">Elenco nazionale dei Comuni in area prioritaria (ARPA Lombardia' + (D.radV ? ', ' + D.radV : '') + ', dagli atti delle Regioni in Gazzetta Ufficiale). ' + aLink('rad', 'Fonte') + ' ' + aLink('radL', 'D.Lgs 101/2020') + '</p>';
     h += '<p class="hint">Informazioni indicative, per orientarsi: fanno fede le norme, gli uffici regionali e comunali e il progettista.</p>';
@@ -6188,7 +6305,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
           typeof DeviceOrientationEvent.requestPermission === 'function') {
         const r = await DeviceOrientationEvent.requestPermission();
         if (r !== 'granted') {
-          throw new Error('Permesso ai sensori di movimento negato. Chiudi Safari del tutto, riapri la pagina e premi di nuovo Avvia.');
+          throw new Error('Permesso ai sensori di movimento negato. Chiudi del tutto il browser, riapri la pagina e premi di nuovo Avvia.');
         }
       }
       window.addEventListener('deviceorientation', onOrient, true);
