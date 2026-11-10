@@ -93,7 +93,7 @@ def main():
         page.route('**/beta/peaks-it.json', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(PEAKS)))
         page.route('**/places-it.json', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(TOWNS)))
         page.goto(f'http://127.0.0.1:{PORT}/beta/index.html')
-        check('Beta v39' in page.inner_text('body'), 'pagina iniziale «Beta v39»')
+        check('Beta v' in page.inner_text('body'), 'pagina iniziale «Beta»')
         page.evaluate('window.__setOrient(0, 90)')
         page.click('#go')
         page.wait_for_timeout(1500)

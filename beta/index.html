@@ -1200,6 +1200,41 @@ body.tabs .gacts { padding-bottom: 10px; }
 .sitU.cli td { padding-left: 4px; }
 .sitU.cli td.m { color: var(--acc); }
 .sitU.cli tr.g td { padding-top: 10px; border-top: 0; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--tx3); }
+/* v40: fotovoltaico (come lo strumento avanzato di PVGIS) */
+#sitBox .sitGo { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--acc); }
+#pvBox { padding: 14px; border-radius: 16px; background: var(--sf); }
+#pvBox .pvWhere { margin: 0 0 10px; font-size: 12.5px; color: var(--tx2); }
+.pvGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 10px; margin-bottom: 10px; }
+.pvGrid .w { grid-column: 1 / -1; }
+#pvBox label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--tx2); }
+#pvBox label > b { font-weight: inherit; }
+#pvBox label > span { display: flex; align-items: center; gap: 6px; color: var(--tx2); font-size: 13px; }
+#pvBox input[type=text], #pvBox select { width: 100%; min-width: 0; height: 38px; padding: 0 10px; border: 0; border-radius: 10px; font: inherit; font-size: 15px; color: var(--tx); background: var(--fill); }
+#pvBox label > span input { flex: 1; }
+.pvRow { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 8px; }
+.pvRow label { flex: 1; }
+.pvMeas { flex: none; height: 38px; padding: 0 12px; border: 0; border-radius: 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--acc); background: var(--fill); }
+#pvBox .pvChk { flex-direction: row; align-items: center; gap: 8px; margin: 6px 0; font-size: 13.5px; color: var(--tx); }
+#pvBox .pvChk input { width: 20px; height: 20px; margin: 0; accent-color: var(--acc); }
+.pvHelp { margin: -2px 0 6px; font-size: 12px; color: var(--tx2); }
+#pvLive { margin: 8px 0 10px; padding: 12px; border-radius: 12px; background: var(--bg); text-align: center; }
+#pvLive b { display: block; font-size: 34px; font-variant-numeric: tabular-nums; }
+#pvLive span { display: block; margin: 4px 0 8px; font-size: 12.5px; line-height: 1.4; color: var(--tx2); }
+.pvLiveBtn { display: flex; gap: 8px; justify-content: center; }
+.pvLiveBtn button { height: 36px; padding: 0 14px; border: 0; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; color: var(--acc); background: var(--fill); }
+.pvLiveBtn button:first-child { color: #fff; background: var(--acc); }
+#pvGo { display: block; width: 100%; height: 44px; margin-top: 8px; border: 0; border-radius: 12px; font: inherit; font-size: 15px; font-weight: 600; color: #fff; background: var(--acc); }
+#pvGo:disabled { opacity: 0.5; }
+#pvOut { margin-top: 12px; }
+#pvOut .pvBig { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+#pvOut .pvBig div { padding: 10px 8px; border-radius: 12px; background: var(--bg); text-align: center; }
+#pvOut .pvBig b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
+#pvOut .pvBig span { display: block; margin-top: 2px; font-size: 11px; line-height: 1.3; color: var(--tx2); }
+#pvOut svg { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+#pvOut svg text { font: 9.5px -apple-system, system-ui, sans-serif; fill: var(--tx2); }
+#pvOut svg rect.b { fill: #f2b705; }
+#pvOut h5 { margin: 12px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tx2); }
+#pvOut .pvErr { padding: 10px 12px; border-radius: 12px; background: var(--bg); font-size: 13px; color: var(--tx); }
 /* v33: Storia e cultura */
 .puGrid .puTile[data-amb="sto"] { grid-column: 1 / -1; min-height: 80px; }
 #stoBox { padding: 14px; border-radius: 16px; background: var(--sf); }
@@ -1363,7 +1398,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         <p id="msg" role="alert"></p>
         <div class="obRow">
           <button type="button" class="obHowBtn" id="obHow">Come funziona ›</button>
-          <span class="ver">Beta v39 · clima futuro in tutta Italia</span>
+          <span class="ver">Beta v40 · fotovoltaico</span>
         </div>
       </div>
     </section>
@@ -1546,7 +1581,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       <div class="seg" id="segT"><button type="button" data-th="auto">Automatico</button><button type="button" data-th="light">Chiaro</button><button type="button" data-th="dark">Scuro</button></div>
       <p class="hint">Automatico segue l’aspetto chiaro o scuro scelto nelle impostazioni del telefono.</p>
       <h3>Livelli sulla mappa</h3>
-      <label class="keyRow"><span>Chiave Esri per la foto satellitare dettagliata<small>si incolla una volta e resta solo su questo dispositivo; senza chiave si usa Sentinel-2 (EOX)</small></span>
+      <label class="keyRow"><span>Chiave Esri personale (facoltativa)<small>di solito non serve: le foto Esri arrivano dal server dell’app. Una chiave incollata qui resta solo su questo dispositivo e ha la precedenza</small></span>
         <input type="password" id="esriKey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AAPT…"></label>
       <label class="sw"><span>Catasto<small>particelle e numeri dell’Agenzia delle Entrate sulla mappa grande; serve la rete</small></span><input type="checkbox" id="catLayer"></label>
       <h3 id="advSec">Bussola e taratura (avanzate)</h3>
@@ -1627,6 +1662,43 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     <div class="puGrid" id="puGrid"></div>
     <div id="puVin" hidden><h3>Vincoli</h3><div id="vinBox"></div></div>
     <div id="puSit" hidden><h3>Sito ed Energia</h3><div id="sitBox"></div></div>
+    <div id="puPv" hidden><h3>Fotovoltaico</h3>
+      <div id="pvBox">
+        <p class="pvWhere" id="pvWhere"></p>
+        <div class="pvGrid">
+          <label>Potenza di picco<span><input id="pvKwp" type="text" inputmode="decimal" min="0.1" max="1000" step="0.1" value="3"> kWp</span></label>
+          <label>Perdite di sistema<span><input id="pvLoss" type="text" inputmode="decimal" min="0" max="50" step="0.5" value="14"> %</span></label>
+          <label>Tecnologia<select id="pvTech"><option value="crystSi">Silicio cristallino</option><option value="crystSi2025">Silicio cristallino, moduli recenti</option><option value="CIS">CIS</option><option value="CdTe">CdTe</option><option value="Unknown">Altro / non noto</option></select></label>
+          <label>Montaggio<select id="pvMount"><option value="free">Libero (ventilato)</option><option value="building">Integrato (tetto)</option></select></label>
+          <label class="w">Sistema<select id="pvTrack"><option value="fixed">Fisso</option><option value="inclined">Inseguimento su asse inclinato</option><option value="vertical">Inseguimento su asse verticale</option><option value="two">Inseguimento su due assi</option></select></label>
+        </div>
+        <div id="pvFixed">
+          <div class="pvRow"><label>Inclinazione<span><input id="pvAng" type="text" inputmode="decimal" min="0" max="90" step="1" value="30"> °</span></label>
+            <button type="button" class="pvMeas" id="pvMeasTilt">Misura col telefono</button></div>
+          <div class="pvRow"><label>Orientamento<span><input id="pvAsp" type="text" inputmode="decimal" min="-180" max="180" step="1" value="0"> °</span></label>
+            <button type="button" class="pvMeas" id="pvMeasAsp">Usa la bussola</button></div>
+          <p class="pvHelp" id="pvAspTxt"></p>
+          <label class="pvChk"><input type="checkbox" id="pvOptInc"> Inclinazione ottimale (calcolata da PVGIS)</label>
+          <label class="pvChk"><input type="checkbox" id="pvOptAll"> Inclinazione e orientamento ottimali</label>
+        </div>
+        <div id="pvAxis" hidden>
+          <div class="pvRow"><label><b id="pvAxisLbl">Inclinazione</b><span><input id="pvAxAng" type="text" inputmode="decimal" min="0" max="90" step="1" value="30"> °</span></label></div>
+          <label class="pvChk"><input type="checkbox" id="pvAxOpt" checked> Angolo ottimale (calcolato da PVGIS)</label>
+        </div>
+        <div id="pvLive" hidden><b id="pvLiveVal">–</b><span id="pvLiveTxt"></span><div class="pvLiveBtn"><button type="button" id="pvLiveUse">Usa questo valore</button><button type="button" id="pvLiveX">Annulla</button></div></div>
+        <div class="pvGrid">
+          <label class="w">Orizzonte (ombre di monti e colline)<select id="pvHor"><option value="pvgis">Di PVGIS (rilievo ~90 m)</option><option value="app">Calcolato dall’app (rilievo ~30 m, 15 km)</option><option value="none">Nessuno</option></select></label>
+        </div>
+        <label class="pvChk"><input type="checkbox" id="pvCost"> Costo dell’energia prodotta</label>
+        <div id="pvCostBox" class="pvGrid" hidden>
+          <label>Costo impianto<span><input id="pvSys" type="text" inputmode="decimal" min="0" step="100" value="5000"> €</span></label>
+          <label>Interesse<span><input id="pvInt" type="text" inputmode="decimal" min="0" max="20" step="0.1" value="3"> %/anno</span></label>
+          <label>Durata<span><input id="pvLife" type="text" inputmode="numeric" min="1" max="50" step="1" value="25"> anni</span></label>
+        </div>
+        <button type="button" id="pvGo">Calcola la produzione</button>
+        <div id="pvOut"></div>
+      </div>
+    </div>
     <div id="puSto" hidden><h3>Storia e cultura</h3><div id="stoBox"></div></div>
     <button type="button" id="puSheet" disabled>Crea la scheda del luogo<em>in arrivo</em></button>
     <h3>Dettagli</h3>
@@ -1805,7 +1877,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     return best;
   }
 
-  const S = {
+  const S = { oriB: null, oriG: null,
     heading: null, compAcc: null, pitch: null, alOff: 0, alPos: null, alQ: null,
     lat: null, lon: null, gpsAcc: null, alt: null, altAcc: null, gpsMsg: null,
     fov: 70, off: 0, pitchOff: 0, radius: 25000, land: false, declAuto: 3,
@@ -2645,6 +2717,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     }
     if (h !== null) S.heading = smoothAngle(S.heading, h, 0.3);
     if (typeof e.beta === 'number') {
+      S.oriB = e.beta; S.oriG = typeof e.gamma === 'number' ? e.gamma : 0;   // v40: inclinazione del telefono (fotovoltaico)
       const p = e.beta - 90; // 0 = orizzonte, positivo = verso l'alto
       S.pitch = (S.pitch === null) ? p : S.pitch + (p - S.pitch) * 0.3;
     }
@@ -3003,47 +3076,69 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
      Con una chiave Esri (account sviluppatore ArcGIS gratuito) si usa World Imagery, molto più dettagliata. */
   // Chiave API di ArcGIS Location Platform: NON sta nel codice (il repository è pubblico). Si incolla una volta nelle Impostazioni
   // e resta solo su quel telefono (S.esriKey). Se Esri non risponde (chiave scaduta, quota esaurita) si torna a EOX.
-  let ESRI_KEY = '';
+  // v40: di serie le foto Esri passano dal proxy Cloudflare, che tiene la chiave come segreto (ESRI_KEY): nessuno deve incollarla.
+  // Il proxy dice se ce l'ha rispondendo «orientis 3 esri» a /ping. Una chiave incollata nelle Impostazioni ha la precedenza.
+  let ESRI_KEY = '', ESRI_PROXY = false, esriPing = 0;   // 0 da chiedere, 1 in corso, 2 fatto
+  const esriOn = () => !!ESRI_KEY || ESRI_PROXY;
+  function satRebuild() {
+    if (mapReady && map.getSource('sat')) { try { map.removeLayer('sat'); map.removeSource('sat'); map.addSource('sat', SAT_SRC()); map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } }, 'comB'); } catch (er) {} }
+    satApply();
+  }
   function esriSet(k) {
     k = String(k || '').trim();
     if (k === ESRI_KEY) return;
     ESRI_KEY = k; satErr = 0;
-    if (mapReady && map.getSource('sat')) { try { map.removeLayer('sat'); map.removeSource('sat'); map.addSource('sat', SAT_SRC()); map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } }, 'comB'); } catch (er) {} }
-    satApply();
+    satRebuild();
+  }
+  async function esriProxyCheck() {
+    if (esriPing) return;
+    esriPing = 1;
+    let yes = false;
+    try {
+      const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 5000);
+      const r = await fetch(CAT_BASE + '/ping', { cache: 'no-store', signal: ac.signal });
+      clearTimeout(tm);
+      const t = r.ok ? await r.text() : '';
+      yes = /^orientis \d+ esri/.test(t);
+    } catch (e) { /* senza proxy: foto EOX */ }
+    esriPing = 2;
+    if (yes && !ESRI_PROXY) { ESRI_PROXY = true; satErr = 0; satRebuild(); } else satApply();
   }
   const SAT_YEARS = ['2024', '2023', '2021'];   // se un anno non risponde si passa al precedente
   let satY = 0, satErr = 0;
   function SAT_SRC() {
-    return ESRI_KEY
-      ? { type: 'raster', tiles: ['https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=' + ESRI_KEY], tileSize: 256, maxzoom: 19 }
-      : { type: 'raster', tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-' + SAT_YEARS[satY] + '_3857/default/g/{z}/{y}/{x}.jpg'], tileSize: 256, maxzoom: 15 };
+    if (ESRI_KEY) return { type: 'raster', tiles: ['https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token=' + ESRI_KEY], tileSize: 256, maxzoom: 19 };
+    if (ESRI_PROXY) return { type: 'raster', tiles: [CAT_BASE + '/esri/{z}/{y}/{x}'], tileSize: 256, maxzoom: 19 };
+    return { type: 'raster', tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-' + SAT_YEARS[satY] + '_3857/default/g/{z}/{y}/{x}.jpg'], tileSize: 256, maxzoom: 15 };
   }
   function satAttr() {
     const y = SAT_YEARS[satY];
-    return ESRI_KEY ? 'Foto: Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    return esriOn() ? 'Foto: Powered by Esri · Esri, Maxar, Earthstar Geographics, and the GIS User Community'
       : 'Foto: <a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + y + '</a> by EOX IT Services GmbH (contiene dati Copernicus Sentinel ' + y + ' modificati), licenza CC BY-NC-SA 4.0';
   }
   // anno non disponibile: dopo qualche errore dei tasselli satellitari si prova l'anno precedente
   function satOnError(e) {
     if (!e || e.sourceId !== 'sat') return;
     if (ESRI_KEY) { if (++satErr < 6) return; satErr = 0; ESRI_KEY = ''; }
+    else if (ESRI_PROXY) { if (++satErr < 6) return; satErr = 0; ESRI_PROXY = false; }
     else { if (satY >= SAT_YEARS.length - 1 || ++satErr < 4) return; satErr = 0; satY++; }
     try { map.removeLayer('sat'); map.removeSource('sat'); map.addSource('sat', SAT_SRC()); map.addLayer({ id: 'sat', type: 'raster', source: 'sat', layout: { visibility: 'none' }, paint: { 'raster-fade-duration': 150 } }, 'comB'); satApply(); } catch (er) {}
   }
   function satApply() {
     const on = !!S.sat && full && tabNow() === 'mappa';
+    if (on && esriPing < 2 && !ESRI_KEY) { esriProxyCheck(); }   // la foto si mostra quando si sa da dove prenderla
     $('satBtn').setAttribute('aria-pressed', String(!!S.sat));
     document.body.classList.toggle('sat', on);
     if (!mapReady || !map.getLayer('sat')) return;
-    const v = on ? 'visible' : 'none';
+    const v = on && (esriPing === 2 || ESRI_KEY) ? 'visible' : 'none';
     if (map.getLayoutProperty('sat', 'visibility') !== v) map.setLayoutProperty('sat', 'visibility', v);
     const sh = $('miniAttr').querySelector('.s');
-    if (sh) sh.innerHTML = on ? (ESRI_KEY ? 'Powered by <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a> · Maxar, Earthstar Geographics' : '<a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + SAT_YEARS[satY] + '</a> · Copernicus') : '© OSM';
+    if (sh) sh.innerHTML = on ? (esriOn() ? 'Powered by <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a> · Maxar, Earthstar Geographics' : '<a href="https://cloudless.eox.at" target="_blank" rel="noopener">EOxCloudless ' + SAT_YEARS[satY] + '</a> · Copernicus') : '© OSM';
   }
   $('esriKey').addEventListener('change', () => { S.esriKey = $('esriKey').value.trim(); saveSettings(); esriSet(S.esriKey); });
   $('satBtn').addEventListener('click', (e) => {
     e.stopPropagation(); S.sat = !S.sat; saveSettings(); satApply();
-    if (S.sat && !ESRI_KEY && mapReady && map.getZoom() > 15) mapHint('Foto satellitare con poco dettaglio da vicino (circa 10 m).');
+    if (S.sat && !esriOn() && mapReady && map.getZoom() > 15) mapHint('Foto satellitare con poco dettaglio da vicino (circa 10 m).');
   });
 
   /* ---------- v38: ricerca dei Comuni per nome ---------- */
@@ -6162,6 +6257,192 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
       '<a href="https://climadat.isprambiente.it/pnacc/dati-indicatori-mappe-pnacc/aree-terrestri/" target="_blank" rel="noopener">Fonte ›</a></p>';
     return h;
   }
+
+  /* ---------- v40: fotovoltaico (PVGIS 5.3 PVcalc, attraverso il proxy) ----------
+     Parametri come lo strumento «Fotovoltaico connesso alla rete» di PVGIS; inclinazione misurata col telefono appoggiato
+     sulla falda, orientamento con la bussola; orizzonte di PVGIS, dell'app (dal rilievo) o nessuno. */
+  const PV = { lat: null, lon: null, name: '', live: null, liveT: 0, busy: false, last: null, hzMemo: null };
+  const PV_MON = ['G', 'F', 'M', 'A', 'M', 'G', 'L', 'A', 'S', 'O', 'N', 'D'];
+  const PV_MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+  function pvSetTarget(lat, lon, name) {
+    const ch = PV.lat !== lat || PV.lon !== lon;
+    PV.lat = lat; PV.lon = lon; PV.name = name || '';
+    $('puPv').hidden = lat === null;
+    if (lat === null) return;
+    setText('pvWhere', 'Stima per ' + (name ? name + ' · ' : '') + lat.toFixed(4).replace('.', ',') + ' N, ' + lon.toFixed(4).replace('.', ',') + ' E');
+    if (ch && PV.last && (PV.last.lat !== lat || PV.last.lon !== lon)) { $('pvOut').innerHTML = '<p class="pvHelp">Il punto è cambiato: premi di nuovo «Calcola».</p>'; PV.last = null; }
+  }
+  function pvAspText() {
+    const a = parseFloat($('pvAsp').value);
+    if (!isFinite(a)) { setText('pvAspTxt', ''); return; }
+    setText('pvAspTxt', 'Moduli rivolti a ' + pvDir(a) + ' (0° = Sud, −90° = Est, +90° = Ovest).');
+  }
+  function pvDir(a) {   // orientamento PVGIS (0 = Sud, 90 = Ovest) → punto cardinale
+    const az = ((a + 180) % 360 + 360) % 360;
+    return ['Nord', 'Nord-Est', 'Est', 'Sud-Est', 'Sud', 'Sud-Ovest', 'Ovest', 'Nord-Ovest'][Math.round(az / 45) % 8];
+  }
+  function pvModeUI() {
+    const t = $('pvTrack').value;
+    $('pvFixed').hidden = t !== 'fixed';
+    $('pvAxis').hidden = t === 'fixed' || t === 'two';
+    setText('pvAxisLbl', t === 'vertical' ? 'Inclinazione dei moduli' : 'Inclinazione dell’asse');
+    const oa = $('pvOptAll').checked;
+    $('pvOptInc').disabled = oa; $('pvAng').disabled = oa || $('pvOptInc').checked; $('pvAsp').disabled = oa;
+    $('pvAxAng').disabled = $('pvAxOpt').checked;
+    $('pvCostBox').hidden = !$('pvCost').checked;
+    pvAspText();
+  }
+  ['pvTrack', 'pvOptAll', 'pvOptInc', 'pvAxOpt', 'pvCost'].forEach((id) => $(id).addEventListener('change', pvModeUI));
+  $('pvAsp').addEventListener('input', pvAspText);
+  // misura dal vivo: inclinazione (telefono appoggiato sulla falda) o orientamento (bussola, telefono come in Guarda)
+  function pvLiveStart(kind) {
+    if (kind === 'tilt' && S.oriB === null) { toast('Servono i sensori di movimento: avvia l’app dalla schermata Guarda.', 4000); return; }
+    if (kind === 'asp' && S.heading === null) { toast('Serve la bussola: avvia l’app dalla schermata Guarda.', 4000); return; }
+    PV.live = kind;
+    $('pvLive').hidden = false;
+    setText('pvLiveTxt', kind === 'tilt'
+      ? 'Appoggia il telefono sulla falda, schermo verso l’alto, con il lato lungo lungo la linea di pendenza. Aspetta che il numero sia fermo.'
+      : 'Mettiti di spalle al colmo e tieni il telefono dritto davanti a te, come per inquadrare, nella direzione verso cui scende la falda.');
+    clearInterval(PV.liveT);
+    PV.liveT = setInterval(pvLiveTick, 200);
+    pvLiveTick();
+  }
+  function pvLiveVal() {
+    if (PV.live === 'tilt') {
+      if (S.oriB === null) return null;
+      const b = S.oriB * RAD, g = S.oriG * RAD;
+      return Math.acos(Math.max(-1, Math.min(1, Math.cos(b) * Math.cos(g)))) / RAD;
+    }
+    if (S.heading === null) return null;
+    let a = trueHeading() - 180;
+    if (a > 180) a -= 360; if (a < -180) a += 360;
+    return a;
+  }
+  function pvLiveTick() {
+    const v = pvLiveVal();
+    setText('pvLiveVal', v === null ? '–' : (v > 0 && PV.live === 'asp' ? '+' : '') + Math.round(v) + '°');
+  }
+  function pvLiveStop(use) {
+    if (use && PV.live) {
+      const v = pvLiveVal();
+      if (v !== null) {
+        if (PV.live === 'tilt') { $('pvAng').value = Math.round(v); $('pvOptInc').checked = false; }
+        else $('pvAsp').value = Math.round(v);
+        $('pvOptAll').checked = false;
+      }
+    }
+    PV.live = null; clearInterval(PV.liveT); $('pvLive').hidden = true; pvModeUI();
+  }
+  $('pvMeasTilt').addEventListener('click', () => pvLiveStart('tilt'));
+  $('pvMeasAsp').addEventListener('click', () => pvLiveStart('asp'));
+  $('pvLiveUse').addEventListener('click', () => pvLiveStop(true));
+  $('pvLiveX').addEventListener('click', () => pvLiveStop(false));
+  // orizzonte dall'app: 48 direzioni (passo 7,5°, da Nord in senso orario), angolo massimo del terreno entro 15 km
+  async function pvHorizon(lat, lon) {
+    const k = lat.toFixed(4) + ',' + lon.toFixed(4);
+    if (PV.hzMemo && PV.hzMemo.k === k) return PV.hzMemo.v;
+    let P = null;
+    if (S.lat !== null && DEM.prof && geo(DEM.prof.lat, DEM.prof.lon, lat, lon).d < 100) P = DEM.prof;
+    else {
+      const R = 15000, keys = demTileList(lat, lon, R);
+      await demLoad(keys);
+      const g = demGet(lat, lon, DEM_LEVELS[0].z);
+      if (g === null) throw new Error('rilievo non disponibile');
+      P = await demProfile(lat, lon, R, g + 3);
+    }
+    const n = 48, per = P.nA / n, v = [];
+    for (let i = 0; i < n; i++) {
+      let mx = 0;
+      for (let j = Math.round(i * per - per / 2); j <= Math.round(i * per + per / 2); j++) mx = Math.max(mx, P.hz[((j % P.nA) + P.nA) % P.nA]);
+      v.push(Math.round(mx * 10) / 10);
+    }
+    PV.hzMemo = { k: k, v: v };
+    return v;
+  }
+  function pvNum(id, lo, hi) { const x = parseFloat(String($(id).value).replace(',', '.')); return isFinite(x) ? Math.min(hi, Math.max(lo, x)) : null; }
+  async function pvRun() {
+    if (PV.busy || PV.lat === null) return;
+    const kwp = pvNum('pvKwp', 0.05, 5000), loss = pvNum('pvLoss', 0, 80);
+    if (kwp === null || loss === null) { $('pvOut').innerHTML = '<p class="pvErr">Controlla potenza e perdite.</p>'; return; }
+    const q = new URLSearchParams({ lat: PV.lat.toFixed(5), lon: PV.lon.toFixed(5), peakpower: String(kwp), loss: String(loss),
+      pvtechchoice: $('pvTech').value, mountingplace: $('pvMount').value });
+    const t = $('pvTrack').value;
+    if (t === 'fixed') {
+      if ($('pvOptAll').checked) q.set('optimalangles', '1');
+      else {
+        if ($('pvOptInc').checked) q.set('optimalinclination', '1'); else q.set('angle', String(pvNum('pvAng', 0, 90) || 0));
+        q.set('aspect', String(pvNum('pvAsp', -180, 180) || 0));
+      }
+    } else {
+      q.set('fixed', '0');
+      if (t === 'two') q.set('twoaxis', '1');
+      else {
+        const ax = t === 'inclined' ? 'inclined' : 'vertical';
+        q.set(ax + '_axis', '1');
+        if ($('pvAxOpt').checked) q.set(ax + '_optimum', '1'); else q.set(ax + 'axisangle', String(pvNum('pvAxAng', 0, 90) || 0));
+      }
+    }
+    const hor = $('pvHor').value;
+    PV.busy = true; $('pvGo').disabled = true;
+    $('pvOut').innerHTML = '<p class="pvHelp">' + (hor === 'app' ? 'Calcolo l’orizzonte dal rilievo, poi chiedo a PVGIS…' : 'Chiedo a PVGIS…') + '</p>';
+    try {
+      if (hor === 'none') q.set('usehorizon', '0');
+      else if (hor === 'app') { q.set('usehorizon', '1'); q.set('userhorizon', (await pvHorizon(PV.lat, PV.lon)).join(',')); }
+      if ($('pvCost').checked) {
+        q.set('pvprice', '1'); q.set('systemcost', String(pvNum('pvSys', 0, 1e8) || 0));
+        q.set('interest', String(pvNum('pvInt', 0, 30) || 0)); q.set('lifetime', String(Math.round(pvNum('pvLife', 1, 60) || 25)));
+      }
+      const r = await fetch(CAT_BASE + '/pvgis?' + q.toString());
+      const txt = await r.text();
+      let j = null; try { j = JSON.parse(txt); } catch (e) { j = null; }
+      if (!r.ok || !j || !j.outputs) throw new Error(j && j.message ? j.message : (r.status === 404 ? 'il server dell’app va aggiornato (versione 3)' : 'risposta non valida (' + r.status + ')'));
+      PV.last = { lat: PV.lat, lon: PV.lon };
+      $('pvOut').innerHTML = pvHtml(j, kwp, hor);
+    } catch (e) {
+      $('pvOut').innerHTML = '<p class="pvErr">Calcolo non riuscito: ' + escHtml(describeError(e)) + '. Riprova tra poco.</p>';
+    } finally { PV.busy = false; $('pvGo').disabled = false; }
+  }
+  $('pvGo').addEventListener('click', pvRun);
+  $('sitBox').addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) $(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  function pvHtml(j, kwp, hor) {
+    const O = j.outputs, I = j.inputs || {}, key = Object.keys(O.totals || {})[0];
+    const T = O.totals[key], M = (O.monthly && O.monthly[key]) || [];
+    const ms = (I.mounting_system && I.mounting_system[key]) || {};
+    const f0 = (x) => fmtInt(x), f1 = (x) => nf(x, 1);
+    const ey = T.E_y, hy = T['H(i)_y'];
+    let h = '<div class="pvBig"><div><b>' + f0(ey) + '</b><span>kWh all’anno</span></div><div><b>' + f0(ey / kwp) + '</b><span>kWh per kWp</span></div>' +
+      '<div><b>' + f0(hy) + '</b><span>kWh/m² sul piano dei moduli</span></div></div>';
+    // grafico mensile
+    const mx = Math.max(1, ...M.map((m) => m.E_m)), W = 340, H = 120, bw = W / 12;
+    h += '<h5>Produzione mensile, kWh</h5><svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" role="img" aria-label="Produzione mensile">' +
+      M.map((m, i) => { const bh = (m.E_m / mx) * (H - 14); return '<rect class="b" x="' + (i * bw + 4) + '" y="' + (H - bh) + '" width="' + (bw - 8) + '" height="' + bh + '" rx="2"><title>' + PV_MESI[i] + ': ' + f0(m.E_m) + ' kWh</title></rect>' +
+        '<text x="' + (i * bw + bw / 2) + '" y="' + (H - bh - 3) + '" text-anchor="middle">' + f0(m.E_m) + '</text><text x="' + (i * bw + bw / 2) + '" y="' + (H + 12) + '" text-anchor="middle">' + PV_MON[i] + '</text>'; }).join('') + '</svg>';
+    // impostazioni usate da PVGIS (anche gli angoli ottimali)
+    const ang = (o, u) => o && o.value !== undefined ? nf(o.value, 0) + '°' + (o.optimal ? ' (ottimale)' : '') : '–';
+    const rows = [];
+    if (key === 'fixed') rows.push(['Inclinazione', ang(ms.slope)], ['Orientamento', ms.azimuth && ms.azimuth.value !== undefined ? nf(ms.azimuth.value, 0) + '°, verso ' + pvDir(ms.azimuth.value) + (ms.azimuth.optimal ? ' (ottimale)' : '') : '–']);
+    else if (/two/i.test(key)) rows.push(['Sistema', 'inseguimento su due assi']);
+    else rows.push(['Sistema', /vert/i.test(key) ? 'inseguimento su asse verticale' : 'inseguimento su asse inclinato'], [/vert/i.test(key) ? 'Inclinazione dei moduli' : 'Inclinazione dell’asse', ang(ms.slope)]);
+    rows.push(['Variabilità tra gli anni', '± ' + f0(T.SD_y) + ' kWh']);
+    const md = I.meteo_data || {};
+    rows.push(['Dati di irraggiamento', (md.radiation_db || 'PVGIS') + (md.year_min ? ', ' + md.year_min + '–' + md.year_max : '')]);
+    rows.push(['Orizzonte', hor === 'none' ? 'non considerato' : hor === 'app' ? 'calcolato dall’app (rilievo ~30 m)' : 'di PVGIS (rilievo ~90 m)']);
+    h += '<h5>Impostazioni usate</h5><div class="vinRows">' + rows.map((x) => '<span>' + x[0] + '</span><b>' + escHtml(x[1]) + '</b>').join('') + '</div>';
+    // perdite
+    const pc = (x) => x === undefined || x === null ? '–' : (x > 0 ? '+' : x < 0 ? '−' : '') + nf(Math.abs(x), 1) + '%';
+    h += '<h5>Perdite e guadagni</h5><div class="vinRows">' +
+      '<span>Angolo d’incidenza (riflessione)</span><b>' + pc(T.l_aoi) + '</b><span>Effetti spettrali</span><b>' + pc(T.l_spec) + '</b>' +
+      '<span>Temperatura e irraggiamento basso</span><b>' + pc(T.l_tg) + '</b><span>Sistema (cavi, inverter, sporco…)</span><b>' + pc(-(I.pv_module ? I.pv_module.system_loss : 0)) + '</b>' +
+      '<span>Totale</span><b>' + pc(T.l_total) + '</b></div>';
+    if (T.LCOE_pv !== undefined && T.LCOE_pv !== null) h += '<h5>Costo dell’energia</h5><div class="vinRows"><span>Costo livellato (LCOE)</span><b>' + nf(T.LCOE_pv, 3) + ' €/kWh</b></div>';
+    h += '<h5>Mese per mese</h5><table class="sitU"><tr><th>Mese</th><th>kWh</th><th>kWh/m²</th></tr>' +
+      M.map((m, i) => '<tr><td>' + PV_MESI[i] + '</td><td>' + f0(m.E_m) + '</td><td>' + f1(m['H(i)_m']) + '</td></tr>').join('') + '</table>';
+    h += '<p class="sitNote">Stima di PVGIS su anni di dati satellitari: non è un progetto. Non considera le ombre vicine (edifici, alberi, comignoli) né la neve; la produzione reale può variare di anno in anno.</p>' +
+      '<p class="sitSrc">PVGIS © Unione europea, Centro comune di ricerca (JRC). <a href="https://re.jrc.ec.europa.eu/pvg_tools/it/" target="_blank" rel="noopener">Apri PVGIS ›</a></p>';
+    return h;
+  }
+  pvModeUI();
+  window.__panoPv = PV;
   function sitoTile(o) {
     if (!o) return S.lat === null ? 'in attesa del GPS' : 'in attesa del Comune';
     if (!o.row) return SITO.state === 'err' ? 'non disponibile ora (serve la rete la prima volta)' : SITO.state === 'ok' ? 'Comune non trovato nelle tabelle' : 'in caricamento…';
@@ -6235,6 +6516,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
         '³ Valori delle Tabelle 1–3 aumentati del 30% (Allegato 1 §1.4.3). Le trasmittanze comprendono i ponti termici; per il 1° livello H′<sub>T</sub> dipende dal rapporto vetrato (Tab. 11).</p>';
       h += '<p class="sitSrc">DM 28 ottobre 2025 (GU n. 283 del 5/12/2025, in vigore dal 3/6/2026). ' + aLink('dm', 'Gazzetta Ufficiale') + '</p>';
     } else if (fx) h += '<p class="sitNote">Requisiti minimi: dipendono dalla zona climatica da applicare (vedi sopra).</p>';
+    h += '<p class="sitSrc"><button type="button" class="sitGo" data-go="puPv">Stima della produzione fotovoltaica ›</button></p>';
     // Neve e vento
     h += '<h4>Neve e vento' + (o.quota !== null ? ' · quota ≈ ' + o.quota + ' m' : '') + '</h4>';
     const nv = [];
@@ -6313,6 +6595,7 @@ body[data-tab="mappa"] #miniWrap.full #lyNote:not([hidden]) { display: block; po
     const gq = g !== null ? g : (!p && S.alt !== null && (S.altAcc === null || S.altAcc <= 25) ? Math.round(S.alt) : null);
     const sit = sitoFor(p ? p.com : COM.cur, tgt.lat, tgt.lon, gq);
     $('puSit').hidden = tgt.lat === null;
+    pvSetTarget(tgt.lat, tgt.lon, p ? (p.nm || (p.com ? p.com.n : '')) : 'la tua posizione');
     const sh = sitoHtml(sit);
     if ($('sitBox').dataset.h !== sh) { $('sitBox').innerHTML = sh; $('sitBox').dataset.h = sh; }
     const val = { vin: vinShort(vin), cat: p ? catOf(p) : catShort(), sit: sitoTile(sit), sto: stoTile() };
