@@ -30,8 +30,11 @@
 - `test_v39.py` (parte da test_v38) prova anche la tabella del Clima futuro per Ariano Irpino.
 - `test_v40.py` (parte da test_v39) prova il Fotovoltaico con un PVGIS finto (parametri della richiesta, risultati, misura di inclinazione e orientamento col telefono, angoli ottimali, orizzonte dell'app in 48 direzioni, costo, inseguimento) e le foto Esri dal server.
 
-## Struttura di `beta/` (dalla v41, pulizia del codice – tappa A)
-- `index.html`: pagina e codice principale (gli stili e i dati fissi non ci sono più).
+## Struttura di `beta/` (dalla v41, pulizia del codice – tappe A e B)
+- `index.html`: solo la pagina (circa 430 righe). Il codice sta in `js/`, in 12 file caricati in quest'ordine con `<script src="js/….js?v=40">`:
+  `base` (costanti, utilità, impostazioni, geografia), `rilievo` (terreno), `dati-luogo` (archivio, OpenStreetMap, fiumi), `sensori` (sensori, calibrazione, sole), `mappa` (mini-mappa, satellite, ricerca dei Comuni), `orientamento` (bussola, allineamento, creste, percorso del sole), `disegno`, `foto` (impostazioni, scatto, galleria, modifica), `struttura` (fotocamera, zoom, Comune e catasto, Mappa · Guarda · Punto · Archivio), `vincoli-sito` (frane e alluvioni, Sito ed Energia, Clima futuro), `fotovoltaico`, `avvio`.
+  Non sono moduli: sono script classici che condividono lo stesso spazio di nomi, quindi **l'ordine dei tag conta** e le righe eseguite subito al caricamento devono usare solo cose definite nello stesso file o in uno precedente (`struttura.js` comincia proprio con l'avvio delle impostazioni perché richiama funzioni che stanno più sotto nello stesso file). Il codice dentro è identico a quello di prima della v41, con la stessa indentazione.
 - `css/stile.css`: tutti gli stili, identici a prima (collegato con `?v=`: cambiare il numero quando si modifica il file).
 - `dati/declinazione.js`: declinazione magnetica WMM2025. `dati/norme.js`: tabelle di norme di «Sito ed Energia» (sismica, zone climatiche, neve e vento NTC 2018, trasmittanze DM 28/10/2025, link alle fonti, indicatori del Clima futuro). Entrambi si leggono da `window.ORI_DATI`, caricati prima del codice principale.
+- Per i confronti di schermate prima/dopo: la finta fotocamera di Chromium ha una "fetta" chiara animata a tempo, quindi cambia da un'esecuzione all'altra; contano solo le differenze nel resto dell'immagine.
 - I test non cambiano: servono ancora gli stessi comandi, con MapLibre 4.7.1 (`npm install maplibre-gl@4.7.1`). Se un test fallisce con «Address already in use», c'è un altro test ancora acceso: chiuderlo e ripetere.
