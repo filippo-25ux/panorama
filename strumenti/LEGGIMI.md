@@ -29,3 +29,9 @@
 - `make_clima.py` crea `beta/clima-it.json` (v39, «Clima futuro»): indicatori PNACC 2024 di ISPRA, clima 1981-2010 (E-OBS, 0,1°) e variazioni al 2036-2065 (EURO-CORDEX, RCP2.6/4.5/8.5) dagli zip interni dei 4 pacchetti scaricati da climadat.isprambiente.it (alcuni pacchetti hanno un indice zip rovinato: si estraggono leggendo le intestazioni locali dei file).
 - `test_v39.py` (parte da test_v38) prova anche la tabella del Clima futuro per Ariano Irpino.
 - `test_v40.py` (parte da test_v39) prova il Fotovoltaico con un PVGIS finto (parametri della richiesta, risultati, misura di inclinazione e orientamento col telefono, angoli ottimali, orizzonte dell'app in 48 direzioni, costo, inseguimento) e le foto Esri dal server.
+
+## Struttura di `beta/` (dalla v41, pulizia del codice – tappa A)
+- `index.html`: pagina e codice principale (gli stili e i dati fissi non ci sono più).
+- `css/stile.css`: tutti gli stili, identici a prima (collegato con `?v=`: cambiare il numero quando si modifica il file).
+- `dati/declinazione.js`: declinazione magnetica WMM2025. `dati/norme.js`: tabelle di norme di «Sito ed Energia» (sismica, zone climatiche, neve e vento NTC 2018, trasmittanze DM 28/10/2025, link alle fonti, indicatori del Clima futuro). Entrambi si leggono da `window.ORI_DATI`, caricati prima del codice principale.
+- I test non cambiano: servono ancora gli stessi comandi, con MapLibre 4.7.1 (`npm install maplibre-gl@4.7.1`). Se un test fallisce con «Address already in use», c'è un altro test ancora acceso: chiuderlo e ripetere.
